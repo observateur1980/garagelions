@@ -1,11 +1,12 @@
 {% load static %}
 <style>
-    .header-9 .mega-menu .menu-links > li > a,
+.header-9 .mega-menu .menu-links > li > a,
 .mega-menu .menu-links > li > a {
     color: #626262;
     text-transform: uppercase;
     font-family: Arial, sans-serif;
     font-weight: 600;
+    letter-spacing: 0.4px;
 }
 
 .icon-bar {
@@ -23,15 +24,11 @@
     margin-right: 30px;
 }
 
-.header-9 .mega-menu > section.menu-list-items {
+.header-9 .mega-menu > section.menu-list-items,
+.header-9 .mega-menu.desktopTopFixed .menu-list-items {
     border-bottom: 1px solid rgb(76, 73, 73);
     height: 96px;
-    background: transparent;
-}
-
-.header-9 .mega-menu.desktopTopFixed .menu-list-items {
     background: #ffffff;
-    border-bottom: 1px solid rgb(76, 73, 73);
 }
 
 .gl-nav-shell {
@@ -44,6 +41,7 @@
 .gl-nav-left,
 .gl-nav-right {
     flex: 1 1 0;
+    min-width: 0;
 }
 
 .gl-nav-left .menu-links,
@@ -56,11 +54,13 @@
 }
 
 .gl-nav-left .menu-links {
-    justify-content: flex-start !important;
+    justify-content: flex-end !important;
+    padding-right: 42px !important;
 }
 
 .gl-nav-right .menu-links {
-    justify-content: flex-end !important;
+    justify-content: flex-start !important;
+    padding-left: 42px !important;
 }
 
 .gl-nav-left .menu-links > li,
@@ -69,15 +69,18 @@
     display: flex !important;
     align-items: center !important;
     height: 96px;
+    position: relative;
 }
 
 .gl-nav-center {
-    flex: 0 0 auto;
+    flex: 0 0 220px;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 96px;
-    padding: 0 24px;
+    padding: 0 10px;
+    position: relative;
+    z-index: 20;
 }
 
 .gl-nav-center a {
@@ -98,6 +101,8 @@
     align-items: center !important;
     height: 96px;
     line-height: 1 !important;
+    padding: 0 14px !important;
+    white-space: nowrap;
 }
 
 .req-bar-on-menu {
@@ -116,28 +121,117 @@
     vertical-align: middle;
     position: relative;
     top: 0;
+    white-space: nowrap;
 }
 
-.mobile-logo {
+.mega-menu .drop-down-multilevel {
+    min-width: 240px;
+    z-index: 9999 !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: auto !important;
+}
+
+.mobile-logo,
+.mobile-menu-toggle,
+.mobile-menu-panel {
     display: none;
+}
+
+.mobile-menu-toggle {
+    position: absolute;
+    right: 15px;
+    top: 18px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #4c4949;
+    background: transparent;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001;
+}
+
+.mobile-menu-toggle i {
+    font-size: 20px;
+    color: #4c4949;
+}
+
+.mobile-menu-panel {
+    background: #ffffff;
+    border-top: 1px solid #d9d9d9;
+    padding: 10px 0;
+}
+
+.mobile-menu-panel ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu-panel li {
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu-panel a {
+    display: block;
+    padding: 12px 20px;
+    color: #626262;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.mobile-submenu {
+    padding-left: 15px;
+}
+
+@media screen and (max-width: 1200px) {
+    .gl-nav-center {
+        flex-basis: 190px;
+    }
+
+    .gl-nav-left .menu-links {
+        padding-right: 24px !important;
+    }
+
+    .gl-nav-right .menu-links {
+        padding-left: 24px !important;
+    }
+
+    .menu-links > li > a {
+        padding: 0 10px !important;
+        font-size: 13px;
+    }
+
+    .req-bar-on-menu {
+        padding: 0 14px !important;
+    }
 }
 
 @media screen and (max-width: 992px) {
     .gl-nav-shell {
-        display: block;
-        height: 70px;
+        display: none;
     }
 
-    .gl-nav-left,
-    .gl-nav-right,
-    .gl-nav-center {
-        display: none;
+    .header-9 .mega-menu > section.menu-list-items,
+    .header-9 .mega-menu.desktopTopFixed .menu-list-items {
+        position: fixed;
+        height: 78px;
+        width: 100%;
+        left: 0;
+        top: 0;
+        z-index: 9999;
+        background: transparent;
     }
 
     .mobile-logo {
         display: block;
         text-align: center;
-        padding-top: 6px;
+        padding-top: 8px;
     }
 
     .mobile-logo img {
@@ -145,14 +239,23 @@
         width: auto;
     }
 
-    .mega-menu > section.menu-list-items {
-        position: fixed;
-        height: 70px;
+    .mobile-menu-toggle {
+        display: flex;
     }
 
-    .icon-bar a {
-        margin-right: 15px;
-        font-size: 14px;
+    .mobile-menu-panel.is-open {
+        display: block;
+        position: fixed;
+        top: 78px;
+        left: 0;
+        right: 0;
+        z-index: 9998;
+        max-height: calc(100vh - 78px);
+        overflow-y: auto;
+    }
+
+    .icon-bar {
+        display: none;
     }
 }
 </style>
@@ -160,11 +263,10 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <div class="icon-bar hidden-xs">
-
-  <a href="tel:8554645119"><i class="fa fa-phone">&nbsp; +1 855 464 5119</i></a>
-  <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
-
+    <a href="tel:8554645119"><i class="fa fa-phone">&nbsp; +1 855 464 5119</i></a>
+    <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
 </div>
+
 <header id="header" class="header-9">
     <div class="menu">
         <nav id="menu-1" class="mega-menu">
@@ -179,10 +281,13 @@
                                 </a>
                             </div>
 
+                            <button class="mobile-menu-toggle" type="button" aria-label="Open menu" onclick="document.getElementById('mobileMenuPanel').classList.toggle('is-open');">
+                                <i class="fa fa-bars"></i>
+                            </button>
+
                             <div class="gl-nav-shell">
                                 <div class="gl-nav-left">
                                     <ul class="menu-links">
-
                                         <li>
                                             <a href="#">Products <i class="fa fa-angle-down fa-indicator"></i></a>
                                             <ul class="drop-down-multilevel">
@@ -217,6 +322,23 @@
                                         <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">Request a Consultation</a></li>
                                     </ul>
                                 </div>
+                            </div>
+
+                            <div id="mobileMenuPanel" class="mobile-menu-panel">
+                                <ul>
+                                    <li><a href="{% url 'home' %}">Home</a></li>
+                                    <li><a href="{% url 'projects' %}">Projects</a></li>
+                                    <li><a href="{% url 'video' %}">Videos</a></li>
+                                    <li><a href="{% url 'videoreviews' %}">Video Reviews</a></li>
+                                    <li><a href="{% url 'create_lead' %}">Contact</a></li>
+                                    <li><a href="{% url 'create_lead' %}">Request a Consultation</a></li>
+                                    <li class="mobile-submenu"><a href="#">Garage Remodeling</a></li>
+                                    <li class="mobile-submenu"><a href="#">Garage Cabinets</a></li>
+                                    <li class="mobile-submenu"><a href="#">Garage Flooring</a></li>
+                                    <li class="mobile-submenu"><a href="#">Lighting & Electrical</a></li>
+                                    <li class="mobile-submenu"><a href="#">Attic Storage</a></li>
+                                    <li class="mobile-submenu"><a href="#">Laundry / Utility Upgrades</a></li>
+                                </ul>
                             </div>
 
                         </div>
