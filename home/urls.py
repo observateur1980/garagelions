@@ -31,4 +31,14 @@ urlpatterns = [
     path("copyright/", views.CopyrightPage.as_view(), name="copyright"),
     path("terms/", views.Terms.as_view(), name="terms"),
     path("privacy/", views.Privacy.as_view(), name="privacy"),
+
+
+    path('garage_cabinet', views.GarageCabinet.as_view(), name='garage_cabinet'),
+    path('garage_flooring', views.GarageFlooring.as_view(), name='garage_flooring'),
+    path('garage_slatwall', views.GarageSlatwall.as_view(), name='garage_slatwall'),
+    path('storage_rack', views.StorageRack.as_view(), name='storage_rack'),
+    path('garage_makeover', views.GarageMakeover.as_view(), name='garage_makeover'),
+    path('garage_door', views.GarageDoor.as_view(), name='garage_door'),
+    path('garage_conversion', views.GarageConversion.as_view(), name='garage_conversion'),
+    path('car_lift', views.CarLift.as_view(), name='car_lift'),
 ]

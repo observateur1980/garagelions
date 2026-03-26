@@ -161,3 +161,73 @@ class Terms(TemplateView):
 
 class Privacy(TemplateView):
     template_name = "home/privacy.html"
+
+
+class GarageCabinet(TemplateView):
+    template_name = 'home/garage_cabinet.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageCabinet, self).get_context_data(**kwargs)
+        return context
+
+
+class GarageFlooring(TemplateView):
+    template_name = 'home/garage_flooring.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageFlooring, self).get_context_data(**kwargs)
+        return context
+
+
+
+class GarageSlatwall(TemplateView):
+    template_name = 'home/garage_slatwall.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageSlatwall, self).get_context_data(**kwargs)
+        return context
+
+
+
+class StorageRack(TemplateView):
+    template_name = 'home/storage_rack.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(StorageRack, self).get_context_data(**kwargs)
+        return context
+
+
+
+class GarageMakeover(TemplateView):
+    template_name = 'home/garage_makeover.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageMakeover, self).get_context_data(**kwargs)
+        return context
+
+
+class GarageDoor(TemplateView):
+    template_name = 'home/garage_door.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageDoor, self).get_context_data(**kwargs)
+        return context
+
+
+
+
+class GarageConversion(TemplateView):
+    template_name = 'home/garage_conversion.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GarageConversion, self).get_context_data(**kwargs)
+        return context
+
+
+class CarLift(TemplateView):
+    template_name = 'home/car_lift.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CarLift, self).get_context_data(**kwargs)
+        return context
+
