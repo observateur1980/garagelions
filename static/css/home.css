@@ -13,7 +13,11 @@
         }
 
 
-        .img_sld .btn2 {
+        .img_sld .btn1 {
+            background-color: #ad5635;
+        }
+
+         .img_sld .btn2 {
             background-color: rgb(68, 68, 68);
         }
 

@@ -59,28 +59,6 @@ class Video(TemplateView):
 
 
 
-class Newconstruction(TemplateView):
-    template_name = 'home/newconstruction.html'
-
-
-class KitchenRemodeling(TemplateView):
-    template_name = 'home/kitchen_remodeling.html'
-
-
-class Bathroom(TemplateView):
-    template_name = 'home/bathroom.html'
-
-
-class Garage(TemplateView):
-    template_name = 'home/garage.html'
-
-
-class Homeremodel(TemplateView):
-    template_name = 'home/homeremodel.html'
-
-
-class Homeadditions(TemplateView):
-    template_name = 'home/homeadditions.html'
 
 
 def videoreviews(request):
