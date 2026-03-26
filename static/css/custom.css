@@ -1,0 +1,350 @@
+/*
+
+/* Your custom css codes start from here: */
+
+
+ 
+/* =========================
+   Parviz Construction Footer
+   ========================= */
+.pc-footer-cta{
+  background: #0b2545;
+  padding: 28px 0;
+}
+.pc-footer-cta h3{
+  margin: 0 0 4px 0;
+  color:#fff;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+.pc-footer-cta p{
+  margin: 0;
+  color: rgba(255,255,255,.85);
+}
+.pc-footer-cta-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  color:#0b2545;
+  font-weight:700;
+  text-decoration:none;
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+}
+.pc-footer-cta-btn:hover{
+  text-decoration:none;
+  transform: translateY(-1px);
+}
+
+.pc-footer{
+  background: #071a2f;
+  padding: 60px 0 24px;
+  color: rgba(255,255,255,.86);
+}
+.pc-footer a{
+  color: rgba(255,255,255,.92);
+}
+.pc-footer a:hover{
+  color:#fff;
+  text-decoration:none;
+}
+.pc-footer-title{
+  color:#fff;
+  font-weight:700;
+  margin-bottom: 14px;
+}
+.pc-footer-logo{
+  height: 38px;
+  width: auto;
+  margin-bottom: 10px;
+  filter: brightness(0) invert(1);
+  opacity: .95;
+}
+.pc-footer-brand h4{
+  color:#fff;
+  font-weight:800;
+  margin: 0 0 10px 0;
+}
+.pc-footer-brand p{
+  margin: 0 0 16px 0;
+  color: rgba(255,255,255,.82);
+  line-height: 1.6;
+}
+.pc-footer-actions{
+  margin-bottom: 16px;
+}
+.pc-footer-btn{
+  display:inline-block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.16);
+  font-weight:700;
+}
+.pc-footer-btn:hover{
+  background: rgba(255,255,255,.18);
+}
+.pc-footer-meta{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size: 14px;
+  color: rgba(255,255,255,.85);
+}
+.pc-footer-meta i{
+  width: 18px;
+  opacity:.9;
+}
+
+.pc-footer-links{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.pc-footer-links a{
+  display:inline-block;
+  padding: 2px 0;
+  color: rgba(255,255,255,.82);
+}
+.pc-footer-links a:hover{
+  color:#fff;
+}
+
+.pc-footer-videos{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.pc-footer-video{
+  display:flex;
+  gap:12px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.pc-footer-video:hover{
+  background: rgba(255,255,255,.09);
+}
+.pc-footer-video-thumb{
+  position:relative;
+  width: 84px;
+  height: 60px;
+  border-radius: 12px;
+  overflow:hidden;
+  flex: 0 0 auto;
+}
+.pc-footer-video-thumb img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+.pc-footer-play{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,.25);
+}
+.pc-footer-play img{
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
+  opacity: .95;
+}
+.pc-footer-video-title{
+  color:#fff;
+  font-weight:700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.pc-footer-video-date{
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+}
+.pc-footer-muted{
+  color: rgba(255,255,255,.75);
+  margin:0;
+}
+
+.pc-footer-social{
+  margin-top: 14px;
+  display:flex;
+  gap:10px;
+}
+.pc-footer-social a{
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.pc-footer-social a:hover{
+  background: rgba(255,255,255,.14);
+}
+
+.pc-footer-bottom{
+  margin-top: 34px;
+  padding-top: 18px;
+  padding-bottom: 15px;
+  border-top: 1px solid rgba(255,255,255,.10);
+
+}
+.pc-footer-copy{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  font-size: 14px;
+  color: rgba(255,255,255,.78);
+}
+.pc-footer-copy a{
+  color:#fff;
+  font-weight:700;
+}
+.pc-footer-bottom-note{
+  font-size: 14px;
+  color: rgba(255,255,255,.75);
+}
+
+/* Mobile tweaks */
+@media (max-width: 767px){
+
+  /* Mobile: add separators between footer columns for better spacing */
+  .pc-footer .row > [class*="col-"]{
+    padding-top: 18px;
+  }
+  .pc-footer .row > [class*="col-"]:not(:first-child){
+    margin-top: 18px;
+    border-top: 1px solid rgba(255,255,255,.10);
+  }
+
+
+  /* Extra spacing between brand/contact block and next columns on mobile */
+  .pc-footer-brand{
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+
+  }
+  .pc-footer-brand .pc-footer-meta{
+    margin-bottom: 18px;
+  }
+
+  .pc-footer-cta .text-md-end{ text-align:left !important; margin-top: 12px; }
+}
+
+
+/* =========================
+   Footer – Mobile & Typography tweaks
+   ========================= */
+
+.pc-footer-cta h3{
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  font-weight: 800;
+}
+.pc-footer-cta p{
+  margin: 0;
+  opacity: .9;
+  font-weight: 500;
+}
+.pc-footer-cta-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  min-height: 44px;
+}
+
+.pc-footer{
+  padding: 52px 0 0 0;
+}
+.pc-footer-title{
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.pc-footer-brand h4{
+  font-weight: 900;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.pc-footer p,
+.pc-footer-links a,
+.pc-footer-meta,
+.pc-footer-muted{
+  font-weight: 500;
+}
+
+.pc-footer-links li{
+  margin-bottom: 1px;
+}
+.pc-footer-links a{
+  display: inline-block;
+  padding: 4px 0;
+}
+
+.pc-footer-video{
+  align-items: flex-start;
+}
+.pc-footer-video-thumb{
+  width: 84px;
+  min-width: 84px;
+  height: 64px;
+}
+.pc-footer-video-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.pc-footer-social a{
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+/* Mobile */
+@media (max-width: 767px){
+  .pc-footer-cta{
+    padding: 22px 0;
+  }
+  .pc-footer-cta-btn{
+    width: 100%;
+  }
+  .pc-footer-logo{
+    max-width: 160px;
+  }
+  .pc-footer{
+    padding-top: 42px;
+  }
+  .pc-footer-bottom{
+    margin-top: 28px;
+    padding: 18px 0;
+    border-top: transparent;
+
+  }
+  .pc-footer-copy{
+    justify-content: center;
+  }
+  .pc-footer-bottom-note{
+    text-align: center;
+  }
+}

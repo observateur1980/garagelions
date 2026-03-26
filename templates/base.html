@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+	<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800&display=swap">
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="Garage Remodeling, Garage Makeover" />
+<meta name="description" content="Trusted professionals for garage flooring, garage storage, and garage organization. Get a garage remodel. Call us at 855 295 36 70." />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Home, Kitchen, Bathroom Remodeling | Parviz Construction &amp; Remodeling</title>
+
+<!-- Favicon -->
+<link rel="shortcut icon" href="{% static 'icons/favicon.png' %}" />
+
+<!-- bootstrap -->
+<link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+
+
+
+<!-- plugins -->
+<link href="{% static 'css/plugins-css.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- mega menu -->
+<link href="{% static 'css/mega-menu/mega_menu.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- default -->
+<link href="{% static 'css/default.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- main style -->
+<link href="{% static 'css/style.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- responsive -->
+<link href="{% static 'css/responsive.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- custom style -->
+<link href="{% static 'css/custom.css' %}" rel="stylesheet" type="text/css" />
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/css/lightgallery-bundle.min.css">
+
+<style>
+    html, body {
+    font-family: "Georgia", "Times New Roman", serif;
+}
+</style>
+</head>
+	<body>
+
+
+
+        <!-- WRAPPER : begin -->
+		<div class="page-wrapper">
+
+
+
+
+
+		{% include "navbar.html" %}
+
+
+        {%block content%}
+
+
+        {%endblock%}
+        <!-- Footer -->
+
+	{% include 'footer.html' %}
+    </div>
+    <!-- WRAPPER : END -->
+
+		<!-- SCRIPTS : begin -->
+
+
+
+<div id="back-to-top"><a class="top arrow" href="#top"><i class="fa fa-long-arrow-up"></i></a></div>
+
+<!--=================================
+ jquery -->
+
+<!-- jquery  -->
+<script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+
+<!-- bootstrap -->
+<script type="text/javascript" src="{% static 'js/bootstrap.min.js' %}"></script>
+
+<!-- plugins-jquery -->
+<script type="text/javascript" src="{% static 'js/plugins-jquery.js' %}"></script>
+
+<!-- mega menu -->
+<script type="text/javascript" src="{% static 'js/mega-menu/mega_menu.js' %}"></script>
+
+<!-- socialstream -->
+<script src="{% static 'js/social/socialstream.jquery.js' %}"></script>
+
+<!-- isotope -->
+<script src="{% static 'js/isotope/isotope.pkgd.min.js' %}"></script>
+
+<!-- popup -->
+<script src="{% static 'js/popup/jquery.magnific-popup.js' %}"></script>
+
+<!-- wow -->
+<script src="{% static 'js/wow.min.js' %}"></script>
+
+<!-- appear -->
+<script src="{% static 'js/jquery.appear.js' %}"></script>
+
+<!-- custom -->
+<script type="text/javascript" src="{% static 'js/custom.js' %}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/lightgallery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/plugins/zoom/lg-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/plugins/thumbnail/lg-thumbnail.min.js"></script>
+
+		<!-- SCRIPTS : end -->
+    </body>
+</html>

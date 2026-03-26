@@ -1,0 +1,33 @@
+
+{% load static %}
+{% block content %}
+
+    <div class="d-flex justify-content-center" style="margin-top: 200px" >
+        <div class="row">
+            {% if  form.non_field_errors %}
+                <div class="mb-40">
+                    <label class="alert alert-danger">{{ form.non_field_errors.as_text }}</label>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="container mt-3 col-lg-4" >
+            <div class="row" style="text-align: center"><h2>Login to your Account</h2></div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3 mt-3">
+                    {{ form.query }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password }}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+
+
+
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+  .consent-box {
+    margin-top: 25px;
+  }
+
+  .consent-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    border: 1px solid #d9e1ea;
+    border-radius: 10px;
+    background: #f8fbff;
+    line-height: 1.6;
+  }
+
+  .consent-checkbox input[type="checkbox"] {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    accent-color: #0d182a;
+    flex: 0 0 auto;
+    cursor: pointer;
+  }
+
+  .consent-checkbox label {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .consent-checkbox a {
+    color: #0d182a;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  .consent-checkbox a:hover {
+    color: #1d3557;
+  }
+
+  @media (max-width: 767px) {
+    .consent-checkbox {
+      padding: 14px;
+      gap: 10px;
+    }
+
+    .consent-checkbox label {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+</style>
+
+
+    <section class="white-bg page-section-ptb" style="margin-top: 90px">
+  <div class="container">
+    <div class="row">
+       <div class="col-lg-12 col-md-12">
+        <div class="section-title-1 text-center">
+          <h1 class="text-blue">REQUEST YOUR FREE CONSULTATION</h1>
+          <div class="title-line"></div>
+          <h4>We will get in touch via phone, email or text to set up your consultation for your garage project.
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+        <form id="lead-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+      <div class="col-md-8 col-md-offset-2">
+        <div id="register-form" class="register-form">
+
+           <div class="section-field">
+             <label for="name">Your Name*</label>
+              <div class="field-widget">
+                <i class="fa fa-pencil"></i>
+                  {{ lead_form.name }}
+              </div>
+            </div>
+            <div class="section-field">
+             <label for="email">Email *</label>
+              <div class="field-widget">
+               <i class="fa fa-envelope"></i>
+                  {{ lead_form.email }}
+              </div>
+            </div>
+            <div class="section-field">
+             <label for="phone">Mobile phone *</label>
+              <div class="field-widget">
+               <i class="fa fa-mobile"></i>
+                  {{ lead_form.phone }}
+              </div>
+            </div>
+
+
+
+
+                    <div class="section-field">
+                      <label>Which services are you interested in?</label>
+                      {% for checkbox in lead_form.consultation_types %}
+                        <div class="remember-checkbox">
+                          {{ checkbox.tag }}
+                          <label class="remember" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                        </div>
+                      {% endfor %}
+                    </div>
+
+               </div>
+
+             <div class="section-field" style="margin-top: 25px">
+                 <label for="Message">Optional</label>
+                  <div class="field-widget">
+                   {{ lead_form.message }}
+                   </div>
+                  </div>
+
+
+            <div class="section-field" style="margin-top: 25px">
+              <label for="id_attachments">Upload photos / videos (optional)</label>
+              <div class="field-widget">
+                <i class="fa fa-paperclip"></i>
+                {{ lead_form.attachments }}
+                {% if lead_form.attachments.help_text %}
+                  <small style="display:block; margin-top:8px; opacity:.75;">
+                    {{ lead_form.attachments.help_text }}
+                  </small>
+                {% endif %}
+                {% if lead_form.attachments.errors %}
+                  <div style="margin-top:8px; color:#c0392b;">
+                    {{ lead_form.attachments.errors }}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+                <div id="upload-progress-wrap" style="display:none; margin-top:18px;">
+  <div style="font-size:14px; margin-bottom:6px;">
+    Uploading… <span id="upload-progress-percent">0%</span>
+  </div>
+
+  <div style="width:100%; height:10px; background:#eee; border-radius:8px; overflow:hidden;">
+    <div id="upload-progress-bar" style="height:10px; width:0%; background:#0d182a;"></div>
+  </div>
+
+  <div id="upload-progress-detail" style="font-size:12px; margin-top:6px; opacity:.75;"></div>
+</div>
+
+<div class="section-field consent-box">
+  <div class="field-widget">
+    <div class="consent-checkbox">
+      <input type="checkbox" id="sms_consent" name="option1">
+      <label for="sms_consent">
+        By checking this box, I consent to receive SMS messages from Parviz Construction related to customer care at the phone number provided above. Message frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to opt out. Please review our
+        <a href="https://garagelions.com/privacy/" target="_blank">Privacy Policy</a>
+        and
+        <a href="https://garagelions.com/terms/" target="_blank">Terms &amp; Conditions</a>.
+      </label>
+    </div>
+  </div>
+</div>
+
+              <button type="submit" class="button mt-20" >
+                <span>REQUEST A CONSULTATION</span>
+                <i class="fa fa-check"></i>
+             </button>
+         </div>
+        </form>
+      </div>
+    </div>
+</section>
+
+
+<script>
+(function () {
+  const form = document.getElementById("lead-form");
+  if (!form) return;
+
+  const wrap = document.getElementById("upload-progress-wrap");
+  const bar = document.getElementById("upload-progress-bar");
+  const percentEl = document.getElementById("upload-progress-percent");
+  const detailEl = document.getElementById("upload-progress-detail");
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  form.addEventListener("submit", function (e) {
+    // Only show progress if user selected files
+    const fileInput = form.querySelector('input[type="file"][name="attachments"]');
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+
+    // If no files, let normal submit happen (no need AJAX)
+    if (!hasFiles) return;
+
+    e.preventDefault();
+
+    // UI state
+    wrap.style.display = "block";
+    bar.style.width = "0%";
+    percentEl.textContent = "0%";
+    detailEl.textContent = "Starting upload…";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+      submitBtn.style.cursor = "not-allowed";
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", form.action || window.location.href, true);
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+    xhr.upload.onprogress = function (evt) {
+      if (!evt.lengthComputable) return;
+      const pct = Math.round((evt.loaded / evt.total) * 100);
+      bar.style.width = pct + "%";
+      percentEl.textContent = pct + "%";
+      detailEl.textContent = `${(evt.loaded/1024/1024).toFixed(1)} MB of ${(evt.total/1024/1024).toFixed(1)} MB`;
+    };
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // If server returns JSON with redirect_url, follow it
+        try {
+          const data = JSON.parse(xhr.responseText || "{}");
+          if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+            return;
+          }
+        } catch (err) {
+          // Not JSON; fall through
+        }
+        // Otherwise, reload to show server-side messages/redirect
+        window.location.reload();
+      } else {
+        // Show server error response (often HTML)
+        detailEl.textContent = "Upload failed. Please try again.";
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    };
+
+    xhr.onerror = function () {
+      detailEl.textContent = "Network error. Please try again.";
+      if (submitBtn) submitBtn.disabled = false;
+    };
+
+    const formData = new FormData(form);
+    xhr.send(formData);
+  });
+})();
+</script>
+{% endblock %}

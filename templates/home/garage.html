@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+/* ==========================
+   FAQ SECTION
+========================== */
+
+.faq-section {
+    padding: 80px 0;
+    background: #f8f9fb;
+}
+
+.faq-accordion {
+    max-width: 900px;
+    margin: 40px auto 0;
+}
+
+.faq-item {
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.faq-question {
+    width: 100%;
+    padding: 18px 20px;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e73be;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.faq-question:hover {
+    background: rgba(30,115,190,0.05);
+}
+
+.faq-question .icon {
+    font-size: 22px;
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    padding: 0 20px;
+}
+
+.faq-answer p {
+    margin: 15px 0 20px;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* ACTIVE STATE */
+.faq-item.active .faq-answer {
+    max-height: 300px;
+}
+
+.faq-item.active .faq-question .icon {
+    transform: rotate(45deg);
+}
+
+.features13 p{
+    font-size: 15px;
+}
+
+/* ==========================
+   MODERN HERO
+========================== */
+
+.hero-modern {
+    position: relative;
+    padding: 120px 0;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(128 139 166 / 95%) 0%, rgb(186 189 198 / 85%) 50%, rgba(15, 23, 42, 0.6) 100%);
+    z-index: 0;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-tag {
+    display: inline-block;
+    background: rgba(30,115,190,0.15);
+    color: #1e4364;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 17px;
+    margin-bottom: 15px;
+}
+
+.hero-title {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.hero-title span {
+    color: #1e4364;
+}
+
+.hero-subtitle {
+    font-size: 17px;
+    max-width: 520px;
+    opacity: 0.9;
+    margin-bottom: 25px;
+    color: #3d3838;
+}
+
+.hero-badges span {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 15px;
+}
+
+.hero-buttons {
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background: #1e73be;
+    color: #fff;
+    padding: 12px 26px;
+    border-radius: 6px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #111;
+    padding: 12px 26px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* Right image */
+.hero-image {
+    max-width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+}
+
+/* MOBILE */
+@media (max-width: 991px) {
+    .hero-title {
+        font-size: 34px;
+    }
+    .hero-modern {
+        padding: 90px 0;
+        text-align: center;
+    }
+
+    .hero-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-image-wrap {
+        order: 1;
+        margin-bottom: 20px;
+    }
+
+    .hero-buttons {
+        order: 2;
+        margin-bottom: 20px;
+    }
+
+    .hero-text {
+        order: 3;
+    }
+
+    .hero-modern {
+        text-align: center;
+    }
+}
+
+/* HERO BUTTON FIX FOR SMALL PHONES */
+@media (max-width: 575px) {
+
+    .hero-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+    }
+
+    .hero-buttons a {
+        flex: 1;
+        max-width: 48%;
+        padding: 12px 10px;
+        font-size: 14px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .hero-badges {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hero-badges span {
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 5px 10px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-buttons a {
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+}
+
+</style>
+
+<section class="hero-modern"
+        style="background-image: url('{% static "images/slider/garage-bg.png" %}');">
+
+  <div class="hero-overlay"></div>
+
+  <div class="container hero-content">
+    <div class="row align-items-center hero-row">
+
+      <!-- LEFT CONTENT -->
+      <div class="col-lg-6 col-md-6 hero-text">
+        <span class="hero-tag">Garage Remodeling</span>
+
+        <h1 class="hero-title">
+            Upgrade Your Garage Into a <span>Clean</span> & Functional Space
+        </h1>
+
+        <p class="hero-subtitle">
+          Epoxy floors, drywall, insulation, lighting, storage systems, and permits — done professionally and code compliant.
+        </p>
+
+        <div class="hero-badges">
+          <span><i class="fa fa-shield"></i> Licensed & Insured</span>
+          <span><i class="fa fa-check-circle"></i> Code Compliant</span>
+          <span>5★ Rated</span>
+        </div>
+
+        <div class="hero-buttons">
+          <a href="tel:6507705303" class="btn-primary" style="background-color: #66676b;">
+            Call (650) 770-5303
+          </a>
+          <a href="/contact/" class="btn-secondary">
+            Get Free Estimate
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT IMAGE -->
+      <div class="col-lg-6 col-md-6 text-center hero-image-wrap">
+        <img src="{% static "images/slider/garage-hero.png" %}"
+             class="hero-image"
+             alt="Garage Remodeling">
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="service white-bg page-section-ptb">
+  <div class="container">
+    <div class="row">
+       <div class="col-lg-12 col-md-12">
+        <div class="section-title-1 text-center">
+          <h1 class="text-blue">Our Garage Remodeling Process</h1>
+          <div class="title-line"></div>
+          <p>Organized work, clean finishes, and a garage that looks like part of the home</p>
+        </div>
+      </div>
+    </div>
+
+   <div class="service-3">
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Consultation & Goal Planning</h3>
+              <p>We evaluate your garage and discuss your goals — storage, workshop, clean parking space, home gym, or future conversion planning.</p>
+              <ul>
+                <li>On-site walkthrough + measurements</li>
+                <li>Review current condition (walls, floor, electrical)</li>
+                <li>Define scope, budget, and timeline</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Design Options & Material Selection</h3>
+              <p>We plan the layout and select finishes — flooring system, wall finish, ceiling, lighting, storage cabinets, slatwall, and more.</p>
+              <ul>
+                <li>Storage layout + parking clearance</li>
+                <li>Choose epoxy/polyaspartic floor options</li>
+                <li>Cabinets, shelves, slatwall, and lighting plan</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Permits & Prep (If Required)</h3>
+              <p>If the project includes electrical upgrades, new circuits, structural work, or garage door changes, we handle permits and prep the jobsite.</p>
+              <ul>
+                <li>Permit documentation when needed</li>
+                <li>Electrical planning (EV outlet, subpanel, etc.)</li>
+                <li>Jobsite protection + staging</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Demolition & Rough Work</h3>
+              <p>We remove old storage, repair surfaces, and complete rough electrical/framing work as needed before finishing.</p>
+              <ul>
+                <li>Remove old shelving/cabinets if needed</li>
+                <li>Wall repairs, framing, and insulation (optional)</li>
+                <li>Rough electrical + inspection (if required)</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Finish Work: Floors, Walls, Lighting & Storage</h3>
+              <p>We finish the garage with clean, durable materials — flooring, paint, lighting, cabinets, and wall systems.</p>
+              <ul>
+                <li>Epoxy/polyaspartic floor coating</li>
+                <li>Drywall/paint and trim details</li>
+                <li>Install cabinets, slatwall, shelving</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Final Walkthrough & Completion</h3>
+              <p>We complete punch-list items, clean the space, and confirm everything is working properly — including outlets, lights, and door operation.</p>
+              <ul>
+                <li>Final inspection (if required)</li>
+                <li>Punch-list + detail work</li>
+                <li>Clean handover + walkthrough</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<section class="faq-section">
+  <div class="container">
+
+    <div class="section-title text-center">
+      <h2>Frequently Asked Questions</h2>
+      <p>Clear answers to common questions about garage remodeling</p>
+    </div>
+
+    <div class="faq-accordion">
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can you add epoxy flooring to my garage?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. We install garage floor coating systems (epoxy and polyaspartic options) with proper surface prep for durability.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can you add outlets or an EV charger circuit?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. We can add outlets, dedicated circuits, subpanel upgrades, and EV charging outlets. Permits may be required depending on scope.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Do garage remodels require permits?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Some do and some don’t. Electrical upgrades, structural changes, or major modifications typically require permits. We handle permits when needed.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can you help with storage systems and cabinets?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. We can install garage cabinets, overhead racks, shelves, and slatwall systems to keep the space clean and organized.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.faq-question').forEach(button => {
+    button.addEventListener('click', () => {
+      const item = button.parentElement;
+      item.classList.toggle('active');
+    });
+  });
+</script>
+
+{% endblock %}

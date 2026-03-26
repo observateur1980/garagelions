@@ -1,0 +1,193 @@
+{% load static %}
+<style>
+.header-9 .mega-menu .menu-links > li > a {
+
+    color: #1C3554FF;
+}
+.mega-menu .menu-links > li > a {
+
+    color: #1C3554FF;
+    text-transform: uppercase;
+    font-family: Arial;
+
+}
+
+.mega-menu img {
+    height: 70px;
+    margin-top: -12px;
+
+}
+
+
+@media screen and (min-width: 993px) {
+    .mega-menu.desktopTopFixed .menu-list-items .menu-logo > li > a img {
+        height: 70px;
+        padding-top: 0px;
+        margin: 4px 0px;
+
+    }
+}
+
+{#----------------------------------#}
+
+  .header-9 .mega-menu > section.menu-list-items {
+    border-bottom: 1px solid rgb(17,54,88);
+     height: 90px;
+}
+
+  .header-9 .mega-menu.desktopTopFixed .menu-list-items {
+    background: #ffffff;
+    border-bottom: 1px solid rgb(17,54,88);
+
+}
+
+
+
+    .header-9 .mega-menu.desktopTopFixed .menu-list-items .req-bar-on-menu{
+
+        margin-top: 17px!important;
+    }
+
+{#----------------------------------#}
+
+.icon-bar {
+  width: 100%; /* Full-width */
+  background-color: rgb(17,54,88); /* Dark-grey background */
+  overflow: auto; /* Overflow due to float */
+}
+
+.icon-bar a {
+  float: right; /* Float links side by side */
+  padding: 9px 0; /* Some top and bottom padding */
+  transition: all 0.3s ease; /* Add transition for hover effects */
+  color: white; /* White text color */
+  font-size: 16px; /* Increased font size */
+  margin-right: 30px;
+}
+
+
+{#-----------------#}
+
+    @media screen and (max-width: 600px){
+            .mega-menu > section.menu-list-items{
+                position: fixed;
+            }
+
+
+        .header-9 .mega-menu > section.menu-list-items {
+            {#background: #ffffff;#}
+            {#border-bottom: 1px solid rgb(17,54,88);#}
+            height: 70px;
+        }
+
+        .mega-menu img {
+                height: 60px;
+
+
+        }
+
+
+
+    }
+
+
+
+{#class for request call button on menu#}
+    .req-bar-on-menu{
+        padding-bottom: 1px!important;
+        padding-top: 1px!important;
+        margin-top: 29px!important;
+        line-height: 40px!important;
+        font-weight: bold;
+        background-color: transparent;
+        border: 1px solid #1C3554FF;
+
+
+    }
+
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div class="icon-bar hidden-xs">
+
+  <a href="tel:8552953670"><i class="fa fa-phone">&nbsp; +1 855 295 3670</i></a>
+  <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
+
+</div>
+
+
+
+<!--=================================
+
+
+
+ header -->
+
+<header id="header" class="header-9">
+  <div class="menu">
+  <!-- menu start -->
+   <nav id="menu-1" class="mega-menu">
+    <!-- menu list items container -->
+    <section class="menu-list-items">
+     <div class="container">
+      <div class="row">
+       <div class="col-lg-12 col-md-12">
+        <!-- menu logo -->
+        <ul class="menu-logo">
+            <li>
+                <a href="{% url 'home' %}"><img id="logo_dark_img" src="{% static 'images/logo-dark.png' %}" alt="logo"> </a>
+            </li>
+        </ul>
+
+        <!-- menu links -->
+
+        <ul class="menu-links">
+            <!-- active class -->
+
+            <li class="active"><a href="{% url 'home' %}"> Home</a></li>
+            <li><a href="#">Services <i class="fa fa-angle-down fa-indicator"></i></a>
+                <!-- drop down multilevel  -->
+                <ul class="drop-down-multilevel">
+
+                    <li><a href="{% url 'newconstruction' %}">New Construction</a></li>
+                    <li><a href="{% url 'kitchen_remodeling' %}">Kitchen Remodeling</a></li>
+                    <li><a href="{% url 'bathroom' %}">Bathroom Remodeling</a></li>
+                    <li><a href="{% url 'garage' %}">Garage Remodeling</a></li>
+                    <li><a href="{% url 'homeremodel' %}">Home Remodeling</a></li>
+                    <li><a href="{% url 'homeadditions' %}">Home Additions</a></li>
+
+
+                </ul>
+            </li>
+
+            
+            <li><a href="#">Videos <i class="fa fa-angle-down fa-indicator"></i></a>
+                <!-- drop down multilevel  -->
+                <ul class="drop-down-multilevel">
+
+                    <li><a href="{% url 'video' %}">Videos</a></li>
+                    <li><a href="{% url 'videoreviews' %}">Videos Reviews</a></li>
+
+
+
+                </ul>
+            </li>
+
+            
+            <li><a href="{% url 'projects' %}">Projects</a>
+            </li>
+
+            <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">REQUEST A CONSULTATION</a></li>
+
+        </ul>
+       </div>
+      </div>
+     </div>
+    </section>
+   </nav>
+  <!-- menu end -->
+ </div>
+</header>
+<!--=================================
+ header -->

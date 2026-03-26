@@ -1,0 +1,127 @@
+{% load static %}
+<!--=================================
+  footer
+=================================-->
+
+<section class="pc-footer-cta">
+  <div class="container">
+    <div class="row align-items-center gy-3">
+      <div class="col-12 col-md-8 text-center text-md-start">
+        <h3>Book a free job site consultation</h3>
+        <p>Tell us about your project — we’ll follow up with next steps.</p>
+      </div>
+      <div class="col-12 col-md-4 text-center text-md-end">
+        <a class="pc-footer-cta-btn" href="tel:8552953670">
+          <i class="fa fa-phone"></i>
+          <span>+1 855 295 3670</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pc-footer">
+  <div class="container">
+    <div class="row gy-4">
+      <!-- Brand / About -->
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="pc-footer-brand">
+
+          <h4>Parviz Construction</h4>
+          <p>
+            Quality remodeling and construction in the Bay Area — kitchens, bathrooms, garages, additions, and more.
+          </p>
+
+          <div class="pc-footer-actions">
+            <a class="pc-footer-btn" href="{% url 'create_lead' %}">Request a free consultation</a>
+          </div>
+
+          <div class="pc-footer-meta">
+            <div><i class="fa fa-map-marker"></i> 2074 Walsh Ave, Ste B · Santa Clara, CA 95050</div>
+            <div><i class="fa fa-phone"></i> <a href="tel:8552953670">+1 855 295 3670</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="col-12 col-md-6 col-lg-2">
+        <h5 class="pc-footer-title">Services</h5>
+        <ul class="pc-footer-links">
+          <li><a href="{% url 'kitchen_remodeling' %}">Kitchen remodeling</a></li>
+          <li><a href="{% url 'bathroom' %}">Bathroom remodeling</a></li>
+          <li><a href="{% url 'garage' %}">Garage remodeling</a></li>
+          <li><a href="{% url 'homeadditions' %}">Home additions</a></li>
+          <li><a href="{% url 'homeremodel' %}">Home remodeling</a></li>
+          <li><a href="{% url 'newconstruction' %}">New construction</a></li>
+        </ul>
+      </div>
+
+      <!-- Quick links -->
+      <div class="col-12 col-md-6 col-lg-2">
+        <h5 class="pc-footer-title">Quick links</h5>
+        <ul class="pc-footer-links">
+          <li><a href="{% url 'projects' %}">Projects</a></li>
+
+          <li><a href="{% url 'videoreviews' %}">Video reviews</a></li>
+          <li><a href="{% url 'create_lead' %}">Get an estimate</a></li>
+          <li><a href="{% url 'copyright' %}">Copyright</a></li>
+        </ul>
+      </div>
+
+      <!-- Video reviews -->
+      <div class="col-12 col-md-6 col-lg-4">
+        <h5 class="pc-footer-title">Recent video reviews</h5>
+
+        {% if footer_video_reviews %}
+          <div class="pc-footer-videos">
+            {% for v in footer_video_reviews %}
+              <a class="pc-footer-video" href="{% url 'videoreviews' %}">
+                <div class="pc-footer-video-thumb">
+                  {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}">
+                  {% else %}
+                    <img src="{% static 'images/image.png' %}" alt="Video review">
+                  {% endif %}
+                  <span class="pc-footer-play">
+                    <img src="{% static 'images/bigplay.svg' %}" alt="">
+                  </span>
+                </div>
+                <div class="pc-footer-video-info">
+                  <div class="pc-footer-video-title">{{ v.title|truncatechars:45 }}</div>
+                  <div class="pc-footer-video-date">
+                    <i class="fa fa-calendar"></i> {{ v.created_at|date:"M j, Y" }}
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="pc-footer-muted">No video reviews yet.</p>
+        {% endif %}
+
+        <div class="pc-footer-social">
+          <a href="#" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+          <a href="#" aria-label="Pinterest"><i class="fa fa-pinterest-p"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="fa fa-linkedin"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="pc-footer-bottom">
+      <div class="row align-items-center gy-3">
+        <div class="col-12 col-md-6 text-center text-md-start">
+          <div class="pc-footer-copy">
+            <a href="{% url 'copyright' %}">&copy; Copyright</a>
+            <span>All Rights Reserved</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 text-center text-md-end">
+          <div class="pc-footer-bottom-note">
+            <a href="{% url 'terms' %}">Terms & Conditions </a> |
+              <a href="{% url 'privacy' %}">Privacy Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

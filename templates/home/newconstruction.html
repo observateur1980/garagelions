@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+/* ==========================
+   FAQ SECTION
+========================== */
+
+.faq-section {
+    padding: 80px 0;
+    background: #f8f9fb;
+}
+
+.faq-accordion {
+    max-width: 900px;
+    margin: 40px auto 0;
+}
+
+.faq-item {
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.faq-question {
+    width: 100%;
+    padding: 18px 20px;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e73be;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.faq-question:hover {
+    background: rgba(30,115,190,0.05);
+}
+
+.faq-question .icon {
+    font-size: 22px;
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    padding: 0 20px;
+}
+
+.faq-answer p {
+    margin: 15px 0 20px;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* ACTIVE STATE */
+.faq-item.active .faq-answer {
+    max-height: 300px;
+}
+
+.faq-item.active .faq-question .icon {
+    transform: rotate(45deg);
+}
+
+
+
+
+
+.features13 p{
+    font-size: 15px;
+}
+/* ==========================
+   MODERN HERO
+========================== */
+
+.hero-modern {
+    position: relative;
+    padding: 120px 0;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(128 139 166 / 95%) 0%, rgb(186 189 198 / 85%) 50%, rgba(15, 23, 42, 0.6) 100%);
+    z-index: 0;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-tag {
+    display: inline-block;
+    background: rgba(30,115,190,0.15);
+    color: #1e4364;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 17px;
+    margin-bottom: 15px;
+}
+
+.hero-title {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.hero-title span {
+    color: #1e4364;
+}
+
+.hero-subtitle {
+    font-size: 17px;
+    max-width: 520px;
+    opacity: 0.9;
+    margin-bottom: 25px;
+    color: #3d3838;
+}
+
+.hero-badges span {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 15px;
+}
+
+.hero-buttons {
+    margin-top: 20px;
+
+}
+
+.btn-primary {
+    background: #1e73be;
+    color: #fff;
+    padding: 12px 26px;
+    border-radius: 6px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #111;
+    padding: 12px 26px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* Right image */
+.hero-image {
+    max-width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+}
+
+/* MOBILE */
+@media (max-width: 991px) {
+    .hero-title {
+        font-size: 34px;
+    }
+    .hero-modern {
+        padding: 90px 0;
+        text-align: center;
+    }
+
+    .hero-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-image-wrap {
+        order: 1;
+        margin-bottom: 20px;
+    }
+
+    .hero-buttons {
+        order: 2;
+        margin-bottom: 20px;
+    }
+
+    .hero-text {
+        order: 3;
+    }
+
+    .hero-modern {
+        text-align: center;
+    }
+
+
+}
+
+
+/* HERO BUTTON FIX FOR SMALL PHONES */
+@media (max-width: 575px) {
+
+    .hero-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+
+    }
+
+    .hero-buttons a {
+        flex: 1;
+        max-width: 48%;
+        padding: 12px 10px;
+        font-size: 14px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .hero-badges {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hero-badges span {
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 5px 10px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-buttons a {
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+}
+
+</style>
+<section class="hero-modern"
+        style="background-image: url('{% static "images/slider/designbuild-bg.png" %}');">
+
+  <div class="hero-overlay"></div>
+
+  <div class="container hero-content">
+    <div class="row align-items-center hero-row">
+
+      <!-- LEFT CONTENT -->
+      <div class="col-lg-6 col-md-6 hero-text">
+        <span class="hero-tag">New Construction</span>
+
+        <h1 class="hero-title">
+            From Vision to <span>Finished</span> Construction
+
+
+        </h1>
+
+        <p class="hero-subtitle">
+          Your one-stop shop for design, engineering, permits, and construction.
+        </p>
+
+        <div class="hero-badges">
+          <span><i class="fa fa-shield"></i> Licensed & Insured</span>
+          <span><i class="fa fa-check-circle"></i> Code Compliant</span>
+          <span>5★ Rated</span>
+        </div>
+
+        <div class="hero-buttons">
+          <a href="tel:6507705303" class="btn-primary" style="background-color: #66676b;">
+            Call (650) 770-5303
+          </a>
+          <a href="/contact/" class="btn-secondary">
+            Get Free Estimate
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT IMAGE -->
+      <div class="col-lg-6 col-md-6 text-center hero-image-wrap">
+        <img src="{% static "images/slider/designbuild-hero.png" %}"
+             class="hero-image"
+             alt="Design Build">
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!--=================================
+ inner-intro-->
+
+
+<!--=================================
+ service-->
+
+<section class="service white-bg page-section-ptb">
+  <div class="container">
+    <div class="row">
+       <div class="col-lg-12 col-md-12">
+        <div class="section-title-1 text-center">
+          <h1 class="text-blue">Our Design Build Process</h1>
+          <div class="title-line"></div>
+          <p>Precision construction without shortcuts</p>
+        </div>
+      </div>
+    </div>
+    <!-- ============================================ -->
+   <div class="service-3">
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Initial Consultation & Feasibility</h3>
+              <p>We review your goals, budget, and property conditions to confirm what is legally and structurally feasible under local zoning and building regulations.</p>
+{#              <b>01</b>#}
+              <ul>
+                <li>Evaluate zoning, setbacks, and lot restrictions</li>
+                <li>Review budget range and project timeline</li>
+                <li>Identify potential constraints before design begins</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+    </div>
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Design Development</h3>
+              <p>We prepare floor plans, layouts, and scope of work that align with your needs, California building codes, and city requirements.</p>
+{#              <b>02</b>#}
+              <ul>
+                <li>Develop functional layouts and design concepts</li>
+                <li>Define project scope, materials, and finishes</li>
+                <li>Ensure design aligns with local code requirements</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Engineering & Documentation</h3>
+              <p>Structural calculations, energy compliance (Title 24), and technical drawings are prepared as required by California building departments.</p>
+{#              <b>03</b>#}
+              <ul>
+                <li>Prepare structural and foundation engineering</li>
+                <li>Complete Title 24 energy compliance documentation</li>
+                <li>Assemble full permit-ready construction drawings</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+    </div>
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Permit Submission & Approval</h3>
+              <p>Permit applications are submitted to the city or county. We coordinate plan check responses and revisions until approvals are issued.</p>
+{#              <b>04</b>#}
+              <ul>
+                <li>Submit plans to city or county building departments</li>
+                <li>Address plan check comments and required revisions</li>
+                <li>Obtain permit approvals before construction starts</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+       <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Construction & Inspections</h3>
+              <p>Construction begins after permit approval. All required city inspections are scheduled and completed at each phase of the build.</p>
+{#              <b>05</b>#}
+              <ul>
+                <li>Perform construction according to approved plans</li>
+                <li>Schedule and pass all required city inspections</li>
+                <li>Maintain quality control and jobsite oversight</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+    </div>
+
+       <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6">
+
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Final Approval & Project Completion</h3>
+              <p>After final inspection approval, the project is completed and turned over, fully compliant with California codes and permits.</p>
+{#              <b>06</b>#}
+              <ul>
+                <li>Complete final inspection and sign-off</li>
+                <li>Address any remaining punch-list items</li>
+                <li>Deliver a fully permitted and compliant project</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+
+
+
+  </div>
+  </div>
+</section>
+
+
+<section class="faq-section">
+  <div class="container">
+
+    <div class="section-title text-center">
+      <h2>Frequently Asked Questions</h2>
+      <p>Clear answers to common questions about our construction process</p>
+    </div>
+
+    <div class="faq-accordion">
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Are your projects fully permitted?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. All of our projects are fully permitted and built in compliance
+            with California building codes and local city requirements.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Do I need plans before contacting you?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            No. We handle the entire process including design, engineering,
+            and permit documentation as part of our Design & Build service.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How long does the permit process take in California?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Permit timelines vary by city, but typically range from a few weeks
+            to several months depending on project scope and jurisdiction.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Are you licensed and insured?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. We are a licensed California General B contractor and fully insured
+            for residential construction projects.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<script>
+  document.querySelectorAll('.faq-question').forEach(button => {
+    button.addEventListener('click', () => {
+      const item = button.parentElement;
+      item.classList.toggle('active');
+    });
+  });
+</script>
+{% endblock %}

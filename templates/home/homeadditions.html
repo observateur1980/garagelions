@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+/* ==========================
+   FAQ SECTION
+========================== */
+
+.faq-section {
+    padding: 80px 0;
+    background: #f8f9fb;
+}
+
+.faq-accordion {
+    max-width: 900px;
+    margin: 40px auto 0;
+}
+
+.faq-item {
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.faq-question {
+    width: 100%;
+    padding: 18px 20px;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e73be;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.faq-question:hover {
+    background: rgba(30,115,190,0.05);
+}
+
+.faq-question .icon {
+    font-size: 22px;
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    padding: 0 20px;
+}
+
+.faq-answer p {
+    margin: 15px 0 20px;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* ACTIVE STATE */
+.faq-item.active .faq-answer {
+    max-height: 300px;
+}
+
+.faq-item.active .faq-question .icon {
+    transform: rotate(45deg);
+}
+
+.features13 p{
+    font-size: 15px;
+}
+
+/* ==========================
+   MODERN HERO
+========================== */
+
+.hero-modern {
+    position: relative;
+    padding: 120px 0;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(128 139 166 / 95%) 0%, rgb(186 189 198 / 85%) 50%, rgba(15, 23, 42, 0.6) 100%);
+    z-index: 0;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-tag {
+    display: inline-block;
+    background: rgba(30,115,190,0.15);
+    color: #1e4364;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 17px;
+    margin-bottom: 15px;
+}
+
+.hero-title {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.hero-title span {
+    color: #1e4364;
+}
+
+.hero-subtitle {
+    font-size: 17px;
+    max-width: 520px;
+    opacity: 0.9;
+    margin-bottom: 25px;
+    color: #3d3838;
+}
+
+.hero-badges span {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 15px;
+}
+
+.hero-buttons {
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background: #1e73be;
+    color: #fff;
+    padding: 12px 26px;
+    border-radius: 6px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #111;
+    padding: 12px 26px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* Right image */
+.hero-image {
+    max-width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+}
+
+/* MOBILE */
+@media (max-width: 991px) {
+    .hero-title {
+        font-size: 34px;
+    }
+    .hero-modern {
+        padding: 90px 0;
+        text-align: center;
+    }
+
+    .hero-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-image-wrap {
+        order: 1;
+        margin-bottom: 20px;
+    }
+
+    .hero-buttons {
+        order: 2;
+        margin-bottom: 20px;
+    }
+
+    .hero-text {
+        order: 3;
+    }
+
+    .hero-modern {
+        text-align: center;
+    }
+}
+
+/* HERO BUTTON FIX FOR SMALL PHONES */
+@media (max-width: 575px) {
+
+    .hero-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+    }
+
+    .hero-buttons a {
+        flex: 1;
+        max-width: 48%;
+        padding: 12px 10px;
+        font-size: 14px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .hero-badges {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hero-badges span {
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 5px 10px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-buttons a {
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+}
+</style>
+
+<section class="hero-modern"
+        style="background-image: url('{% static "images/slider/home-additions-bg.png" %}');">
+
+  <div class="hero-overlay"></div>
+
+  <div class="container hero-content">
+    <div class="row align-items-center hero-row">
+
+      <!-- LEFT CONTENT -->
+      <div class="col-lg-6 col-md-6 hero-text">
+        <span class="hero-tag">Home Additions</span>
+
+        <h1 class="hero-title">
+            Add Space, Increase Value, Build It <span>Right</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Room additions, second-story additions, expansions — engineering, permits, and construction handled from start to finish.
+        </p>
+
+        <div class="hero-badges">
+          <span><i class="fa fa-shield"></i> Licensed & Insured</span>
+          <span><i class="fa fa-check-circle"></i> Code Compliant</span>
+          <span>5★ Rated</span>
+        </div>
+
+        <div class="hero-buttons">
+          <a href="tel:6507705303" class="btn-primary" style="background-color: #66676b;">
+            Call (650) 770-5303
+          </a>
+          <a href="/contact/" class="btn-secondary">
+            Get Free Estimate
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT IMAGE -->
+      <div class="col-lg-6 col-md-6 text-center hero-image-wrap">
+        <img src="{% static "images/slider/home-additions-hero.png" %}"
+             class="hero-image"
+             alt="Home Additions">
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="service white-bg page-section-ptb">
+  <div class="container">
+    <div class="row">
+       <div class="col-lg-12 col-md-12">
+        <div class="section-title-1 text-center">
+          <h1 class="text-blue">Our Home Addition Process</h1>
+          <div class="title-line"></div>
+          <p>Planning first, permits handled correctly, and construction done to code</p>
+        </div>
+      </div>
+    </div>
+
+   <div class="service-3">
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Consultation & Feasibility</h3>
+              <p>We evaluate your home and lot conditions to confirm what’s possible under zoning, setbacks, and structural limitations.</p>
+              <ul>
+                <li>Evaluate zoning, lot coverage, and setbacks</li>
+                <li>Review goals, budget, and timeline</li>
+                <li>Identify structural and utility constraints</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Design & Layout Planning</h3>
+              <p>We develop the layout and scope of work to match your needs and ensure the addition blends with your existing home.</p>
+              <ul>
+                <li>Develop floor plan and exterior integration</li>
+                <li>Define finishes and project scope</li>
+                <li>Confirm construction approach</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Engineering & Permit Documents</h3>
+              <p>We prepare structural calculations and permit-ready drawings for submission to your city or county.</p>
+              <ul>
+                <li>Structural engineering and framing plan</li>
+                <li>Title 24 / energy compliance (if required)</li>
+                <li>Complete permit-ready plans</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Permit Submission & Approval</h3>
+              <p>We submit plans and handle plan check comments until permits are approved and ready for construction.</p>
+              <ul>
+                <li>Submit plans to building department</li>
+                <li>Respond to plan check comments</li>
+                <li>Obtain permits and approvals</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 text-right">
+             <h3 class="text-blue">Construction & Inspections</h3>
+              <p>We build the addition according to approved plans and schedule inspections at each required stage.</p>
+              <ul>
+                <li>Foundation, framing, roofing, windows</li>
+                <li>Electrical, plumbing, HVAC integration</li>
+                <li>City inspections and quality control</li>
+              </ul>
+          </div>
+       </div>
+       <div class="col-lg-6 col-md-6 col-sm-6"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <div class="row">
+     <div class="col-lg-6 col-md-6 col-sm-6"></div>
+       <div class="col-lg-6 col-md-6 col-sm-6">
+          <div class="features13 left text-left">
+             <h3 class="text-blue">Finishing & Final Approval</h3>
+              <p>We complete finish work and obtain final inspection approval for a fully permitted and compliant addition.</p>
+              <ul>
+                <li>Drywall, paint, flooring, trim</li>
+                <li>Final fixtures and punch-list</li>
+                <li>Final inspection and sign-off</li>
+              </ul>
+          </div>
+       </div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<section class="faq-section">
+  <div class="container">
+
+    <div class="section-title text-center">
+      <h2>Frequently Asked Questions</h2>
+      <p>Clear answers to common questions about home additions</p>
+    </div>
+
+    <div class="faq-accordion">
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Do home additions require permits?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. Additions typically require permits, engineering, and inspections. We handle the full permit process.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can you match the addition to my existing home?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Yes. We design the addition to blend with the existing home’s exterior, rooflines, windows, and finishes as much as possible.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How long does a home addition take?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Timelines vary by scope and permitting. Most additions take several months including design, permits, and construction. We provide a schedule upfront.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can we live in the home during the addition?
+          <span class="icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>
+            Often yes, depending on where the addition is located and how it connects to the home. We plan work to minimize disruption when possible.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.faq-question').forEach(button => {
+    button.addEventListener('click', () => {
+      const item = button.parentElement;
+      item.classList.toggle('active');
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,103 @@
+
+
+
+        .img_sld {
+            position: relative;
+            width: 100%;
+        }
+
+        .img_sld img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+
+        .img_sld .btn2 {
+            background-color: rgb(68, 68, 68);
+        }
+
+        /* Services */
+        .team-4 .team-image img {
+            border-radius: 7%;
+            margin-bottom: 20px;
+        }
+
+        /* Testimonials */
+        .testimonial-content p {
+            font-family: Roboto, sans-serif;
+            font-size: 16px !important;
+        }
+
+        .testimonial-content a {
+            font-style: italic;
+        }
+
+
+
+        .section-padding-sm {
+            padding: 40px 0;
+        }
+
+        /* ==============================
+           MOBILE (phones & small devices)
+           ============================== */
+        @media (max-width: 767px) {
+
+            .hero-buttons {
+                flex-direction: row;
+                justify-content: center;
+
+                display: flex;
+                width: auto;
+                position: absolute;
+                bottom: 6%;
+                left: 50%;
+                transform: translateX(-50%);
+                align-items: center;
+                flex-wrap: nowrap;
+
+
+
+
+            }
+
+            .hero-buttons a {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+                font-size: 14px;
+
+                margin-right: 6px;
+            }
+
+            #img1 {
+                display: none;
+            }
+
+            #img2 {
+                display: block;
+            }
+
+
+        }
+
+
+        /* ==============================
+           DESKTOP & UP
+           ============================== */
+        @media (min-width: 768px) {
+
+            #img1 {
+                display: block;
+            }
+
+            #img2 {
+                display: none;
+            }
+
+        }
+
+
+

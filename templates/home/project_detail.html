@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+    <style>
+
+    .project-stage-title {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 15px;
+    color: #555;
+
+
+}
+
+    @media (width: 820px) and (orientation: portrait) {
+    .hide-cover-ipad {
+        display: none !important;
+    }
+}
+
+  .project-highlights-heading {
+    margin-bottom: 19px;
+}
+        .breadcrumb {
+            background: none;
+            padding: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-family: "Georgia", "Times New Roman", serif;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            padding: 0 8px;
+            color: #999;
+        }
+
+        .breadcrumb a {
+            color: #1e73be;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-item.active {
+            color: #555;
+        }
+
+        .border_img {
+            border: 1px solid rgba(206, 197, 197, 0.81);
+            border-radius: 6px;
+            background-color: #fff;
+            padding: 4px;
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .project-gallery > div {
+            padding: 5px;
+        }
+
+        .project-section h4 {
+            margin: 30px 0 15px;
+            font-weight: 600;
+        }
+
+        .list-style-1 {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .list-style-1 li {
+            position: relative;
+            padding-left: 22px;
+            margin-bottom: 8px;
+        }
+
+        .list-style-1 li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 8px;
+            height: 8px;
+            background-color: #1e73be;
+            border-radius: 50%;
+        }
+
+        /* Mobile polish */
+        @media (max-width: 767px) {
+
+            .project-title-mobile {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .hide-cover-on-mobile {
+                display: none !important;
+            }
+
+            .list-style-1 li {
+                font-size: 14px;
+                line-height: 1.45;
+            }
+
+            .project-section h4 {
+                margin-top: 20px;
+            }
+
+            .project-gallery > div {
+                padding: 8px;
+            }
+        }
+
+    .project-gallery .col-lg-3,
+.project-gallery .col-md-4,
+.project-gallery .col-sm-6,
+.project-gallery .col-12 {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    cursor: pointer;
+}
+
+.project-gallery .feature-3 {
+    margin-bottom: 4px !important;
+}
+
+
+    </style>
+
+    <section class="page-section-ptb content-box" style="margin-top:80px">
+        <div class="container">
+            <nav aria-label="breadcrumb" class="mb-20">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'projects' %}">Projects</a>
+                    </li>
+
+                </ol>
+            </nav>
+
+            <!-- PROJECT INFO -->
+            <div class="row">
+                <div class="col-12">
+                    <h3 class="mt-30 mb-20 project-title-mobile">
+                        {{ project.project_name }}
+                    </h3>
+                </div>
+
+                <div class="col-md-6">
+                    {% if project.highlights %}
+                        <h4 class="project-highlights-heading">
+    Highlights of this project include:
+</h4>
+                        <ul class="list-style-1 mb-30">
+                            {% for item in project.highlights.splitlines %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 hide-cover-on-mobile hide-cover-ipad">
+                    {% if project.cover_image %}
+                        <img class="border_img"
+                             src="{{ project.cover_image.url }}"
+                             alt="{{ project.project_name }}"
+                             loading="lazy">
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- BEFORE CONSTRUCTION -->
+            {% if before %}
+                <div class="row project-gallery project-section" id="gallery-before">
+                    <div class="col-12">
+                        <h4 class="project-stage-title">Before Construction</h4>
+                    </div>
+
+                    {% for img in before %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-12">
+                            <div class="feature-3 mb-30">
+                                <div class="feature-3-image lg-item"
+                                     data-src="{{ img.image_wm.url }}">
+                                    <img class="border_img"
+                                         src="{{ img.thumb.url }}"
+                                         alt="Before construction"
+                                         loading="lazy">
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- UNDER CONSTRUCTION -->
+            {% if construction %}
+                <div class="row project-gallery project-section" id="gallery-construction">
+                    <div class="col-12">
+                        <h4 class="project-stage-title">Construction in Progress</h4>
+                    </div>
+
+                    {% for img in construction %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-12">
+                            <div class="feature-3 mb-30">
+                                <div class="feature-3-image lg-item"
+                                     data-src="{{ img.image_wm.url }}">
+                                    <img class="border_img"
+                                         src="{{ img.thumb.url }}"
+                                         alt="Under construction"
+                                         loading="lazy">
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- AFTER CONSTRUCTION -->
+            {% if after %}
+                <div class="row project-gallery project-section" id="gallery-after">
+                    <div class="col-12">
+                        <h4 class="project-stage-title">After Construction</h4>
+                    </div>
+
+                    {% for img in after %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-12">
+                            <div class="feature-3 mb-30">
+                                <div class="feature-3-image lg-item"
+                                     data-src="{{ img.image_wm.url }}">
+                                    <img class="border_img"
+                                         src="{{ img.thumb.url }}"
+                                         alt="After construction"
+                                         loading="lazy">
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            ['gallery-before', 'gallery-construction', 'gallery-after'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    lightGallery(el, {
+                        selector: '.lg-item',
+                        plugins: [lgZoom, lgThumbnail],
+                        speed: 300,
+                        download: false,
+                        thumbnail: true,
+                        zoom: true
+                    });
+                }
+            });
+        });
+    </script>
+
+{% endblock %}
