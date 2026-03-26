@@ -1,193 +1,203 @@
 {% load static %}
 <style>
-.header-9 .mega-menu .menu-links > li > a {
-
-    color: #1C3554FF;
-}
+.header-9 .mega-menu .menu-links > li > a,
 .mega-menu .menu-links > li > a {
-
-    color: #1C3554FF;
+    color: ##aa471a;
     text-transform: uppercase;
-    font-family: Arial;
-
+    font-family: Arial, sans-serif;
+    font-weight: 600;
 }
-
-.mega-menu img {
-    height: 70px;
-    margin-top: -12px;
-
-}
-
-
-@media screen and (min-width: 993px) {
-    .mega-menu.desktopTopFixed .menu-list-items .menu-logo > li > a img {
-        height: 70px;
-        padding-top: 0px;
-        margin: 4px 0px;
-
-    }
-}
-
-{#----------------------------------#}
-
-  .header-9 .mega-menu > section.menu-list-items {
-    border-bottom: 1px solid rgb(17,54,88);
-     height: 90px;
-}
-
-  .header-9 .mega-menu.desktopTopFixed .menu-list-items {
-    background: #ffffff;
-    border-bottom: 1px solid rgb(17,54,88);
-
-}
-
-
-
-    .header-9 .mega-menu.desktopTopFixed .menu-list-items .req-bar-on-menu{
-
-        margin-top: 17px!important;
-    }
-
-{#----------------------------------#}
 
 .icon-bar {
-  width: 100%; /* Full-width */
-  background-color: rgb(17,54,88); /* Dark-grey background */
-  overflow: auto; /* Overflow due to float */
+    width: 100%;
+    background-color: #626262;
+    overflow: auto;
 }
+
 
 .icon-bar a {
-  float: right; /* Float links side by side */
-  padding: 9px 0; /* Some top and bottom padding */
-  transition: all 0.3s ease; /* Add transition for hover effects */
-  color: white; /* White text color */
-  font-size: 16px; /* Increased font size */
-  margin-right: 30px;
+    float: right;
+    padding: 9px 0;
+    transition: all 0.3s ease;
+    color: white;
+    font-size: 16px;
+    margin-right: 30px;
 }
 
+.header-9 .mega-menu > section.menu-list-items {
+    border-bottom: 1px solid rgb(17,54,88);
+    height: 96px;
+    background: #ffffff;
+}
 
-{#-----------------#}
+.header-9 .mega-menu.desktopTopFixed .menu-list-items {
+    background: #ffffff;
+    border-bottom: 1px solid rgb(17,54,88);
+}
 
-    @media screen and (max-width: 600px){
-            .mega-menu > section.menu-list-items{
-                position: fixed;
-            }
+.header-9 .mega-menu.desktopTopFixed .menu-list-items .req-bar-on-menu {
+    margin-top: 0 !important;
+}
 
+.gl-nav-shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 96px;
+}
 
-        .header-9 .mega-menu > section.menu-list-items {
-            {#background: #ffffff;#}
-            {#border-bottom: 1px solid rgb(17,54,88);#}
-            height: 70px;
-        }
+.gl-nav-left,
+.gl-nav-right {
+    flex: 1 1 0;
+}
 
-        .mega-menu img {
-                height: 60px;
+.gl-nav-left .menu-links,
+.gl-nav-right .menu-links {
+    display: flex;
+    align-items: center;
+}
 
+.gl-nav-left .menu-links {
+    justify-content: flex-start;
+}
 
-        }
+.gl-nav-right .menu-links {
+    justify-content: flex-end;
+}
 
+.gl-nav-center {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 0 24px;
+}
 
+.gl-nav-center img {
+    height: 78px;
+    width: auto;
+    display: inline-block;
+}
 
+.menu-links > li > a {
+    line-height: 96px;
+}
+
+.req-bar-on-menu {
+    padding: 0 18px !important;
+    line-height: 42px !important;
+    font-weight: bold;
+    background-color: transparent;
+    border: 1px solid #1C3554FF;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+.mobile-logo {
+    display: none;
+}
+
+@media screen and (max-width: 992px) {
+    .gl-nav-shell {
+        display: block;
+        min-height: 70px;
     }
 
-
-
-{#class for request call button on menu#}
-    .req-bar-on-menu{
-        padding-bottom: 1px!important;
-        padding-top: 1px!important;
-        margin-top: 29px!important;
-        line-height: 40px!important;
-        font-weight: bold;
-        background-color: transparent;
-        border: 1px solid #1C3554FF;
-
-
+    .gl-nav-left,
+    .gl-nav-right {
+        display: none;
     }
 
+    .gl-nav-center {
+        display: none;
+    }
+
+    .mobile-logo {
+        display: block;
+        text-align: center;
+        padding-top: 6px;
+    }
+
+    .mobile-logo img {
+        height: 58px;
+        width: auto;
+    }
+
+    .mega-menu > section.menu-list-items {
+        position: fixed;
+        height: 70px;
+    }
+
+    .icon-bar a {
+        margin-right: 15px;
+        font-size: 14px;
+    }
+}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <div class="icon-bar hidden-xs">
-
-  <a href="tel:8552953670"><i class="fa fa-phone">&nbsp; +1 855 295 3670</i></a>
-  <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
-
+    <a href="tel:8552953670"><i class="fa fa-phone">&nbsp; +1 855 295 3670</i></a>
+    <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
 </div>
 
-
-
-<!--=================================
-
-
-
- header -->
-
 <header id="header" class="header-9">
-  <div class="menu">
-  <!-- menu start -->
-   <nav id="menu-1" class="mega-menu">
-    <!-- menu list items container -->
-    <section class="menu-list-items">
-     <div class="container">
-      <div class="row">
-       <div class="col-lg-12 col-md-12">
-        <!-- menu logo -->
-        <ul class="menu-logo">
-            <li>
-                <a href="{% url 'home' %}"><img id="logo_dark_img" src="{% static 'images/logo-dark.png' %}" alt="logo"> </a>
-            </li>
-        </ul>
+    <div class="menu">
+        <nav id="menu-1" class="mega-menu">
+            <section class="menu-list-items">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12 col-md-12">
 
-        <!-- menu links -->
+                            <div class="mobile-logo">
+                                <a href="{% url 'home' %}">
+                                    <img src="{% static 'images/logo-dark.png' %}" alt="Garage Lions logo">
+                                </a>
+                            </div>
 
-        <ul class="menu-links">
-            <!-- active class -->
+                            <div class="gl-nav-shell">
+                                <div class="gl-nav-left">
+                                    <ul class="menu-links">
+                                        <li class="active"><a href="{% url 'home' %}">Home</a></li>
+                                        <li>
+                                            <a href="#">Services <i class="fa fa-angle-down fa-indicator"></i></a>
+                                            <ul class="drop-down-multilevel">
+                                                <li><a href="{% url 'garage' %}">Garage Remodeling</a></li>
+                                                <li><a href="{% url 'garage' %}">Garage Cabinets</a></li>
+                                                <li><a href="{% url 'garage' %}">Garage Flooring</a></li>
+                                                <li><a href="{% url 'garage' %}">Lighting & Electrical</a></li>
+                                                <li><a href="{% url 'garage' %}">Attic Storage</a></li>
+                                                <li><a href="{% url 'garage' %}">Laundry / Utility Upgrades</a></li>
+                                            </ul>
+                                        </li>
+                                        <li><a href="{% url 'projects' %}">Projects</a></li>
+                                    </ul>
+                                </div>
 
-            <li class="active"><a href="{% url 'home' %}"> Home</a></li>
-            <li><a href="#">Services <i class="fa fa-angle-down fa-indicator"></i></a>
-                <!-- drop down multilevel  -->
-                <ul class="drop-down-multilevel">
+                                <div class="gl-nav-center">
+                                    <a href="{% url 'home' %}">
+                                        <img id="logo_dark_img" src="{% static 'images/logo-dark.png' %}" alt="Garage Lions logo">
+                                    </a>
+                                </div>
 
-                    <li><a href="{% url 'newconstruction' %}">New Construction</a></li>
-                    <li><a href="{% url 'kitchen_remodeling' %}">Kitchen Remodeling</a></li>
-                    <li><a href="{% url 'bathroom' %}">Bathroom Remodeling</a></li>
-                    <li><a href="{% url 'garage' %}">Garage Remodeling</a></li>
-                    <li><a href="{% url 'homeremodel' %}">Home Remodeling</a></li>
-                    <li><a href="{% url 'homeadditions' %}">Home Additions</a></li>
+                                <div class="gl-nav-right">
+                                    <ul class="menu-links">
+                                        <li>
+                                            <a href="#">Videos <i class="fa fa-angle-down fa-indicator"></i></a>
+                                            <ul class="drop-down-multilevel">
+                                                <li><a href="{% url 'video' %}">Videos</a></li>
+                                                <li><a href="{% url 'videoreviews' %}">Video Reviews</a></li>
+                                            </ul>
+                                        </li>
+                                        <li><a href="{% url 'create_lead' %}">Contact</a></li>
+                                        <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">Request a Consultation</a></li>
+                                    </ul>
+                                </div>
+                            </div>
 
-
-                </ul>
-            </li>
-
-            
-            <li><a href="#">Videos <i class="fa fa-angle-down fa-indicator"></i></a>
-                <!-- drop down multilevel  -->
-                <ul class="drop-down-multilevel">
-
-                    <li><a href="{% url 'video' %}">Videos</a></li>
-                    <li><a href="{% url 'videoreviews' %}">Videos Reviews</a></li>
-
-
-
-                </ul>
-            </li>
-
-            
-            <li><a href="{% url 'projects' %}">Projects</a>
-            </li>
-
-            <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">REQUEST A CONSULTATION</a></li>
-
-        </ul>
-       </div>
-      </div>
-     </div>
-    </section>
-   </nav>
-  <!-- menu end -->
- </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </nav>
+    </div>
 </header>
-<!--=================================
- header -->
