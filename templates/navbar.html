@@ -1,12 +1,30 @@
 {% load static %}
 <style>
+
+
+
+.header-9 .mega-menu > section.menu-list-items,
+.header-9 .mega-menu.desktopTopFixed .menu-list-items {
+    border-bottom: 1px solid rgb(76, 73, 73);
+    height: 96px;
+    background: whitesmoke;
+
+}
+
+  .header-9 .mega-menu > section.menu-list-items {
+  background: transparent;
+      opacity: 100%;
+}
+
 .header-9 .mega-menu .menu-links > li > a,
 .mega-menu .menu-links > li > a {
-    color: #626262;
+    color: #c64d1e;
     text-transform: uppercase;
     font-family: Arial, sans-serif;
     font-weight: 600;
     letter-spacing: 0.4px;
+
+
 }
 
 .icon-bar {
@@ -24,12 +42,7 @@
     margin-right: 30px;
 }
 
-.header-9 .mega-menu > section.menu-list-items,
-.header-9 .mega-menu.desktopTopFixed .menu-list-items {
-    border-bottom: 1px solid rgb(76, 73, 73);
-    height: 96px;
-    background: #ffffff;
-}
+
 
 .gl-nav-shell {
     display: flex;
@@ -288,17 +301,9 @@
                             <div class="gl-nav-shell">
                                 <div class="gl-nav-left">
                                     <ul class="menu-links">
-                                        <li>
-                                            <a href="#">Products <i class="fa fa-angle-down fa-indicator"></i></a>
-                                            <ul class="drop-down-multilevel">
-                                                <li><a href="#">Garage Remodeling</a></li>
-                                                <li><a href="#">Garage Cabinets</a></li>
-                                                <li><a href="#">Garage Flooring</a></li>
-                                                <li><a href="#">Lighting & Electrical</a></li>
-                                                <li><a href="#">Attic Storage</a></li>
-                                                <li><a href="#">Laundry / Utility Upgrades</a></li>
-                                            </ul>
-                                        </li>
+                                        <li><a href="#">Services</a></li>
+                                        <li><a href="#">Products</a></li>
+
                                         <li><a href="{% url 'projects' %}">Projects</a></li>
                                     </ul>
                                 </div>
@@ -312,13 +317,10 @@
                                 <div class="gl-nav-right">
                                     <ul class="menu-links">
                                         <li>
-                                            <a href="#">Videos <i class="fa fa-angle-down fa-indicator"></i></a>
-                                            <ul class="drop-down-multilevel">
-                                                <li><a href="{% url 'video' %}">Videos</a></li>
-                                                <li><a href="{% url 'videoreviews' %}">Video Reviews</a></li>
-                                            </ul>
+                                            <a href="#">Videos</a>
+
                                         </li>
-                                        <li><a href="{% url 'create_lead' %}">Contact</a></li>
+                                        <li><a href="{% url 'create_lead' %}">About</a></li>
                                         <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">Request a Consultation</a></li>
                                     </ul>
                                 </div>
@@ -326,18 +328,15 @@
 
                             <div id="mobileMenuPanel" class="mobile-menu-panel">
                                 <ul>
-                                    <li><a href="{% url 'home' %}">Home</a></li>
+
                                     <li><a href="{% url 'projects' %}">Projects</a></li>
                                     <li><a href="{% url 'video' %}">Videos</a></li>
-                                    <li><a href="{% url 'videoreviews' %}">Video Reviews</a></li>
-                                    <li><a href="{% url 'create_lead' %}">Contact</a></li>
-                                    <li><a href="{% url 'create_lead' %}">Request a Consultation</a></li>
+
+                                    <li><a href="{% url 'create_lead' %}">About</a></li>
+
                                     <li class="mobile-submenu"><a href="#">Garage Remodeling</a></li>
                                     <li class="mobile-submenu"><a href="#">Garage Cabinets</a></li>
                                     <li class="mobile-submenu"><a href="#">Garage Flooring</a></li>
-                                    <li class="mobile-submenu"><a href="#">Lighting & Electrical</a></li>
-                                    <li class="mobile-submenu"><a href="#">Attic Storage</a></li>
-                                    <li class="mobile-submenu"><a href="#">Laundry / Utility Upgrades</a></li>
                                 </ul>
                             </div>
 
