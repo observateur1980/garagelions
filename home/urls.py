@@ -6,12 +6,19 @@ from . import views
 urlpatterns = [
     path("", views.home, name="home"),
 
+
+
+
+    # STATIC PAGES
+    path("service/", views.Service.as_view(), name="service"),
+    path("product/", views.Product.as_view(), name="product"),
+
     # PROJECTS
     path("projects/", views.projects, name="projects"),
     path("projects/<slug:slug>/", views.project_detail, name="project_detail"),
 
-    # STATIC PAGES
     path("video/", views.Video.as_view(), name="video"),
+    path("about/", views.About.as_view(), name="about"),
 
 
 
@@ -36,4 +43,8 @@ urlpatterns = [
     path('garage_door', views.GarageDoor.as_view(), name='garage_door'),
     path('garage_conversion', views.GarageConversion.as_view(), name='garage_conversion'),
     path('car_lift', views.CarLift.as_view(), name='car_lift'),
+
+
+
+
 ]

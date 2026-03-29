@@ -27,38 +27,246 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
     position: relative;
 }
 
-    </style>
+
+
+#img1,
+#img2 {
+    position: relative;
+}
+
+#img1 > img,
+#img2 > img {
+    display: block;
+    width: 100%;
+}
+
+#img1:before,
+#img2:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+#img1:before {
+    background: linear-gradient(
+        90deg,
+        rgba(20,20,20,0.68) 0%,
+        rgba(20,20,20,0.38) 38%,
+        rgba(20,20,20,0.10) 100%
+    );
+}
+
+#img2:before {
+    background: linear-gradient(
+        180deg,
+        rgba(20,20,20,0.22) 0%,
+        rgba(20,20,20,0.46) 38%,
+        rgba(20,20,20,0.78) 100%
+    );
+}
+
+#img1 .hero-buttons,
+#img2 .hero-buttons {
+    display: none;
+}
+
+.gl-hero-copy {
+    position: absolute;
+    z-index: 3;
+    color: #ffffff;
+}
+
+.gl-hero-copy h1 {
+    margin: 0 0 18px 0;
+    color: #ffffff;
+    font-size: 60px;
+    line-height: 1.02;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.gl-hero-copy p {
+    margin: 0 0 26px 0;
+    color: rgba(255,255,255,0.92);
+    font-size: 20px;
+    line-height: 1.65;
+    max-width: 620px;
+}
+
+.gl-hero-cta .button {
+    margin-right: 12px;
+    margin-bottom: 12px;
+}
+
+.gl-hero-btn-main {
+    background: #ad5635 !important;
+    border-color: #ad5635 !important;
+    color: #ffffff !important;
+}
+
+.gl-hero-btn-main:hover {
+    background: #8f4528 !important;
+    border-color: #8f4528 !important;
+    color: #ffffff !important;
+}
+
+.gl-hero-btn-alt {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.45) !important;
+    color: #ffffff !important;
+}
+
+.gl-hero-btn-alt:hover {
+    background: rgba(255,255,255,0.08) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+}
+
+.gl-hero-desktop {
+    left: 7%;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 700px;
+}
+
+.gl-hero-mobile {
+    left: 20px;
+    right: 20px;
+    bottom: 34px;
+    text-align: left;
+    display: none;
+}
+
+.gl-hero-mobile h1 {
+    font-size: 30px;
+    line-height: 1.08;
+    margin-bottom: 14px;
+}
+
+.gl-hero-mobile p {
+    font-size: 16px;
+    line-height: 1.55;
+    max-width: none;
+    margin-bottom: 20px;
+}
+
+@media screen and (max-width: 991px) {
+    #img1 {
+        display: none;
+    }
+
+    #img2 {
+        display: block;
+    }
+
+    .gl-hero-desktop {
+        display: none;
+    }
+
+    .gl-hero-mobile {
+        display: block;
+    }
+}
+
+@media screen and (min-width: 992px) {
+    #img1 {
+        display: block;
+    }
+
+    #img2 {
+        display: none;
+    }
+
+    .gl-hero-desktop {
+        display: block;
+    }
+
+    .gl-hero-mobile {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 1199px) and (min-width: 992px) {
+    .gl-hero-desktop h1 {
+        font-size: 48px;
+    }
+
+    .gl-hero-desktop p {
+        font-size: 18px;
+        max-width: 560px;
+    }
+}
+
+
+.gl-hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+@media screen and (max-width: 767px) {
+    .gl-hero-cta {
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .gl-hero-cta .button {
+        margin-right: 0 !important;
+        margin-bottom: 0 !important;
+    }
+}
+
+</style>
 
 
 
-    <section>
+ <section>
+    <div class="img_sld" id="img2">
+        <img loading="lazy" src="{% static 'images/slider/bg_vertical.png' %}" alt="Garage transformation mobile">
 
-        <div class="img_sld " id="img2">
-            <img loading="lazy" src="{% static 'images/slider/bg_vertical.png' %}" alt="Snow">
+        <div class="gl-hero-copy gl-hero-mobile">
+            <h1>Built for Storage. Finished for Living.</h1>
+            <p>
+                Premium remodeling, cabinets, flooring, storage, doors, and upgrades built for modern living.
+            </p>
 
-            <div class="hero-buttons">
-                <a href="tel:8554645119" class="btn1 button  mt-15">
-                    <span>Call 855 464 51-19</span>
+            <div class="gl-hero-cta">
+                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
+                    <span>Get a Free Estimate</span>
                 </a>
 
-                <a href="{% url 'create_lead' %}"
-                   class="btn2 button mt-15">
-                    <span>REQUEST A CONSULTATION</span>
+               <a href="tel:8554645119" class="button gl-hero-btn-alt mt-15">
+
+    <span>Call 855 464 5119</span>
+</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="img_sld" id="img1">
+        <img loading="lazy" src="{% static 'images/slider/bg_photo.png' %}" alt="Garage transformation desktop">
+
+        <div class="gl-hero-copy gl-hero-desktop">
+            <h1>Built for Storage. Finished for Living.</h1>
+            <p>
+                Premium remodeling, cabinets, flooring, storage, doors, and upgrades built for modern living.
+            </p>
+
+            <div class="gl-hero-cta">
+                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
+                    <span>Get a Free Estimate</span>
+                </a>
+
+                <a href="{% url 'projects' %}" class="button gl-hero-btn-alt mt-15">
+                    <span>View Projects</span>
                 </a>
             </div>
         </div>
-
-    </section>
-
-    <section>
-
-        <div class="img_sld ">
-            <img loading="lazy" id="img1" src="{% static 'images/slider/bg_photo.png' %}" alt="Snow">
-        </div>
-
-    </section>
-
-
+    </div>
+</section>
 
 
 
@@ -109,6 +317,21 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
+                            <a href="{% url 'garage_makeover' %}">
+                            <img class="img-responsive center-block"
+                                 src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="">
+                            </a>
+                        </div>
+                        <div class="team-name">
+                            <h5><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></h5>
+
+                        </div>
+
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="team-4 text-center">
+                        <div class="team-image">
                             <a href="{% url 'garage_cabinet' %}">
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf garage cabinets.jpg' %}" alt="">
@@ -151,6 +374,12 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                     </div>
                 </div>
+
+
+
+            </div>
+
+            <div class="row">
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
@@ -167,25 +396,6 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                     </div>
                 </div>
 
-
-            </div>
-
-            <div class="row">
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_makeover' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
@@ -277,9 +487,9 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                     <div class="blog-entry post-2">
                         <div class="blog-entry-html-video audio-video">
                             <video preload="metadata" playsinline style="width:100%;height:100%;" id="player1"
-                                   poster="{% static 'video/video-1.jpg' %}" controls="controls"
+                                   poster="{% static 'video/garagelionsvideo.jpg' %}" controls="controls"
                                    preload="none">
-                                <source type="video/mp4" src="{% static 'video/video-1.mp4' %}"/>
+                                <source type="video/mp4" src="{% static 'video/garagelions.mp4' %}"/>
 
                             </video>
                         </div>
@@ -287,8 +497,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                     <div class="text-center mt-30">
                         <a href="{% url 'projects' %}" class="button">
-                            <span>See what we've done</span>
-                            <i class="fa fa-hand-o-right"></i>
+                            <span style="background: dimgrey">See what we've done</span>
+                            <i style="background: dimgrey" class="fa fa-hand-o-right"></i>
                         </a>
                     </div>
 

@@ -37,6 +37,34 @@ def projects(request):
     return render(request, "home/projects.html", {"projects": projects})
 
 
+class Service(TemplateView):
+    template_name = 'home/service.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(Service, self).get_context_data(**kwargs)
+        return context
+
+
+
+class Product(TemplateView):
+    template_name = 'home/product.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(Product, self).get_context_data(**kwargs)
+        return context
+
+
+class About(TemplateView):
+    template_name = 'home/about.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(About, self).get_context_data(**kwargs)
+        return context
+
+
+
+
+
 def project_detail(request, slug):
     project = get_object_or_404(Project, slug=slug)
 

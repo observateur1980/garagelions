@@ -301,8 +301,8 @@
                             <div class="gl-nav-shell">
                                 <div class="gl-nav-left">
                                     <ul class="menu-links">
-                                        <li><a href="#">Services</a></li>
-                                        <li><a href="#">Products</a></li>
+                                        <li><a href="{% url 'service' %}">Services</a></li>
+                                        <li><a href="{% url 'product' %}">Products</a></li>
 
                                         <li><a href="{% url 'projects' %}">Projects</a></li>
                                     </ul>
@@ -317,10 +317,10 @@
                                 <div class="gl-nav-right">
                                     <ul class="menu-links">
                                         <li>
-                                            <a href="#">Videos</a>
+                                            <a href="{% url 'video' %}">Videos</a>
 
                                         </li>
-                                        <li><a href="{% url 'create_lead' %}">About</a></li>
+                                        <li><a href="{% url 'about' %}">About</a></li>
                                         <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">Request a Consultation</a></li>
                                     </ul>
                                 </div>
