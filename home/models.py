@@ -1,5 +1,6 @@
 # models.py
 from django.db import models
+from django.core.validators import FileExtensionValidator
 from multiselectfield import MultiSelectField
 
 from django.utils.text import slugify
@@ -12,6 +13,7 @@ from django.core.files.base import ContentFile
 
 from django.conf import settings
 import os
+from pathlib import Path
 
 
 class Testimonial(models.Model):
@@ -46,11 +48,9 @@ class Testimonial(models.Model):
 
             TARGET_SIZE = (200, 200)
 
-            # Convert to RGB (important for PNGs)
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
 
-            # Crop to square (center)
             width, height = img.size
             min_side = min(width, height)
 
@@ -75,22 +75,24 @@ def resize_image_to_exact(file_field, width=550, height=375, quality=85):
 
     try:
         img = Image.open(file_field)
-        img = ImageOps.exif_transpose(img)  # fixes rotated iPhone images
+        img = ImageOps.exif_transpose(img)
 
-        # Convert for JPEG saving
         if img.mode not in ("RGB", "L"):
             img = img.convert("RGB")
         elif img.mode == "L":
             img = img.convert("RGB")
 
-        # Exact fit (center-crop) to 550x375
-        img = ImageOps.fit(img, (width, height), method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+        img = ImageOps.fit(
+            img,
+            (width, height),
+            method=Image.Resampling.LANCZOS,
+            centering=(0.5, 0.5)
+        )
 
         buffer = BytesIO()
         img.save(buffer, format="JPEG", quality=quality, optimize=True)
         buffer.seek(0)
 
-        # Overwrite same file name (but ensure .jpg extension)
         name = file_field.name
         if not name.lower().endswith((".jpg", ".jpeg")):
             name = name.rsplit(".", 1)[0] + ".jpg"
@@ -98,142 +100,160 @@ def resize_image_to_exact(file_field, width=550, height=375, quality=85):
         file_field.save(name, ContentFile(buffer.read()), save=False)
 
     except Exception:
-        # If anything goes wrong, do not block saving the model
         return
 
 
-def project_upload_to(instance, filename):
-    project = instance if hasattr(instance, "slug") else instance.project
-    return f"projects/{project.slug}/{filename}"
+def gallery_cover_upload_to(instance, filename):
+    slug = instance.slug or slugify(instance.name) or "gallery"
+    return f"galleries/{slug}/covers/{filename}"
 
 
-class ProjectTag(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+def gallery_media_upload_to(instance, filename):
+    gallery = getattr(instance, "gallery", None)
+    slug = gallery.slug or slugify(gallery.name) if gallery else "gallery"
+    return f"galleries/{slug}/items/{filename}"
+
+
+def gallery_thumb_upload_to(instance, filename):
+    gallery = getattr(instance, "gallery", None)
+    slug = gallery.slug or slugify(gallery.name) if gallery else "gallery"
+    return f"galleries/{slug}/thumbnails/{filename}"
+
+
+class Gallery(models.Model):
+    name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
+    thumbnail = models.ImageField(
+        upload_to=gallery_cover_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional gallery cover image used on the galleries page."
+    )
+    page_title = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional custom title for the gallery detail page."
+    )
+    intro_text = models.TextField(
+        blank=True,
+        help_text="Optional intro text shown near the top of the gallery detail page."
+    )
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["order", "name"]
+        verbose_name_plural = "Galleries"
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base = slugify(self.name)
+            slug = base
+            i = 1
+            while Gallery.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                i += 1
+                slug = f"{base}-{i}"
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
+    @property
+    def cover_image(self):
+        if self.thumbnail:
+            return self.thumbnail
+        first_item = self.items.order_by("sort_order", "id").first()
+        return first_item.effective_thumbnail if first_item else None
 
-class Project(models.Model):
-    project_name = models.CharField(max_length=200)
 
-    thumbnail_title = models.CharField(
-        max_length=120,
-        help_text="Short title shown on project thumbnail"
+class GalleryItem(models.Model):
+    IMAGE = "image"
+    VIDEO = "video"
+    MEDIA_TYPE_CHOICES = [
+        (IMAGE, "Photo"),
+        (VIDEO, "Video"),
+    ]
+
+    gallery = models.ForeignKey(
+        Gallery,
+        on_delete=models.CASCADE,
+        related_name="items"
     )
-
-    slug = models.SlugField(unique=True, blank=True)
-
-    tags = models.ManyToManyField(
-        ProjectTag,
+    title = models.CharField(max_length=200, blank=True)
+    section_heading = models.CharField(
+        max_length=255,
         blank=True,
-        related_name="projects"
+        help_text="Optional heading shown before this photo or video."
     )
-
-    cover_image = models.ImageField(upload_to=project_upload_to)
-
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Manual ordering (lower number = shown first)"
-    )
-
-    highlights = models.TextField(
+    text_before = models.TextField(
         blank=True,
-        help_text="Enter one highlight per line (e.g. COMPLETED 2022 MAY)"
+        help_text="Optional text shown before this photo or video."
     )
-
+    text_after = models.TextField(
+        blank=True,
+        help_text="Optional text shown after this photo or video."
+    )
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default=IMAGE)
+    file = models.FileField(
+        upload_to=gallery_media_upload_to,
+        validators=[FileExtensionValidator(allowed_extensions=[
+            "jpg", "jpeg", "png", "webp", "gif",
+            "mp4", "mov", "m4v", "webm", "ogg"
+        ])]
+    )
+    thumbnail = models.ImageField(
+        upload_to=gallery_thumb_upload_to,
+        blank=True,
+        null=True,
+        help_text="Required for videos. Optional for photos."
+    )
+    width = models.PositiveIntegerField(blank=True, null=True, editable=False)
+    height = models.PositiveIntegerField(blank=True, null=True, editable=False)
+    sort_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["order", "-created_at"]  # 👈 important
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base = slugify(self.project_name)
-            slug = base
-            i = 1
-            while Project.objects.filter(slug=slug).exists():
-                i += 1
-                slug = f"{base}-{i}"
-            self.slug = slug
-
-        cover_changed = True
-        if self.pk:
-            old = Project.objects.filter(pk=self.pk).only("cover_image").first()
-            cover_changed = (not old) or (old.cover_image != self.cover_image)
-
-        super().save(*args, **kwargs)
-
-        if cover_changed and self.cover_image:
-            resize_image_to_exact(
-                self.cover_image,
-                width=550,
-                height=375,
-                quality=85
-            )
-            super().save(update_fields=["cover_image"])
-
-    def __str__(self):
-        return self.project_name
-
-
-class BaseProjectImage(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-
-    # ORIGINAL image (used for thumbnails – NO watermark)
-    image = models.ImageField(upload_to=project_upload_to)
-
-    # WATERMARKED image (used for LightGallery – WITH watermark)
-    image_wm = models.ImageField(
-        upload_to=project_upload_to,
-        blank=True,
-        editable=False
-    )
-
-    caption = models.CharField(max_length=255, blank=True)
-    sort_order = models.PositiveIntegerField(default=0)
-
-    # Thumbnail generated from ORIGINAL image
-    thumb = ImageSpecField(
-        source="image",
-        processors=[ResizeToFill(600, 400)],
-        format="JPEG",
-        options={"quality": 82},
-    )
-
-    class Meta:
-        abstract = True
         ordering = ["sort_order", "id"]
 
+    def __str__(self):
+        label = self.title or Path(self.file.name).name
+        return f"{self.gallery.name} - {label}"
+
+    @property
+    def effective_thumbnail(self):
+        if self.thumbnail:
+            return self.thumbnail
+        if self.media_type == self.IMAGE:
+            return self.file
+        return None
+
+    @property
+    def is_square(self):
+        if self.width and self.height:
+            ratio = self.width / self.height
+            return 0.9 <= ratio <= 1.1
+        return False
+
+    @property
+    def layout_class(self):
+        return "is-square" if self.is_square else "is-wide"
+
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
         super().save(*args, **kwargs)
 
-        # Create watermarked copy ONLY ONCE, without touching original
-        if is_new and self.image and not self.image_wm:
-            create_watermark(self.image, self.image_wm)
-            super().save(update_fields=["image_wm"])
-
-
-class ProjectBeforeImage(BaseProjectImage):
-    pass
-
-
-class ProjectConstructionImage(BaseProjectImage):
-    pass
-
-
-class ProjectAfterImage(BaseProjectImage):
-    pass
+        source = self.thumbnail if self.thumbnail else (self.file if self.media_type == self.IMAGE else None)
+        if source:
+            try:
+                source.open("rb")
+                img = Image.open(source)
+                img = ImageOps.exif_transpose(img)
+                self.width, self.height = img.size
+                source.close()
+                GalleryItem.objects.filter(pk=self.pk).update(width=self.width, height=self.height)
+            except Exception:
+                pass
 
 
 class LeadModel(models.Model):
@@ -298,18 +318,15 @@ def create_watermark(source_field, target_field, opacity=0.25, scale=0.25, margi
 
         wm = Image.open(watermark_path).convert("RGBA")
 
-        # Resize watermark relative to image
         wm_width = int(base.width * scale)
         ratio = wm_width / wm.width
         wm_height = int(wm.height * ratio)
         wm = wm.resize((wm_width, wm_height), Image.Resampling.LANCZOS)
 
-        # Opacity
         alpha = wm.split()[3]
         alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
         wm.putalpha(alpha)
 
-        # Bottom-right
         x = base.width - wm.width - margin
         y = base.height - wm.height - margin
         base.alpha_composite(wm, (x, y))
@@ -331,10 +348,8 @@ class VideoReview(models.Model):
     title = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100, blank=True)
 
-    # Upload the actual video file (mp4/webm recommended)
     video = models.FileField(upload_to="video_reviews/")
 
-    # Optional: poster image so the video shows a nice preview before play
     thumbnail = models.ImageField(
         upload_to="video_reviews/thumbnails/",
         blank=True,

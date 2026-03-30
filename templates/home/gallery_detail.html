@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+    .gallery-detail-page {
+        margin-top: 92px;
+        padding: 35px 0 70px;
+    }
+
+    .gallery-page-title {
+        font-size: 58px;
+        font-weight: bold;
+        line-height: 1.1;
+    }
+
+    .gallery-breadcrumb {
+        margin-bottom: 18px;
+        font-size: 16px;
+    }
+
+    .gallery-breadcrumb a {
+        color: #5f5f5f;
+        text-decoration: none;
+    }
+
+    .gallery-breadcrumb span {
+        color: #5f5f5f;
+        margin: 0 8px;
+    }
+
+    .gallery-intro {
+        max-width: 900px;
+        margin: 0 auto 34px;
+        text-align: center;
+    }
+
+    .gallery-intro h2 {
+        margin: 0 0 12px;
+        font-size: 34px;
+        line-height: 1.2;
+        font-weight: 700;
+        color: #5f5f5f;
+        text-transform: uppercase;
+    }
+
+    .gallery-intro p {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.65;
+        color: #5f5f5f;
+    }
+
+    .gallery-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        align-items: start;
+    }
+
+    .gallery-detail-item {
+        overflow: hidden;
+    }
+
+    .gallery-detail-item.is-landscape {
+        grid-column: 1 / -1;
+    }
+
+    .gallery-detail-item.is-portrait {
+        grid-column: auto;
+    }
+
+    .gallery-item-content {
+        margin-bottom: 10px;
+    }
+
+    .gallery-item-heading {
+        margin: 0 0 12px;
+        font-size: 26px;
+        line-height: 1.25;
+        font-weight: 700;
+        color: #5f5f5f;
+        text-transform: uppercase;
+    }
+
+    .gallery-item-text {
+        margin: 0 0 14px;
+        font-size: 17px;
+        line-height: 1.75;
+        color: #5f5f5f;
+    }
+
+    .gallery-detail-item img,
+    .gallery-detail-item video {
+        width: 100%;
+        height: auto;
+        display: block;
+        background: #000;
+    }
+
+    .gallery-detail-caption {
+        padding: 10px 0 0;
+        font-size: 14px;
+        color: #5f5f5f;
+        line-height: 1.4;
+    }
+
+    .gallery-empty {
+        text-align: center;
+        padding: 30px;
+        border: 1px dashed #d7d7d7;
+        border-radius: 8px;
+        color: #5f5f5f;
+        background: #fff;
+    }
+
+    @media (max-width: 767px) {
+        .gallery-detail-page {
+            margin-top: 78px;
+            padding: 24px 0 50px;
+        }
+
+        .gallery-page-title {
+            font-size: 34px;
+            line-height: 1.15;
+        }
+
+        .gallery-breadcrumb {
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .gallery-intro {
+            margin-bottom: 28px;
+        }
+
+        .gallery-intro h2 {
+            font-size: 22px;
+        }
+
+        .gallery-intro p,
+        .gallery-item-text {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .gallery-item-heading {
+            font-size: 20px;
+        }
+
+        .gallery-detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .gallery-detail-item.is-landscape,
+        .gallery-detail-item.is-portrait {
+            grid-column: auto;
+        }
+
+        .gallery-detail-caption {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+    }
+
+
+
+.gallery-breadcrumb-wrap {
+    margin-bottom: 34px;
+    margin-top: 34px;
+    display: flex;
+    justify-content: center;
+}
+
+.gallery-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    line-height: 1;
+}
+
+.gallery-breadcrumb a {
+    color: #5f5f5f;
+    text-decoration: none;
+
+    font-weight: bold;
+}
+
+.gallery-breadcrumb a:hover {
+    color: #6c6a6a;
+}
+
+.gallery-breadcrumb span {
+    color: #5f5f5f;
+}
+
+.gallery-breadcrumb .is-current {
+    color: #9d9191;
+    font-weight: bold;
+}
+
+
+@media (max-width: 767px) {
+    .gallery-breadcrumb-wrap {
+        margin-bottom: 22px;
+        justify-content: flex-start;
+    }
+
+    .gallery-breadcrumb {
+        padding: 10px 14px;
+        font-size: 13px;
+        gap: 8px;
+        flex-wrap: wrap;
+        line-height: 1.4;
+        border-radius: 14px;
+    }
+}
+</style>
+
+
+
+<section class="gallery-detail-page">
+    <div class="container">
+       <div class="gallery-breadcrumb-wrap">
+    <div class="gallery-breadcrumb">
+        <a href="{% url 'home' %}">Home</a>
+        <span>›</span>
+        <a href="{% url 'galleries' %}">Gallery</a>
+        <span>›</span>
+        <span class="is-current">{{ gallery.name }}</span>
+    </div>
+</div>
+
+        {% if gallery.page_title or gallery.intro_text %}
+            <div class="gallery-intro">
+                <h2>{{ gallery.page_title|default:gallery.name }}</h2>
+                {% if gallery.intro_text %}
+                    <p>{{ gallery.intro_text|linebreaksbr }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if items %}
+            <div class="gallery-detail-grid" id="gallery-detail-grid">
+                {% for item in items %}
+                    <div class="gallery-detail-item is-landscape js-gallery-item" data-item-id="{{ item.id }}">
+
+                        {% if item.section_heading %}
+                            <div class="gallery-item-content">
+                                <h3 class="gallery-item-heading">{{ item.section_heading }}</h3>
+                            </div>
+                        {% endif %}
+
+                        {% if item.text_before %}
+                            <div class="gallery-item-content">
+                                <div class="gallery-item-text">{{ item.text_before|linebreaksbr }}</div>
+                            </div>
+                        {% endif %}
+
+                        {% if item.media_type == 'video' %}
+                            <video controls preload="metadata" {% if item.thumbnail %}poster="{{ item.thumbnail.url }}"{% endif %}>
+                                <source src="{{ item.file.url }}">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <img src="{{ item.file.url }}" alt="{{ item.title|default:gallery.name }}" loading="lazy">
+                        {% endif %}
+
+                        {% if item.title %}
+                            <div class="gallery-detail-caption">{{ item.title }}</div>
+                        {% endif %}
+
+                        {% if item.text_after %}
+                            <div class="gallery-item-content" style="margin-top: 14px;">
+                                <div class="gallery-item-text">{{ item.text_after|linebreaksbr }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="gallery-empty">
+                This gallery does not have items yet.
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    (function() {
+        function setLayout(item, width, height) {
+            if (!width || !height) {
+                return;
+            }
+
+            var isPortraitOrSquare = height >= width;
+
+            item.classList.remove('is-landscape', 'is-portrait');
+            item.classList.add(isPortraitOrSquare ? 'is-portrait' : 'is-landscape');
+        }
+
+        document.querySelectorAll('.js-gallery-item').forEach(function(item) {
+            var img = item.querySelector('img');
+            var video = item.querySelector('video');
+
+            if (img) {
+                if (img.complete && img.naturalWidth && img.naturalHeight) {
+                    setLayout(item, img.naturalWidth, img.naturalHeight);
+                } else {
+                    img.addEventListener('load', function() {
+                        setLayout(item, img.naturalWidth, img.naturalHeight);
+                    });
+                }
+            }
+
+            if (video) {
+                if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
+                    setLayout(item, video.videoWidth, video.videoHeight);
+                } else {
+                    video.addEventListener('loadedmetadata', function() {
+                        setLayout(item, video.videoWidth, video.videoHeight);
+                    });
+                }
+            }
+        });
+    })();
+</script>
+
+{% endblock %}

@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView
 
 from .forms import LeadForm
-from .models import Project, Testimonial, VideoReview, LeadAttachment
+from .models import Gallery, LeadAttachment, Testimonial, VideoReview
 
 
 def home(request):
@@ -32,9 +32,20 @@ def home(request):
     })
 
 
-def projects(request):
-    projects = Project.objects.all()
-    return render(request, "home/projects.html", {"projects": projects})
+
+
+def galleries(request):
+    gallery_list = Gallery.objects.filter(is_active=True).prefetch_related("items")
+    return render(request, "home/gallery.html", {"galleries": gallery_list})
+
+
+def gallery_detail(request, slug):
+    gallery = get_object_or_404(
+        Gallery.objects.filter(is_active=True).prefetch_related("items"),
+        slug=slug,
+    )
+    items = list(gallery.items.all())
+    return render(request, "home/gallery_detail.html", {"gallery": gallery, "items": items})
 
 
 class Service(TemplateView):
@@ -43,7 +54,6 @@ class Service(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(Service, self).get_context_data(**kwargs)
         return context
-
 
 
 class Product(TemplateView):
@@ -64,28 +74,8 @@ class About(TemplateView):
 
 
 
-
-def project_detail(request, slug):
-    project = get_object_or_404(Project, slug=slug)
-
-    before = project.projectbeforeimage_set.all()
-    construction = project.projectconstructionimage_set.all()
-    after = project.projectafterimage_set.all()
-
-    return render(request, "home/project_detail.html", {
-        "project": project,
-        "before": before,
-        "construction": construction,
-        "after": after,
-    })
-
-
 class Video(TemplateView):
     template_name = 'home/video.html'
-
-
-
-
 
 
 
@@ -97,7 +87,6 @@ def videoreviews(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # AJAX request: return only the cards
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return render(request, "home/partials/_video_cards.html", {"page_obj": page_obj})
 
@@ -107,20 +96,18 @@ def videoreviews(request):
     })
 
 
+
 def create_lead(request):
     if request.method == 'POST':
         lead_form = LeadForm(request.POST, request.FILES)
         if lead_form.is_valid():
             consultation_request = lead_form.save()
 
-            # Save uploaded attachments (optional)
             uploaded_files = lead_form.cleaned_data.get("attachments") or []
             for f in uploaded_files:
                 LeadAttachment.objects.create(lead=consultation_request, file=f)
 
-            # Prepare email content including selected consultation types
             consultation_types_display = consultation_request.get_consultation_types_display()
-            # Include attachment names in the email (do NOT attach large files to email)
             attachment_names = [f.name for f in uploaded_files]
             attachments_text = (
                 "\n\nAttachments:\n" + "\n".join(f"- {n}" for n in attachment_names)
@@ -153,6 +140,7 @@ def create_lead(request):
     return render(request, 'home/create_lead.html', {'lead_form': lead_form})
 
 
+
 def create_lead_success(request):
     return render(request, 'home/createlead_success.html')
 
@@ -161,9 +149,9 @@ class CopyrightPage(TemplateView):
     template_name = "home/copyright.html"
 
 
-
 class Terms(TemplateView):
     template_name = "home/terms.html"
+
 
 class Privacy(TemplateView):
     template_name = "home/privacy.html"
@@ -185,7 +173,6 @@ class GarageFlooring(TemplateView):
         return context
 
 
-
 class GarageSlatwall(TemplateView):
     template_name = 'home/garage_slatwall.html'
 
@@ -194,14 +181,12 @@ class GarageSlatwall(TemplateView):
         return context
 
 
-
 class StorageRack(TemplateView):
     template_name = 'home/storage_rack.html'
 
     def get_context_data(self, **kwargs):
         context = super(StorageRack, self).get_context_data(**kwargs)
         return context
-
 
 
 class GarageMakeover(TemplateView):
@@ -220,8 +205,6 @@ class GarageDoor(TemplateView):
         return context
 
 
-
-
 class GarageConversion(TemplateView):
     template_name = 'home/garage_conversion.html'
 
@@ -236,4 +219,3 @@ class CarLift(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(CarLift, self).get_context_data(**kwargs)
         return context
-

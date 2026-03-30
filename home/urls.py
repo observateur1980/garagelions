@@ -14,8 +14,9 @@ urlpatterns = [
     path("product/", views.Product.as_view(), name="product"),
 
     # PROJECTS
-    path("projects/", views.projects, name="projects"),
-    path("projects/<slug:slug>/", views.project_detail, name="project_detail"),
+
+    path("galleries/", views.galleries, name="galleries"),
+    path("galleries/<slug:slug>/", views.gallery_detail, name="gallery_detail"),
 
     path("video/", views.Video.as_view(), name="video"),
     path("about/", views.About.as_view(), name="about"),

@@ -2,73 +2,321 @@
 {% load static %}
 {% block content %}
 
+<style>
+    .gallery-list-page {
+        margin-top: 45px;
+        padding: 5px 0 70px;
+    }
+
+    .gallery-page-title {
+        font-size: 58px;
+        font-weight: bold;
+    }
+
+    .gallery-list-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 24px;
+        row-gap: 38px;
+    }
+
+    .gallery-card {
+        display: block;
+        text-decoration: none;
+        transition: transform 0.2s ease;
+        height: 100%;
+    }
+
+    .gallery-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .gallery-card-media {
+        position: relative;
+        width: 100%;
+        height: 260px;
+        background: #f5f5f5;
+        overflow: hidden;
+    }
+
+    .gallery-card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-video-badge {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 68px;
+        height: 68px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .gallery-video-badge:before {
+        content: "";
+        display: block;
+        margin-left: 4px;
+        width: 0;
+        height: 0;
+        border-top: 12px solid transparent;
+        border-bottom: 12px solid transparent;
+        border-left: 20px solid #fff;
+    }
+
+    .gallery-card-body {
+        padding: 12px 0 0;
+        min-height: auto;
+        display: block;
+    }
+
+ .gallery-card-body h3 {
+    margin: 0;
+    color: #5f5f5f;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.3px;
+    background: none;
+    padding: 0;
+}
+
+    .gallery-card-body p {
+        display: none;
+    }
+
+    .gallery-empty {
+        text-align: center;
+        padding: 30px;
+        border: 1px dashed #d7d7d7;
+        border-radius: 8px;
+        color: #5f5f5f;
+        background: #fff;
+    }
+
+    @media (max-width: 1199px) {
+        .gallery-card-media {
+            height: 230px;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .gallery-list-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .gallery-card-media {
+            height: 240px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .gallery-page-title {
+            font-size: 34px;
+            line-height: 1.15;
+        }
+
+        .gallery-video-badge {
+            width: 60px;
+            height: 60px;
+        }
+
+        .gallery-video-badge:before {
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 17px solid #fff;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .gallery-list-page {
+            margin-top: 48px;
+            padding: 8px 0 50px;
+        }
+
+        .gallery-list-grid {
+            grid-template-columns: 1fr;
+            column-gap: 24px;
+            row-gap: 34px;
+        }
+
+        .gallery-card-media {
+            height: 220px;
+        }
+
+        .gallery-card-body h3 {
+    margin: 0;
+    color: 5f5f5f;
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.4px;
+    background: none;
+    padding: 0;
+    text-transform: none;
+}
+    }
 
 
-<!--=================================
- our-clients-->
 
-<section class="our-clients-2 white-bg page-section-ptb" style="margin-top: 115px">
-  <div class="container">
-    <div class="row">
-       <div class="col-lg-12 col-md-12">
-        <div class="section-title-1 text-center">
-          <h1 class="text-blue">Gallery by Category</h1>
-          <div class="title-line"></div>
+    .gallery-intro {
+    padding: 54px 0 10px;
+    text-transform: uppercase;
+}
 
-        </div>
-      </div>
-    </div>
-    <div class="row">
+.gallery-intro-title {
+    margin: 0;
+    font-size: 38px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #5f5f5f;
+    text-align: center;
+    letter-spacing: 0.2px;
+}
+
+@media (max-width: 767px) {
+    .gallery-intro {
+        padding: 24px 0 6px;
+        text-transform: uppercase;
+    }
+
+    .gallery-intro-title {
+        font-size: 26px;
+        line-height: 1.35;
+        padding: 0 10px;
+    }
+}
+.gallery-breadcrumb-section {
+    margin-top: 145px;
+    padding: 0 0 10px;
+}
+
+.gallery-breadcrumb-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 34px
+}
+
+.gallery-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    line-height: 1;
+}
+
+.gallery-breadcrumb a {
+    color: #5f5f5f;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.gallery-breadcrumb a:hover {
+    color: #5f5f5f;
+}
+
+.gallery-breadcrumb span {
+    color: #5f5f5f;
+}
+
+.gallery-breadcrumb .is-current {
+    color: #9d9191;
+    font-weight: bold;
+}
+
+.gallery-intro {
+    padding: 10px 0 18px;
+}
+
+@media (max-width: 767px) {
+    .gallery-breadcrumb-section {
+         margin-top: 108px;
+        padding: 0 0 6px;
+    }
+
+    .gallery-breadcrumb-wrap {
+        justify-content: flex-start;
+    }
+
+    .gallery-breadcrumb {
+        padding: 10px 14px;
+        font-size: 13px;
+        gap: 8px;
+        flex-wrap: wrap;
+        line-height: 1.4;
+        border-radius: 14px;
+    }
+
+    .gallery-intro {
+        padding: 8px 0 12px;
+    }
+}
+</style>
 
 
-    <section>
-						<div>
-							<div class="container">
 
-
-
-                                <div>
-                                    <a href="#" class="btn btn-default" style="margin-bottom: 5px ">KITCHEN REMODELING</a>
-                                    <a href="#" class="btn btn-default" style="margin-bottom: 5px ">BATHROOM REMODELING</a>
-                                    <a href="#" class=" btn btn-default" style="margin-bottom: 5px ">GARAGE REMODELING </a>
-                                    <a href="#" class=" btn btn-default" style="margin-bottom: 5px ">CABINETS</a>
-                                    <a href="#" class="btn btn-default" style="margin-bottom: 5px ">WALL PANELS</a>
-                                    <a href="#" class=" btn btn-default" style="margin-bottom: 5px ">WALL REPAIR</a>
-
-                                </div>
-
-
-
-
-
-</div>
-
-
-
-</div>
-
-    </section>
-
-    </div>
-  </div>
-</section>
-
-<!--=================================
- our-clients-->
-
-
-
-<section class="custom-content-7 bg-14 page-section-ptb">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 col-md-12 text-center">
-
-
-                    <a class="button button-black" target="_blank"
-                       href="#"><span> Copyright Notice </span></a>
-                </div>
+<section class="gallery-breadcrumb-section">
+    <div class="container">
+        <div class="gallery-breadcrumb-wrap">
+            <div class="gallery-breadcrumb">
+                <a href="{% url 'home' %}">Home</a>
+                <span>›</span>
+                <span class="is-current">Gallery</span>
             </div>
         </div>
-    </section>
+    </div>
+</section>
+
+<section class="gallery-intro">
+    <div class="container">
+        <h2 class="gallery-intro-title">Get inspired by our custom garage projects.</h2>
+    </div>
+</section>
+
+<section class="gallery-list-page">
+    <div class="container">
+
+        {% if galleries %}
+            <div class="gallery-list-grid">
+                {% for gallery in galleries %}
+                    <a href="{% url 'gallery_detail' gallery.slug %}" class="gallery-card">
+                        <div class="gallery-card-media">
+                            {% if gallery.cover_image %}
+                                <img src="{{ gallery.cover_image.url }}" alt="{{ gallery.name }}" loading="lazy">
+                            {% else %}
+                                <img src="{% static 'images/image.png' %}" alt="{{ gallery.name }}" loading="lazy">
+                            {% endif %}
+
+                            {% if gallery.items.all.0.media_type == 'video' %}
+                                <span class="gallery-video-badge"></span>
+                            {% endif %}
+                        </div>
+
+                        <div class="gallery-card-body">
+                            <h3>{{ gallery.name }}</h3>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="gallery-empty">
+                No galleries added yet.
+            </div>
+        {% endif %}
+    </div>
+</section>
 
 {% endblock %}
