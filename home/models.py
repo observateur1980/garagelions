@@ -120,6 +120,56 @@ def gallery_thumb_upload_to(instance, filename):
     return f"galleries/{slug}/thumbnails/{filename}"
 
 
+def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, quality=98):
+    """
+    Overwrite the given ImageField file with a watermarked JPG.
+    Only use this for main uploaded gallery photos, not thumbnails.
+    """
+    if not file_field:
+        return False
+
+    try:
+        watermark_path = os.path.join(settings.BASE_DIR, "static", "images", "watermark.png")
+        if not os.path.exists(watermark_path):
+            return False
+
+        file_field.open("rb")
+        base = Image.open(file_field)
+        base = ImageOps.exif_transpose(base).convert("RGBA")
+        file_field.close()
+
+        wm = Image.open(watermark_path).convert("RGBA")
+
+        wm_width = max(180, int(base.width * scale))
+        ratio = wm_width / wm.width
+        wm_height = int(wm.height * ratio)
+        wm = wm.resize((wm_width, wm_height), Image.Resampling.LANCZOS)
+
+        alpha = wm.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
+        wm.putalpha(alpha)
+
+        x = max(margin, base.width - wm.width - margin)
+        y = max(margin, base.height - wm.height - margin)
+        base.alpha_composite(wm, (x, y))
+
+        base = base.convert("RGB")
+
+        buffer = BytesIO()
+        buffer_name = file_field.name
+        if not buffer_name.lower().endswith((".jpg", ".jpeg")):
+            buffer_name = buffer_name.rsplit(".", 1)[0] + ".jpg"
+
+        base.save(buffer, format="JPEG", quality=quality, optimize=True)
+        buffer.seek(0)
+
+        file_field.save(buffer_name, ContentFile(buffer.read()), save=False)
+        return True
+
+    except Exception:
+        return False
+
+
 class Gallery(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
@@ -155,6 +205,7 @@ class Gallery(models.Model):
                 i += 1
                 slug = f"{base}-{i}"
             self.slug = slug
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -241,7 +292,22 @@ class GalleryItem(models.Model):
         return "is-square" if self.is_square else "is-wide"
 
     def save(self, *args, **kwargs):
+        old_file_name = None
+
+        if self.pk:
+            old_values = GalleryItem.objects.filter(pk=self.pk).values("file").first()
+            if old_values:
+                old_file_name = old_values.get("file")
+
         super().save(*args, **kwargs)
+
+        file_changed = bool(self.file) and (old_file_name != self.file.name)
+
+        fields_to_update = []
+
+        if self.media_type == self.IMAGE and file_changed:
+            if apply_watermark_to_field(self.file):
+                fields_to_update.append("file")
 
         source = self.thumbnail if self.thumbnail else (self.file if self.media_type == self.IMAGE else None)
         if source:
@@ -254,6 +320,12 @@ class GalleryItem(models.Model):
                 GalleryItem.objects.filter(pk=self.pk).update(width=self.width, height=self.height)
             except Exception:
                 pass
+
+        if fields_to_update:
+            super().save(update_fields=fields_to_update)
+
+    def clean(self):
+        super().clean()
 
 
 class LeadModel(models.Model):
