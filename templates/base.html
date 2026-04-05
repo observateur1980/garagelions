@@ -1,25 +1,36 @@
 <!DOCTYPE html>
 {% load static %}
-<html>
-	<head>
+<html lang="en">
+<head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800&display=swap">
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="Garage Remodeling, Garage Makeover" />
-<meta name="description" content="Trusted professionals for garage flooring, garage storage, and garage organization. Get a garage remodel. Call us at 855 295 36 70." />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Home, Kitchen, Bathroom Remodeling | Parviz Construction &amp; Remodeling</title>
+
+<title>{% block seo_title %}Garage Lions | Garage Remodeling, Storage, Flooring & Makeovers{% endblock %}</title>
+<meta name="keywords" content="{% block seo_keywords %}garage remodeling, garage makeover, garage flooring, garage cabinets, garage storage, garage organization{% endblock %}">
+<meta name="description" content="{% block seo_description %}Garage Lions designs and builds premium garage spaces with flooring, cabinets, storage, organization, and full garage makeover solutions.{% endblock %}">
+<meta name="robots" content="{% block seo_robots %}index,follow{% endblock %}">
+<link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:title" content="{% block og_title %}{% block og_title_inner %}Garage Lions | Garage Remodeling, Storage, Flooring & Makeovers{% endblock %}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Garage Lions designs and builds premium garage spaces with flooring, cabinets, storage, organization, and full garage makeover solutions.{% endblock %}">
+<meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+<meta property="og:site_name" content="Garage Lions">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% block twitter_title %}Garage Lions | Garage Remodeling, Storage, Flooring & Makeovers{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}Garage Lions designs and builds premium garage spaces with flooring, cabinets, storage, organization, and full garage makeover solutions.{% endblock %}">
 
 <!-- Favicon -->
 <link rel="shortcut icon" href="{% static 'icons/favicon.png' %}" />
 
 <!-- bootstrap -->
 <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
-
-
 
 <!-- plugins -->
 <link href="{% static 'css/plugins-css.css' %}" rel="stylesheet" type="text/css" />
@@ -39,107 +50,181 @@
 <!-- custom style -->
 <link href="{% static 'css/custom.css' %}" rel="stylesheet" type="text/css" />
 
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/css/lightgallery-bundle.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/css/lightgallery-bundle.min.css">
 
 <style>
     html, body {
-    font-family: "Georgia", "Times New Roman", serif;
+        font-family: "Georgia", "Times New Roman", serif;
         color: #5f5f5f;
-}
+    }
 
     .text-blue {
-    color: #6c6a6a;
-}
+        color: #6c6a6a;
+    }
 
+    .section-title-2 .title-line:before {
+        background: #6c6a6a;
+    }
 
+    .section-title-1 .title-line:after {
+        background: #6c6a6a;
+    }
 
-.section-title-2 .title-line:before {
-    background: #6c6a6a;
+    a.button.button-white span {
+        color: #6c6a6a;
+        font-weight: bold;
+    }
 
-}
-
-.section-title-1 .title-line:after {
-    background: #6c6a6a;
-
-}
-
-a.button.button-white span {
-
-    color: #6c6a6a;
-    font-weight: bold;
-
-}
-a.button.button-white i {
-    background: rgba(0, 0, 0, 0.09);
-
-    color: #6c6a6a;
-    font-weight: bold;
-
-}
+    a.button.button-white i {
+        background: rgba(0, 0, 0, 0.09);
+        color: #6c6a6a;
+        font-weight: bold;
+    }
 
     .action-box {
-    background: #6c6a6a;
-
-}
+        background: #6c6a6a;
+    }
 
     .remember-checkbox label:before {
-    border: 2px solid #6c6a6a;
+        border: 2px solid #6c6a6a;
+    }
 
-}
-.register-form .field-widget i {
+    .register-form .field-widget i {
+        color: #6c6a6a;
+    }
 
-    color: #6c6a6a;
-}
+    h1, h2, h3, h4, h5, h6 {
+        color: #6c6a6a;
+    }
 
+    .section-title-1 .title-line:before {
+        background: #6c6a6a;
+    }
 
+    .gl-geo-banner {
+        display: none;
+        position: sticky;
+        top: 0;
+        z-index: 10020;
+        background: #0d182a;
+        color: #ffffff;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    }
 
-h1, h2, h3, h4, h5, h6 {
+    .gl-geo-banner.is-visible {
+        display: block;
+    }
 
-    color: #6c6a6a;
+    .gl-geo-banner-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px 0;
+    }
 
-}
+    .gl-geo-banner-text {
+        font-size: 15px;
+        line-height: 1.6;
+        color: rgba(255,255,255,.92);
+    }
 
-.section-title-1 .title-line:before {
-    background: #6c6a6a;
+    .gl-geo-banner-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
 
-}
+    .gl-geo-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,.18);
+        background: transparent;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        cursor: pointer;
+    }
+
+    .gl-geo-btn-primary {
+        background: #a25a2f;
+        border-color: #a25a2f;
+    }
+
+    .gl-geo-btn:hover {
+        color: #fff;
+        opacity: .94;
+    }
+
+    @media (max-width: 767px) {
+        .gl-geo-banner-inner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .gl-geo-banner-actions {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+    }
 </style>
+
+{% block extra_head %}{% endblock %}
 </head>
-	<body>
+<body>
 
-
-
-        <!-- WRAPPER : begin -->
-		<div class="page-wrapper">
-
-
-
-
-
-		{% include "navbar.html" %}
-
-
-        {%block content%}
-
-
-        {%endblock%}
-        <!-- Footer -->
-
-	{% include 'footer.html' %}
+<div id="glGeoBanner" class="gl-geo-banner" aria-live="polite">
+    <div class="container">
+        <div class="gl-geo-banner-inner">
+            <div class="gl-geo-banner-text" id="glGeoBannerText">
+                We found a Garage Lions location near you.
+            </div>
+            <div class="gl-geo-banner-actions">
+                <a href="#" id="glGeoBannerGo" class="gl-geo-btn gl-geo-btn-primary">View location</a>
+                <button type="button" id="glGeoBannerDismiss" class="gl-geo-btn">Dismiss</button>
+            </div>
+        </div>
     </div>
-    <!-- WRAPPER : END -->
+</div>
 
-		<!-- SCRIPTS : begin -->
+<!-- WRAPPER : begin -->
+<div class="page-wrapper">
 
+    {% include "navbar.html" %}
 
+    {% block content %}{% endblock %}
 
-<div id="back-to-top"><a class="top arrow" href="#top" style="background: dimgrey"><i class="fa fa-long-arrow-up"></i></a></div>
+    {% include 'footer.html' %}
+</div>
 
-<!--=================================
- jquery -->
+<div id="back-to-top">
+    <a class="top arrow" href="#top" style="background: dimgrey"><i class="fa fa-long-arrow-up"></i></a>
+</div>
 
-<!-- jquery  -->
+<script type="application/json" id="glCitiesData">
+[
+{% for city in all_cities %}
+  {
+    "name": "{{ city.name|escapejs }}",
+    "state": "{{ city.state|escapejs }}",
+    "slug": "{{ city.slug|escapejs }}",
+    "url": "{% url 'location_detail' city.slug %}",
+    "set_url": "{% url 'set_location' city.slug %}",
+    "search_name": "{{ city.name|lower|escapejs }}",
+    "search_state": "{{ city.state|lower|escapejs }}"
+  }{% if not forloop.last %},{% endif %}
+{% endfor %}
+]
+</script>
+
+<!-- jquery -->
 <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
 
 <!-- bootstrap -->
@@ -173,6 +258,115 @@ h1, h2, h3, h4, h5, h6 {
 <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/plugins/zoom/lg-zoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/plugins/thumbnail/lg-thumbnail.min.js"></script>
 
-		<!-- SCRIPTS : end -->
-    </body>
+<script>
+(function () {
+    const banner = document.getElementById("glGeoBanner");
+    const bannerText = document.getElementById("glGeoBannerText");
+    const goBtn = document.getElementById("glGeoBannerGo");
+    const dismissBtn = document.getElementById("glGeoBannerDismiss");
+    const cityDataEl = document.getElementById("glCitiesData");
+
+    if (!banner || !bannerText || !goBtn || !dismissBtn || !cityDataEl) return;
+
+    let cities = [];
+    try {
+        cities = JSON.parse(cityDataEl.textContent || "[]");
+    } catch (e) {
+        cities = [];
+    }
+
+    if (!cities.length) return;
+
+    const dismissedKey = "gl_geo_banner_dismissed_v1";
+    const currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
+
+    function showBanner(city) {
+        if (!city) return;
+        bannerText.textContent = `Looks like you're near ${city.name}, ${city.state}. Would you like to view that Garage Lions location page?`;
+        goBtn.href = city.set_url + "?next=" + encodeURIComponent(city.url);
+        banner.classList.add("is-visible");
+    }
+
+    function findCityByPlace(cityName, stateName) {
+        const c = (cityName || "").trim().toLowerCase();
+        const s = (stateName || "").trim().toLowerCase();
+
+        return cities.find(function (item) {
+            const cityMatches = item.search_name === c;
+            const stateMatches = !s || item.search_state === s;
+            return cityMatches && stateMatches;
+        });
+    }
+
+    function shouldSkip(city) {
+        if (!city) return true;
+
+        const dismissed = localStorage.getItem(dismissedKey);
+        if (dismissed === city.slug) return true;
+
+        if (currentPath === city.url.replace(/\/+$/, "")) return true;
+
+        return false;
+    }
+
+    dismissBtn.addEventListener("click", function () {
+        const href = goBtn.getAttribute("href") || "";
+        const match = href.match(/set-location\/([^/?#]+)/);
+        if (match && match[1]) {
+            localStorage.setItem(dismissedKey, match[1]);
+        }
+        banner.classList.remove("is-visible");
+    });
+
+    if (!("geolocation" in navigator)) return;
+
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=10&addressdetails=1`;
+
+            fetch(url, {
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+            .then(function (response) {
+                if (!response.ok) throw new Error("Reverse geocoding failed");
+                return response.json();
+            })
+            .then(function (data) {
+                const address = data.address || {};
+                const cityName =
+                    address.city ||
+                    address.town ||
+                    address.village ||
+                    address.county ||
+                    "";
+                const stateName = address.state || "";
+
+                const matchedCity = findCityByPlace(cityName, stateName);
+                if (shouldSkip(matchedCity)) return;
+
+                showBanner(matchedCity);
+            })
+            .catch(function () {
+                // silently fail
+            });
+        },
+        function () {
+            // user denied or failed
+        },
+        {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 3600000
+        }
+    );
+})();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
 </html>

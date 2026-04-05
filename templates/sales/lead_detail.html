@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block seo_title %}Lead Detail | Garage Lions{% endblock %}
+
+{% block content %}
+<section style="margin-top: 120px; padding: 50px 0;">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;"><h1 style="margin:0;">{{ lead.name }}</h1><div style="display:flex; gap:12px; flex-wrap:wrap;"><a href="{% url 'sales_lead_list' %}" class="button button-white"><span>Back to Leads</span><i class="fa fa-arrow-left"></i></a><a href="{% url 'account:password_change' %}" class="button button-white"><span>Change Password</span><i class="fa fa-lock"></i></a></div></div>
+
+    <div class="row" style="margin-top: 24px;">
+      <div class="col-md-6">
+        <div class="gl-info-card">
+          <h3>Lead Information</h3>
+          <p><strong>Email:</strong> {{ lead.email }}</p>
+          <p><strong>Phone:</strong> {{ lead.phone }}</p>
+          <p><strong>ZIP Code:</strong> {{ lead.zip_code }}</p>
+          <p><strong>City:</strong> {% if lead.city %}{{ lead.city.name }}, {{ lead.city.state }}{% endif %}</p>
+          <p><strong>Services:</strong> {{ lead.get_consultation_types_display }}</p>
+          <p><strong>Message:</strong><br>{{ lead.message|linebreaksbr }}</p>
+        </div>
+
+        <div class="gl-info-card" style="margin-top:20px;">
+          <h3>Attachments</h3>
+          {% for item in lead.attachments.all %}
+            <p><a href="{{ item.file.url }}" target="_blank">{{ item.file.name }}</a></p>
+          {% empty %}
+            <p>No attachments.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="gl-info-card">
+          <h3>Update Lead</h3>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label>Status</label>
+              {{ form.status }}
+            </div>
+            <div class="form-group">
+              <label>Internal Notes</label>
+              {{ form.internal_notes }}
+            </div>
+            <button type="submit" class="button">
+              <span>Save Changes</span>
+              <i class="fa fa-check"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

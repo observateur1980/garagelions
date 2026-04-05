@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block seo_title %}Sales Dashboard | Garage Lions{% endblock %}
+
+{% block content %}
+<section style="margin-top: 120px; padding: 50px 0;">
+  <div class="container">
+    <h1>Sales Dashboard</h1>
+    <p>Welcome, {{ request.user.email|default:request.user.username }}</p>
+
+    <div style="margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="{% url 'account:password_change' %}" class="button button-white"><span>Change Password</span><i class="fa fa-lock"></i></a>
+      <a href="{% url 'account:logout' %}" class="button button-white"><span>Logout</span><i class="fa fa-sign-out"></i></a>
+    </div>
+
+    <div class="row" style="margin-top: 30px;">
+      <div class="col-md-3"><div class="gl-info-card"><h3>Total</h3><p>{{ counts.total }}</p></div></div>
+      <div class="col-md-3"><div class="gl-info-card"><h3>New</h3><p>{{ counts.new_count }}</p></div></div>
+      <div class="col-md-3"><div class="gl-info-card"><h3>Contacted</h3><p>{{ counts.contacted_count }}</p></div></div>
+      <div class="col-md-3"><div class="gl-info-card"><h3>Appointments</h3><p>{{ counts.appointment_count }}</p></div></div>
+    </div>
+
+    <div style="margin-top: 30px;">
+      <a href="{% url 'sales_lead_list' %}" class="button"><span>View All Leads</span><i class="fa fa-arrow-right"></i></a>
+    </div>
+
+    <div style="margin-top: 40px;">
+      <h2>Recent Leads</h2>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>ZIP</th>
+            <th>City</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in recent_leads %}
+          <tr>
+            <td>{{ lead.created_at }}</td>
+            <td>{{ lead.name }}</td>
+            <td>{{ lead.zip_code }}</td>
+            <td>{% if lead.city %}{{ lead.city.name }}, {{ lead.city.state }}{% endif %}</td>
+            <td>{{ lead.get_status_display }}</td>
+            <td><a href="{% url 'sales_lead_detail' lead.pk %}">Open</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6">No leads found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

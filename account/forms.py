@@ -1,46 +1,56 @@
 from django import forms
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.contrib.auth import get_user_model, authenticate
-from .models import MyUser
-from django.core.validators import RegexValidator
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 User = get_user_model()
-
-from .models import USERNAME_REGEX
-from django.db.models import Q
 
 
 class UserLoginForm(forms.Form):
     query = forms.CharField(
-        widget=forms.TextInput(attrs={'id': 'contact-email', 'name': 'contact-email',
-                                      'placeholder': 'Enter email', 'class': 'form-control', 'type': 'email'}))
+        label="Email or Username",
+        widget=forms.TextInput(
+            attrs={
+                "id": "login-query",
+                "placeholder": "Enter your email or username",
+                "class": "form-control",
+                "autocomplete": "username",
+            }
+        ),
+    )
+    password = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(
+            attrs={
+                "id": "password",
+                "placeholder": "Enter your password",
+                "class": "form-control",
+                "autocomplete": "current-password",
+            }
+        ),
+    )
 
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'id': 'password', 'name': 'password',
-                                                                 'placeholder': 'Enter password',
-                                                                 'class': 'form-control', 'type': 'password'}))
+    def clean(self):
+        cleaned_data = super().clean()
+        query = (cleaned_data.get("query") or "").strip()
+        password = cleaned_data.get("password")
 
-    def clean(self, *args, **kwargs):
-        query = self.cleaned_data.get('query')
-        password = self.cleaned_data.get('password')
+        if not query or not password:
+            raise forms.ValidationError("Please enter your email or username and password.")
 
-        user_qs_final = User.objects.filter(
-
-            Q(username__iexact=query) |
-            Q(email__iexact=query)
-
+        user_qs = User.objects.filter(
+            Q(username__iexact=query) | Q(email__iexact=query)
         ).distinct()
 
-        if not user_qs_final.exists() and user_qs_final.count() != 1:
-            raise forms.ValidationError('Invalid credantials - user not exsist')
+        if user_qs.count() != 1:
+            raise forms.ValidationError("Invalid login credentials.")
 
-        user_obj = user_qs_final.first()
+        user_obj = user_qs.first()
+
         if not user_obj.check_password(password):
-            raise forms.ValidationError('Invalid credantials - password invalid')
+            raise forms.ValidationError("Invalid login credentials.")
 
         if not user_obj.is_active:
-            raise forms.ValidationError('Inactive user')
+            raise forms.ValidationError("This account is inactive.")
 
-        self.cleaned_data['user_obj'] = user_obj
-        return super(UserLoginForm, self).clean(*args, **kwargs)
-
-
+        cleaned_data["user_obj"] = user_obj
+        return cleaned_data

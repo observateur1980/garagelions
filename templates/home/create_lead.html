@@ -1,8 +1,117 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-
 <style>
+  .section-title-1 h4 {
+    color: #6b6b6b;
+  }
+
+  .section-field {
+    margin-bottom: 28px;
+  }
+
+  .section-field label {
+    display: block;
+    margin-bottom: 10px;
+    color: #626262;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+.field-widget {
+  position: relative;
+}
+
+.field-widget i {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #777777;
+  font-size: 18px;
+  line-height: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.field-widget input,
+.field-widget select,
+.field-widget textarea {
+  width: 100%;
+  display: block;
+  background: #f2f4fb !important;
+  border: 1px solid #eceff8 !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  color: #333333 !important;
+  -webkit-text-fill-color: #333333 !important;
+  font-size: 16px;
+}
+
+.field-widget input,
+.field-widget select {
+  height: 45px;
+  padding: 12px 16px 12px 52px;
+}
+
+.field-widget textarea {
+  min-height: 136px;
+  padding: 14px 16px;
+  resize: vertical;
+}
+
+.field-widget input:focus,
+.field-widget select:focus,
+.field-widget textarea:focus {
+  outline: none;
+  background: #f2f4fb !important;
+  border: 1px solid #d9d9d9 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+}
+
+.field-widget input:-webkit-autofill,
+.field-widget input:-webkit-autofill:hover,
+.field-widget input:-webkit-autofill:focus,
+.field-widget input:-webkit-autofill:active,
+.field-widget textarea:-webkit-autofill,
+.field-widget textarea:-webkit-autofill:hover,
+.field-widget textarea:-webkit-autofill:focus,
+.field-widget select:-webkit-autofill,
+.field-widget select:-webkit-autofill:hover,
+.field-widget select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #333333 !important;
+  caret-color: #333333 !important;
+  border: 1px solid #d9d9d9 !important;
+  -webkit-box-shadow: 0 0 0 1000px #f2f4fb inset !important;
+  box-shadow: 0 0 0 1000px #f2f4fb inset !important;
+  background: #f2f4fb !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+  .remember-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .remember-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+
+  .remember-checkbox label {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 400;
+    color: #5f5f5f;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
   .consent-box {
     margin-top: 25px;
   }
@@ -46,6 +155,31 @@
   }
 
   @media (max-width: 767px) {
+    .section-field {
+      margin-bottom: 22px;
+    }
+
+    .section-field label {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .field-widget i {
+      left: 16px;
+      font-size: 17px;
+    }
+
+    .field-widget input,
+    .field-widget select {
+      height: 54px;
+      padding: 10px 14px 10px 48px;
+    }
+
+    .field-widget textarea {
+      min-height: 128px;
+      padding: 12px 14px;
+    }
+
     .consent-checkbox {
       padding: 14px;
       gap: 10px;
@@ -56,10 +190,12 @@
       line-height: 1.5;
     }
   }
+
+  .row .section-field {
+  margin-bottom: 28px;
+}
 </style>
-
-
-    <section class="white-bg page-section-ptb" style="margin-top: 90px">
+<section class="white-bg page-section-ptb" style="margin-top: 90px">
   <div class="container">
     <div class="row">
        <div class="col-lg-12 col-md-12">
@@ -74,107 +210,154 @@
     <div class="row">
         <form id="lead-form" method="post" enctype="multipart/form-data">
             {% csrf_token %}
+
+            {% if selected_sales_point %}
+              <input type="hidden" name="sales_point_slug" value="{{ selected_sales_point.slug }}">
+            {% elif selected_city %}
+              <input type="hidden" name="sales_point_slug" value="{{ selected_city.slug }}">
+            {% endif %}
+
       <div class="col-md-8 col-md-offset-2">
         <div id="register-form" class="register-form">
 
-           <div class="section-field">
-             <label for="name">Your Name*</label>
-              <div class="field-widget">
-                <i class="fa fa-pencil"></i>
-                  {{ lead_form.name }}
-              </div>
-            </div>
+          <div class="row">
+  <div class="col-md-6">
+    <div class="section-field">
+      <label for="{{ lead_form.first_name.id_for_label }}">First Name*</label>
+      <div class="field-widget">
+        <i class="fa fa-pencil"></i>
+        {{ lead_form.first_name }}
+      </div>
+      {{ lead_form.first_name.errors }}
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="section-field">
+      <label for="{{ lead_form.last_name.id_for_label }}">Last Name*</label>
+      <div class="field-widget">
+        <i class="fa fa-pencil"></i>
+        {{ lead_form.last_name }}
+      </div>
+      {{ lead_form.last_name.errors }}
+    </div>
+  </div>
+</div>
+
             <div class="section-field">
              <label for="email">Email *</label>
               <div class="field-widget">
                <i class="fa fa-envelope"></i>
                   {{ lead_form.email }}
               </div>
+              {{ lead_form.email.errors }}
             </div>
+
             <div class="section-field">
              <label for="phone">Mobile phone *</label>
               <div class="field-widget">
                <i class="fa fa-mobile"></i>
                   {{ lead_form.phone }}
               </div>
+              {{ lead_form.phone.errors }}
             </div>
 
-
-
-
-                    <div class="section-field">
-                      <label>Which services are you interested in?</label>
-                      {% for checkbox in lead_form.consultation_types %}
-                        <div class="remember-checkbox">
-                          {{ checkbox.tag }}
-                          <label class="remember" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
-                        </div>
-                      {% endfor %}
-                    </div>
-
-               </div>
-
-             <div class="section-field" style="margin-top: 25px">
-                 <label for="Message">Optional</label>
-                  <div class="field-widget">
-                   {{ lead_form.message }}
-                   </div>
-                  </div>
-
-
-            <div class="section-field" style="margin-top: 25px">
-              <label for="id_attachments">Upload photos / videos (optional)</label>
+            <div class="section-field">
+             <label for="{{ lead_form.zip_code.id_for_label }}">ZIP Code *</label>
               <div class="field-widget">
-                <i class="fa fa-paperclip"></i>
-                {{ lead_form.attachments }}
-                {% if lead_form.attachments.help_text %}
-                  <small style="display:block; margin-top:8px; opacity:.75;">
-                    {{ lead_form.attachments.help_text }}
-                  </small>
-                {% endif %}
-                {% if lead_form.attachments.errors %}
-                  <div style="margin-top:8px; color:#c0392b;">
-                    {{ lead_form.attachments.errors }}
-                  </div>
-                {% endif %}
+               <i class="fa fa-map-marker"></i>
+                  {{ lead_form.zip_code }}
               </div>
+              {{ lead_form.zip_code.errors }}
             </div>
-                <div id="upload-progress-wrap" style="display:none; margin-top:18px;">
-  <div style="font-size:14px; margin-bottom:6px;">
-    Uploading… <span id="upload-progress-percent">0%</span>
-  </div>
 
-  <div style="width:100%; height:10px; background:#eee; border-radius:8px; overflow:hidden;">
-    <div id="upload-progress-bar" style="height:10px; width:0%; background:#0d182a;"></div>
-  </div>
+            {% if lead_form.city and not selected_sales_point and not selected_city %}
+            <div class="section-field">
+             <label for="{{ lead_form.city.id_for_label }}">Preferred Location</label>
+              <div class="field-widget">
+               <i class="fa fa-building"></i>
+                  {{ lead_form.city }}
+              </div>
+              {{ lead_form.city.errors }}
+            </div>
+            {% elif lead_form.city %}
+              {{ lead_form.city }}
+            {% endif %}
 
-  <div id="upload-progress-detail" style="font-size:12px; margin-top:6px; opacity:.75;"></div>
-</div>
+            <div class="section-field">
+              <label>Which services are you interested in?</label>
+              {% for checkbox in lead_form.consultation_types %}
+                <div class="remember-checkbox">
+                  {{ checkbox.tag }}
+                  <label class="remember" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                </div>
+              {% endfor %}
+              {{ lead_form.consultation_types.errors }}
+            </div>
 
-<div class="section-field consent-box">
-  <div class="field-widget">
-    <div class="consent-checkbox">
-      <input type="checkbox" id="sms_consent" name="option1">
-      <label for="sms_consent">
-        By checking this box, I consent to receive SMS messages from Parviz Construction related to customer care at the phone number provided above. Message frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to opt out. Please review our
-        <a href="https://garagelions.com/privacy/" target="_blank">Privacy Policy</a>
-        and
-        <a href="https://garagelions.com/terms/" target="_blank">Terms &amp; Conditions</a>.
-      </label>
-    </div>
-  </div>
-</div>
+        </div>
 
-              <button type="submit" class="button mt-20" >
-                <span>REQUEST A CONSULTATION</span>
-                <i class="fa fa-check"></i>
-             </button>
-         </div>
+        <div class="section-field" style="margin-top: 25px">
+          <label for="Message">Optional</label>
+          <div class="field-widget">
+            {{ lead_form.message }}
+          </div>
+          {{ lead_form.message.errors }}
+        </div>
+
+        <div class="section-field" style="margin-top: 25px">
+          <label for="id_attachments">Upload photos / videos (optional)</label>
+          <div class="field-widget">
+
+            {{ lead_form.attachments }}
+            {% if lead_form.attachments.help_text %}
+              <small style="display:block; margin-top:8px; opacity:.75;">
+                {{ lead_form.attachments.help_text }}
+              </small>
+            {% endif %}
+            {% if lead_form.attachments.errors %}
+              <div style="margin-top:8px; color:#c0392b;">
+                {{ lead_form.attachments.errors }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div id="upload-progress-wrap" style="display:none; margin-top:18px;">
+          <div style="font-size:14px; margin-bottom:6px;">
+            Uploading… <span id="upload-progress-percent">0%</span>
+          </div>
+
+          <div style="width:100%; height:10px; background:#eee; border-radius:8px; overflow:hidden;">
+            <div id="upload-progress-bar" style="height:10px; width:0%; background:#0d182a;"></div>
+          </div>
+
+          <div id="upload-progress-detail" style="font-size:12px; margin-top:6px; opacity:.75;"></div>
+        </div>
+
+        <div class="section-field consent-box">
+          <div class="field-widget">
+            <div class="consent-checkbox">
+              <input type="checkbox" id="sms_consent" name="option1">
+              <label for="sms_consent">
+                By checking this box, I consent to receive SMS messages from Parviz Construction related to customer care at the phone number provided above. Message frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to opt out. Please review our
+                <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a>
+                and
+                <a href="{% url 'terms' %}" target="_blank">Terms &amp; Conditions</a>.
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="button mt-20" >
+          <span>REQUEST A CONSULTATION</span>
+          <i class="fa fa-check"></i>
+        </button>
+      </div>
         </form>
       </div>
     </div>
 </section>
-
 
 <script>
 (function () {
@@ -188,16 +371,13 @@
   const submitBtn = form.querySelector('button[type="submit"]');
 
   form.addEventListener("submit", function (e) {
-    // Only show progress if user selected files
     const fileInput = form.querySelector('input[type="file"][name="attachments"]');
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
 
-    // If no files, let normal submit happen (no need AJAX)
     if (!hasFiles) return;
 
     e.preventDefault();
 
-    // UI state
     wrap.style.display = "block";
     bar.style.width = "0%";
     percentEl.textContent = "0%";
@@ -222,7 +402,6 @@
 
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
-        // If server returns JSON with redirect_url, follow it
         try {
           const data = JSON.parse(xhr.responseText || "{}");
           if (data.redirect_url) {
@@ -230,12 +409,9 @@
             return;
           }
         } catch (err) {
-          // Not JSON; fall through
         }
-        // Otherwise, reload to show server-side messages/redirect
         window.location.reload();
       } else {
-        // Show server error response (often HTML)
         detailEl.textContent = "Upload failed. Please try again.";
         if (submitBtn) submitBtn.disabled = false;
       }

@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block seo_title %}
+{% if sales_point.page_title %}
+{{ sales_point.page_title }}
+{% else %}
+{{ sales_point.name }} | Garage Lions
+{% endif %}
+{% endblock %}
+
+{% block seo_description %}
+{% if sales_point.meta_description %}
+{{ sales_point.meta_description }}
+{% else %}
+Contact {{ sales_point.name }} for garage remodeling, flooring, cabinets, storage, and garage makeover services.
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+  .gl-location-page {
+    margin-top: 90px;
+
+  }
+
+  .gl-location-hero {
+    padding: 64px 0 42px;
+
+    border-bottom: 1px solid #eee4da;
+  }
+
+  .gl-location-eyebrow {
+    display: inline-block;
+    margin-bottom: 14px;
+    color: #a25a2f;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .gl-location-hero h1 {
+    margin: 0 0 14px;
+    color: #0d182a;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.12;
+  }
+
+  .gl-location-hero p {
+    max-width: 760px;
+    margin: 0;
+    color: grey;
+    font-size: 18px;
+    line-height: 1.75;
+  }
+
+  .gl-location-main {
+    padding: 42px 0 84px;
+  }
+
+  .gl-location-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .gl-location-card,
+  .gl-side-card,
+  .gl-cta-card {
+    background: #fff;
+    border: 1px solid #e5ddd5;
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(13, 24, 42, 0.05);
+    padding: 30px;
+  }
+
+  .gl-location-card h2,
+  .gl-side-card h2,
+  .gl-cta-card h2 {
+    margin: 0 0 18px;
+    color: #0d182a;
+    font-size: 28px;
+    font-weight: 800;
+  }
+
+  .gl-location-card h3,
+  .gl-side-card h3 {
+    margin: 0 0 12px;
+    color: #0d182a;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .gl-location-card p,
+  .gl-location-card li,
+  .gl-side-card p,
+  .gl-side-card li,
+  .gl-cta-card p {
+    color: #5b6675;
+    line-height: 1.75;
+  }
+
+  .gl-location-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #efe6de;
+  }
+
+  .gl-location-list,
+  .gl-hours-list,
+  .gl-service-area-list,
+  .gl-zip-list {
+    margin: 0;
+    padding: 0;
+  }
+
+  .gl-location-list {
+    list-style: none;
+  }
+
+  .gl-location-list li {
+    margin-bottom: 10px;
+  }
+
+  .gl-hours-list {
+    list-style: none;
+  }
+
+  .gl-hours-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 7px 0;
+    border-bottom: 1px solid #f3ece6;
+  }
+
+  .gl-hours-list li:last-child {
+    border-bottom: 0;
+  }
+
+  .gl-service-area-list,
+  .gl-zip-list {
+    list-style: disc;
+    padding-left: 20px;
+  }
+
+  .gl-side-banner {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+    border: 1px solid #e7d7c8;
+    border-radius: 12px;
+    background: #fbf7f2;
+  }
+
+  .gl-side-btn,
+  .gl-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 12px;
+    background: #a25a2f;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+
+  .gl-side-btn:hover,
+  .gl-cta-btn:hover {
+    color: #fff;
+    opacity: .95;
+  }
+
+  .gl-location-cta {
+    margin-top: 28px;
+  }
+
+  .gl-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .gl-gallery-card {
+    display: block;
+    border: 1px solid #e5ddd5;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .gl-gallery-card img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    display: block;
+  }
+
+  .gl-gallery-card-body {
+    padding: 14px 16px;
+  }
+
+  .gl-gallery-card-body h4 {
+    margin: 0 0 6px;
+    color: #0d182a;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .gl-gallery-card-body p {
+    margin: 0;
+    color: grey;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  @media (max-width: 991px) {
+    .gl-location-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .gl-location-hero h1 {
+      font-size: 34px;
+    }
+
+    .gl-gallery-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .gl-location-hero {
+      padding: 46px 0 30px;
+    }
+
+    .gl-location-hero h1 {
+      font-size: 28px;
+    }
+
+    .gl-location-hero p {
+      font-size: 16px;
+    }
+
+    .gl-hours-list li {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+</style>
+
+<section class="gl-location-page">
+  <div class="gl-location-hero">
+    <div class="container">
+      <span class="gl-location-eyebrow">Garage Lions location</span>
+      <h1>
+        {% if sales_point.hero_title %}
+          {{ sales_point.hero_title }}
+        {% else %}
+          GARAGE LIONS OF {{ sales_point.name|upper }}
+        {% endif %}
+      </h1>
+      <p>
+        {% if sales_point.hero_subtitle %}
+          {{ sales_point.hero_subtitle }}
+        {% else %}
+          Contact {{ sales_point.name }} for garage flooring, cabinets, storage, organization, and complete garage makeover solutions.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="gl-location-main">
+    <div class="container">
+      <div class="gl-location-grid">
+        <div class="gl-location-card">
+          <h2>{{ sales_point.name }}</h2>
+
+          <div class="gl-location-section" style="margin-top:0; padding-top:0; border-top:0;">
+            <h3>Contact Information</h3>
+            <ul class="gl-location-list">
+              {% if sales_point.full_address %}
+                <li><strong>Address:</strong> {{ sales_point.full_address }}</li>
+              {% endif %}
+              {% if sales_point.local_phone %}
+                <li><strong>Phone:</strong> <a href="tel:{{ sales_point.local_phone }}">{{ sales_point.local_phone }}</a></li>
+              {% endif %}
+              {% if sales_point.local_email %}
+                <li><strong>Email:</strong> <a href="mailto:{{ sales_point.local_email }}">{{ sales_point.local_email }}</a></li>
+              {% endif %}
+            </ul>
+          </div>
+
+          {% if sales_point.working_hours.all %}
+          <div class="gl-location-section">
+            <h3>Hours</h3>
+            <ul class="gl-hours-list">
+              {% for item in sales_point.working_hours.all %}
+                <li>
+                  <span>{{ item.get_day_display }}</span>
+                  <span>
+                    {% if item.is_open %}
+                      {% if item.open_time and item.close_time %}
+                        {{ item.open_time|time:"g:i a" }} - {{ item.close_time|time:"g:i a" }}
+                      {% elif item.note %}
+                        {{ item.note }}
+                      {% else %}
+                        Open
+                      {% endif %}
+                    {% else %}
+                      {% if item.note %}
+                        {{ item.note }}
+                      {% else %}
+                        Closed
+                      {% endif %}
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if cities %}
+          <div class="gl-location-section">
+            <h3>Service Areas</h3>
+            <ul class="gl-service-area-list">
+              {% for item in cities %}
+                {% if item.is_active %}
+                  <li>{{ item.name }}, {{ item.state }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if cities %}
+          <div class="gl-location-section">
+            <h3>ZIP Codes Served</h3>
+            <ul class="gl-zip-list">
+              {% for item in cities %}
+                {% for zip_item in item.zip_codes.all %}
+                  <li>{{ zip_item.code }} — {{ item.name }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <div class="gl-side-card">
+            <h2>Send Us Your Questions or Comments</h2>
+            <p>Please use our contact form if you have any questions or comments about our products and services.</p>
+
+            <div class="gl-side-banner">
+              <strong>Contacting:</strong> {{ sales_point.name }}<br>
+              {% if sales_point.local_phone %}<strong>Phone:</strong> {{ sales_point.local_phone }}<br>{% endif %}
+              {% if sales_point.local_email %}<strong>Email:</strong> {{ sales_point.local_email }}{% endif %}
+            </div>
+
+            <a class="gl-side-btn" href="{% url 'create_lead' %}?sales_point={{ sales_point.slug }}">
+              Request a Free Consultation
+            </a>
+          </div>
+
+          <div class="gl-cta-card gl-location-cta">
+            <h2>Complimentary Design Consultation</h2>
+            <p>Let’s talk about your garage remodel.</p>
+            <a class="gl-cta-btn" href="{% url 'create_lead' %}?sales_point={{ sales_point.slug }}">
+              Request a Free Consultation
+            </a>
+          </div>
+
+          {% if galleries %}
+          <div class="gl-side-card gl-location-cta">
+            <h2>Featured Projects</h2>
+            <div class="gl-gallery-grid">
+              {% for gallery in galleries %}
+                <a class="gl-gallery-card" href="{% url 'gallery_detail' gallery.slug %}">
+                  {% if gallery.cover_image %}
+                    <img src="{{ gallery.cover_image.url }}" alt="{{ gallery.name }}">
+                  {% endif %}
+                  <div class="gl-gallery-card-body">
+                    <h4>{{ gallery.name }}</h4>
+                    <p>
+                      {% if gallery.intro_text %}
+                        {{ gallery.intro_text|truncatechars:90 }}
+                      {% else %}
+                        View this Garage Lions project gallery.
+                      {% endif %}
+                    </p>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

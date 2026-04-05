@@ -158,3 +158,11 @@ cython_debug/
 # JetBrains (PyCharm)
 # Uncomment if you want to ignore everything:
 #.idea/.DS_Store
+.DS_Store
+__MACOSX/
+
+.venv/
+
+
+*.zip
+

@@ -25,16 +25,36 @@
 .icon-bar {
     width: 100%;
     background-color: #626262;
-    overflow: auto;
+    overflow: hidden;
 }
 
-.icon-bar a {
-    float: right;
-    padding: 9px 0;
-    transition: all 0.3s ease;
+.gl-top-location-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+    padding: 0 22px;
+}
+
+.gl-top-location-bar a {
+    display: inline-flex;
+    align-items: center;
     color: #ffffff;
-    font-size: 16px;
-    margin-right: 30px;
+    font-size: 14px;
+    min-height: 44px;
+    padding: 0 18px;
+    text-decoration: none;
+    border-left: 1px solid rgba(255,255,255,0.18);
+    transition: all 0.3s ease;
+}
+
+.gl-top-location-bar a:first-child {
+    border-left: 0;
+}
+
+.gl-top-location-bar a:hover {
+    background: rgba(255,255,255,0.08);
+    color: #ffffff;
 }
 
 .gl-nav-shell {
@@ -131,11 +151,36 @@
 }
 
 .mega-menu .drop-down-multilevel {
-    min-width: 240px;
+    min-width: 260px;
     z-index: 9999 !important;
     top: 100% !important;
     left: 0 !important;
     right: auto !important;
+    background: #ffffff;
+}
+
+.mega-menu .drop-down-multilevel li a {
+    padding: 12px 18px !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    text-transform: none !important;
+    color: #333 !important;
+}
+
+.selected-location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 12px;
+    padding: 10px 14px;
+    background: #f7f2ed;
+    border: 1px solid #d7c2b3;
+    border-radius: 999px;
+    color: #7d4b2a;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
 }
 
 .mobile-logo,
@@ -214,6 +259,12 @@
     font-weight: 600;
     text-transform: uppercase;
     border-bottom: 1px solid #eeeeee;
+}
+
+.mobile-location-list a {
+    text-transform: none;
+    font-weight: 500;
+    padding-left: 34px;
 }
 
 @media screen and (max-width: 1200px) {
@@ -316,10 +367,25 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+{% if selected_city %}
 <div class="icon-bar hidden-xs">
-    <a href="tel:8554645119"><i class="fa fa-phone">&nbsp; +1 855 464 5119</i></a>
-    <a href="{% url 'create_lead' %}"><i class="fa fa-envelope">&nbsp; Contact us</i></a>
+    <div class="gl-top-location-bar">
+        <a href="{% url 'location_detail' selected_city.slug %}">
+            <i class="fa fa-map-marker"></i>&nbsp; {{ selected_city.name }}
+        </a>
+
+        {% if selected_city.local_phone %}
+        <a href="tel:{{ selected_city.local_phone }}">
+            <i class="fa fa-phone"></i>&nbsp; {{ selected_city.local_phone }}
+        </a>
+        {% endif %}
+
+        <a href="{% url 'location_detail' selected_city.slug %}">
+            <i class="fa fa-envelope"></i>&nbsp; Contact Us
+        </a>
+    </div>
 </div>
+{% endif %}
 
 <header id="header" class="header-9">
     <div class="menu">
@@ -336,7 +402,9 @@
                             </div>
 
                             <div class="mobile-nav-actions">
-                                <a class="mobile-call-link" href="tel:+18554645119" aria-label="Call Garage Lions">
+                                <a class="mobile-call-link"
+                                   href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}+18554645119{% endif %}"
+                                   aria-label="Call Garage Lions">
                                     <span>Call</span>
                                     <i class="fa fa-phone"></i>
                                 </a>
@@ -352,8 +420,20 @@
                                     <ul class="menu-links">
                                         <li><a href="{% url 'service' %}">Services</a></li>
                                         <li><a href="{% url 'product' %}">Products</a></li>
-                                        <li><a href="{% url 'video' %}">Videos</a></li>
-
+                                        <li>
+                                            <a href="{% url 'locations_list' %}">Locations</a>
+                                            {% if all_cities %}
+                                                <ul class="drop-down-multilevel">
+                                                    {% for sales_point in all_cities %}
+                                                        <li>
+                                                            <a href="{% url 'location_detail' sales_point.slug %}">
+                                                                {{ sales_point.name }}
+                                                            </a>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </li>
                                     </ul>
                                 </div>
 
@@ -365,11 +445,17 @@
 
                                 <div class="gl-nav-right">
                                     <ul class="menu-links">
-
                                         <li><a href="{% url 'galleries' %}">Gallery</a></li>
                                         <li><a href="{% url 'about' %}">About</a></li>
-                                        <li><a href="{% url 'create_lead' %}" class="req-bar-on-menu btn btn-default hidden-xs">Request a Consultation</a></li>
+                                        <li>
+                                            <a href="{% if selected_city %}{% url 'create_lead' %}?sales_point={{ selected_city.slug }}{% else %}{% url 'create_lead' %}{% endif %}"
+                                               class="req-bar-on-menu btn btn-default hidden-xs">
+                                               Request a Consultation
+                                            </a>
+                                        </li>
                                     </ul>
+
+
                                 </div>
                             </div>
 
@@ -377,11 +463,26 @@
                                 <ul>
                                     <li><a href="{% url 'service' %}">Services</a></li>
                                     <li><a href="{% url 'product' %}">Products</a></li>
+                                    <li><a href="{% url 'locations_list' %}">Locations</a></li>
+
+                                    {% if all_cities %}
+                                        <li class="mobile-location-list">
+                                            {% for sales_point in all_cities %}
+                                                <a href="{% url 'location_detail' sales_point.slug %}">
+                                                    {{ sales_point.name }}
+                                                </a>
+                                            {% endfor %}
+                                        </li>
+                                    {% endif %}
 
                                     <li><a href="{% url 'video' %}">Videos</a></li>
                                     <li><a href="{% url 'galleries' %}">Gallery</a></li>
                                     <li><a href="{% url 'about' %}">About</a></li>
-                                    <li><a href="{% url 'create_lead' %}">Request a Consultation</a></li>
+                                    <li>
+                                        <a href="{% if selected_city %}{% url 'create_lead' %}?sales_point={{ selected_city.slug }}{% else %}{% url 'create_lead' %}{% endif %}">
+                                            Request a Consultation
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
 

@@ -348,3 +348,28 @@
     text-align: center;
   }
 }
+
+
+.button,
+a.button,
+button.button,
+input.button {
+  background: #4c4949 !important;
+  border-color: #d9d9d9 !important;
+  color: #8c8c8c !important;
+}
+
+.button:hover,
+a.button:hover,
+button.button:hover,
+input.button:hover,
+.button:focus,
+a.button:focus,
+button.button:focus,
+input.button:focus {
+  background: #6c6a6a !important;
+  border-color: #cfcfcf !important;
+  color: #4c4949 !important;
+}
+
+

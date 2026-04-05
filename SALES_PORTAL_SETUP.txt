@@ -1,0 +1,46 @@
+Garage Lions Sales Portal Setup
+
+This ZIP is configured for email/username + password login.
+Google OAuth has been removed.
+
+Main salesperson login:
+- /account/login/
+
+After login:
+- /sales/dashboard/
+
+Features included:
+- salesperson-only lead dashboard
+- salesperson-only lead list
+- salesperson-only lead detail
+- lead status update
+- internal notes
+- change password page
+- ZIP-code-based lead routing
+- city-to-salesperson assignment
+
+What you need to do after unzip:
+1. Install requirements:
+   pip install -r requirements.txt
+
+2. Run migrations:
+   python manage.py makemigrations
+   python manage.py migrate
+
+3. Create admin user:
+   python manage.py createsuperuser
+
+4. In Django admin:
+   - create salesperson users
+   - assign each City.assigned_user
+   - add ZIP codes under each city
+
+5. Salesperson signs in with:
+   - email or username
+   - password you define for them
+
+Routes:
+- /account/login/
+- /account/password-change/
+- /sales/dashboard/
+- /sales/leads/

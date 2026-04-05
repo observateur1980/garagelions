@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block seo_title %}My Leads | Garage Lions{% endblock %}
+
+{% block content %}
+<section style="margin-top: 120px; padding: 50px 0;">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;"><h1 style="margin:0;">My Leads</h1><div style="display:flex; gap:12px; flex-wrap:wrap;"><a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a><a href="{% url 'account:password_change' %}" class="button button-white"><span>Change Password</span><i class="fa fa-lock"></i></a></div></div>
+
+    <form method="get" style="margin: 20px 0;">
+      <div class="row">
+        <div class="col-md-4">
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, email, phone, ZIP">
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-control">
+            <option value="">All statuses</option>
+            <option value="new" {% if status == "new" %}selected{% endif %}>New</option>
+            <option value="contacted" {% if status == "contacted" %}selected{% endif %}>Contacted</option>
+            <option value="appointment_set" {% if status == "appointment_set" %}selected{% endif %}>Appointment Set</option>
+            <option value="quoted" {% if status == "quoted" %}selected{% endif %}>Quoted</option>
+            <option value="closed_won" {% if status == "closed_won" %}selected{% endif %}>Closed Won</option>
+            <option value="closed_lost" {% if status == "closed_lost" %}selected{% endif %}>Closed Lost</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="button"><span>Filter</span><i class="fa fa-search"></i></button>
+        </div>
+      </div>
+    </form>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>ZIP</th>
+          <th>City</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in page_obj %}
+        <tr>
+          <td>{{ lead.created_at }}</td>
+          <td>{{ lead.name }}</td>
+          <td>{{ lead.phone }}</td>
+          <td>{{ lead.zip_code }}</td>
+          <td>{% if lead.city %}{{ lead.city.name }}, {{ lead.city.state }}{% endif %}</td>
+          <td>{{ lead.get_status_display }}</td>
+          <td><a href="{% url 'sales_lead_detail' lead.pk %}">Open</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No leads found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

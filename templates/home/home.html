@@ -229,10 +229,31 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         <img loading="lazy" src="{% static 'images/slider/bg_vertical.png' %}" alt="Garage transformation mobile">
 
         <div class="gl-hero-copy gl-hero-mobile">
-            <h1>Built for Storage. Finished for Living.</h1>
-            <p>
-                Premium remodeling, cabinets, flooring, storage, doors, and upgrades built for modern living.
-            </p>
+                        {% if selected_city %}
+              <h1>
+                {% if selected_city.hero_title %}
+                  {{ selected_city.hero_title }}
+                {% else %}
+                  Garage Remodeling in {{ selected_city.name }}, {{ selected_city.state }}
+                {% endif %}
+              </h1>
+            {% else %}
+              <h1>Premium Garage Remodeling & Storage Solutions</h1>
+            {% endif %}
+
+            {% if selected_city %}
+              <p>
+                {% if selected_city.hero_subtitle %}
+                  {{ selected_city.hero_subtitle }}
+                {% else %}
+                  Garage Lions serves {{ selected_city.name }}, {{ selected_city.state }} with premium garage flooring, cabinets, storage, and complete garage makeover solutions.
+                {% endif %}
+              </p>
+            {% else %}
+              <p>
+                Garage Lions helps homeowners transform garages with flooring, cabinets, slatwall, storage, and complete makeovers.
+              </p>
+            {% endif %}
 
             <div class="gl-hero-cta">
                 <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
@@ -253,10 +274,31 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         <img loading="lazy" src="{% static 'images/slider/bg_photo.png' %}" alt="Garage transformation desktop">
 
         <div class="gl-hero-copy gl-hero-desktop">
-            <h1>Built for Storage. Finished for Living.</h1>
-            <p>
-                Premium remodeling, cabinets, flooring, storage, doors, and upgrades built for modern living.
-            </p>
+            {% if selected_city %}
+              <h1>
+                {% if selected_city.hero_title %}
+                  {{ selected_city.hero_title }}
+                {% else %}
+                  Garage Remodeling in {{ selected_city.name }}, {{ selected_city.state }}
+                {% endif %}
+              </h1>
+            {% else %}
+              <h1>Premium Garage Remodeling & Storage Solutions</h1>
+            {% endif %}
+
+            {% if selected_city %}
+              <p>
+                {% if selected_city.hero_subtitle %}
+                  {{ selected_city.hero_subtitle }}
+                {% else %}
+                  Garage Lions serves {{ selected_city.name }}, {{ selected_city.state }} with premium garage flooring, cabinets, storage, and complete garage makeover solutions.
+                {% endif %}
+              </p>
+            {% else %}
+              <p>
+                Garage Lions helps homeowners transform garages with flooring, cabinets, slatwall, storage, and complete makeovers.
+              </p>
+            {% endif %}
 
             <div class="gl-hero-cta">
                 <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
