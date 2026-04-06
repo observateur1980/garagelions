@@ -30,7 +30,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
     position: relative;
 }
 
-
+.action-box .button.button-white,
+.action-box .button.button-white span,
+.action-box .button.button-white i {
+    background: whitesmoke !important;
+    border-color: whitesmoke !important;
+    color: #555 !important;
+}
 
 #img1,
 #img2 {
@@ -256,14 +262,21 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
             {% endif %}
 
             <div class="gl-hero-cta">
-                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
+                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15" style="background-color: #c64d1e">
                     <span>Get a Free Estimate</span>
                 </a>
 
-               <a href="tel:8554645119" class="button gl-hero-btn-alt mt-15">
+                {% if selected_city.local_phone %}
+                <a class="button gl-hero-btn-alt mt-15" href="tel:{{ selected_city.local_phone }}">
+                     <span>Call {{ selected_city.local_phone }}</span>
+                 </a>
+                {% else %}
+                    <a href="tel:6506605101" class="button gl-hero-btn-alt mt-15">
+                    <span>Call 650 660 5101</span>
+                </a>
+                {% endif %}
 
-    <span>Call 855 464 5119</span>
-</a>
+
             </div>
         </div>
     </div>
@@ -301,7 +314,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
             {% endif %}
 
             <div class="gl-hero-cta">
-                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15">
+                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15" style="background-color: #c64d1e">
                     <span>Get a Free Estimate</span>
                 </a>
 
@@ -362,13 +375,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_makeover' %}">
+                            <a >
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></h5>
+                            <h5><a>Garage Makeovers</a></h5>
 
                         </div>
 
@@ -377,13 +390,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_cabinet' %}">
+                            <a >
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf garage cabinets.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_cabinet' %}"> Garage Cabinets</a></h5>
+                            <h5><a> Garage Cabinets</a></h5>
 
                         </div>
 
@@ -392,13 +405,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_flooring' %}">
+                            <a>
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf epoxy floor.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_flooring' %}">Garage Flooring</a></h5>
+                            <h5><a>Garage Flooring</a></h5>
 
                         </div>
 
@@ -407,13 +420,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_slatwall' %}">
+                            <a>
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf slat wall.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_slatwall' %}">Slat Wall Solutions</a></h5>
+                            <h5><a>Slat Wall Solutions</a></h5>
 
                         </div>
 
@@ -428,13 +441,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'storage_rack' %}">
+                            <a>
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf overhead storage.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'storage_rack' %}">Storage Racks</a></h5>
+                            <h5><a>Storage Racks</a></h5>
 
                         </div>
 
@@ -444,13 +457,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_door' %}">
+                            <a>
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildorf garage door.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_door' %}">Garage Doors</a></h5>
+                            <h5><a>Garage Doors</a></h5>
 
                         </div>
 
@@ -459,13 +472,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'garage_conversion' %}">
+                            <a>
                             <img class="img-responsive center-block"
                                  src="{% static 'images/services/schildrof garage conversion.jpg' %}" alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'garage_conversion' %}">Garage Conversion</a></h5>
+                            <h5><a>Garage Conversion</a></h5>
 
                         </div>
 
@@ -474,13 +487,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-3 col-md-3 col-sm-6">
                     <div class="team-4 text-center">
                         <div class="team-image">
-                            <a href="{% url 'car_lift' %}">
+                            <a>
                             <img class="img-responsive center-block" src="{% static 'images/services/car lift.jpg' %}"
                                  alt="">
                             </a>
                         </div>
                         <div class="team-name">
-                            <h5><a href="{% url 'car_lift' %}">Car Lifts</a></h5>
+                            <h5><a>Car Lifts</a></h5>
 
                         </div>
 
@@ -508,10 +521,13 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                     <h2 class="text-white">Free Design Consultation</h2>
                     <h3 class="text-white">Contact us today for a free estimate</h3>
                 </div>
-                <div class="col-lg-4 col-md-4 text-right action-box-button">
-                    <a href="{% url 'create_lead' %}" class="button button-white mt-15 btn-lg">
-                        <span>REQUEST YOUR FREE CONSULTATION</span>
-                        <i class="fa fa-hand-o-right"></i>
+                <div class="col-lg-4 col-md-4 text-right action-box-button" >
+
+                    <a href="{% url 'create_lead' %}"
+                          class="button button-white mt-15 btn-lg"
+                       style="background: whitesmoke !important; border: 1px solid whitesmoke !important; color: #555 !important;">
+                        <span style="background: whitesmoke !important; color: #555 !important;">REQUEST YOUR FREE CONSULTATION</span>
+                        <i class="fa fa-hand-o-right" style="background: whitesmoke !important; color: #555 !important;"></i>
                     </a>
 
                 </div>

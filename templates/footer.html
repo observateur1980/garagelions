@@ -28,14 +28,31 @@
         <p>Tell us about your project — we’ll follow up with next steps.</p>
       </div>
       <div class="col-12 col-md-4 text-center text-md-end">
-        <a class="pc-footer-cta-btn" href="tel:8554645119">
-          <i class="fa fa-phone"></i>
-          <span>+1 855 464 5119</span>
-        </a>
+            {% if selected_city.local_phone %}
+                 <a class="pc-footer-cta-btn" href="tel:{{ selected_city.local_phone }}">
+                  <i class="fa fa-phone"></i>
+                  <span>{{ selected_city.local_phone }}</span>
+                </a>
+
+            {% else %}
+                 <a class="pc-footer-cta-btn" href="tel:6506605101">
+                  <i class="fa fa-phone"></i>
+                  <span>+1 650 660 5101</span>
+                </a>
+
+            {% endif %}
+
+
+
+
+
       </div>
     </div>
   </div>
 </section>
+
+
+
 
 <footer class="pc-footer">
   <div class="container">

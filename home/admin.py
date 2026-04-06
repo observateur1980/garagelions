@@ -1,8 +1,8 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import (
     SalesPoint,
     SalesPointWorkingHour,
-    ServiceCity,
     ZipCode,
     Gallery,
     GalleryItem,
@@ -10,6 +10,8 @@ from .models import (
     LeadModel,
     LeadAttachment,
     VideoReview,
+    ServiceCity,
+
 )
 
 
@@ -41,6 +43,11 @@ class ZipCodeAdmin(admin.ModelAdmin):
         return obj.service_city.sales_point.name
 
 
+
+class CityInline(admin.TabularInline):
+    model = ServiceCity
+    extra = 1
+
 @admin.register(SalesPoint)
 class SalesPointAdmin(admin.ModelAdmin):
     list_display = (
@@ -51,11 +58,59 @@ class SalesPointAdmin(admin.ModelAdmin):
         "is_active",
         "is_featured",
         "order",
+        "related_cities",
+        "related_zip_codes",
     )
     list_editable = ("is_active", "is_featured", "order")
     search_fields = ("name", "local_email", "lead_notification_email")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [SalesPointWorkingHourInline]
+    inlines = [SalesPointWorkingHourInline, CityInline]
+    readonly_fields = ("zip_codes_preview",)
+
+    def related_cities(self, obj):
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        return ", ".join(city.name for city in cities) or "-"
+    related_cities.short_description = "Cities"
+
+    def related_zip_codes(self, obj):
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        parts = []
+
+        for city in cities:
+            zip_codes = city.zip_codes.order_by("code")
+            codes = ", ".join(zip_code.code for zip_code in zip_codes)
+            if codes:
+                parts.append(f"{city.name}: {codes}")
+            else:
+                parts.append(f"{city.name}: -")
+
+        if not parts:
+            return "-"
+
+        return format_html("<br>".join(parts))
+    related_zip_codes.short_description = "Zip codes"
+
+    def zip_codes_preview(self, obj):
+        if not obj.pk:
+            return "-"
+
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        lines = []
+
+        for city in cities:
+            zip_codes = city.zip_codes.order_by("code")
+            codes = ", ".join(zip_code.code for zip_code in zip_codes)
+            if codes:
+                lines.append(f"{city.name}: {codes}")
+            else:
+                lines.append(f"{city.name}: -")
+
+        if not lines:
+            return "-"
+
+        return format_html("<br>".join(lines))
+    zip_codes_preview.short_description = "Related zip codes"
+
     fieldsets = (
         ("Basic", {
             "fields": ("name", "slug", "is_active", "is_featured", "order")
@@ -70,12 +125,16 @@ class SalesPointAdmin(admin.ModelAdmin):
             "fields": ("lead_notification_email", "from_email", "reply_to_email", "assigned_user", "assigned_salesperson")
         }),
         ("Content", {
-            "fields": ("intro_text", "seo_body")
+            "fields": ("intro_text", "seo_body", "zip_codes_preview")
         }),
         ("Map", {
             "fields": ("latitude", "longitude")
         }),
     )
+
+
+
+
 class GalleryItemInline(admin.StackedInline):
     model = GalleryItem
     extra = 1

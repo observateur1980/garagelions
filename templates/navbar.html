@@ -403,7 +403,7 @@
 
                             <div class="mobile-nav-actions">
                                 <a class="mobile-call-link"
-                                   href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}+18554645119{% endif %}"
+                                   href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}+16506605101{% endif %}"
                                    aria-label="Call Garage Lions">
                                     <span>Call</span>
                                     <i class="fa fa-phone"></i>
@@ -418,22 +418,14 @@
                             <div class="gl-nav-shell">
                                 <div class="gl-nav-left">
                                     <ul class="menu-links">
-                                        <li><a href="{% url 'service' %}">Services</a></li>
-                                        <li><a href="{% url 'product' %}">Products</a></li>
+
+
                                         <li>
                                             <a href="{% url 'locations_list' %}">Locations</a>
-                                            {% if all_cities %}
-                                                <ul class="drop-down-multilevel">
-                                                    {% for sales_point in all_cities %}
-                                                        <li>
-                                                            <a href="{% url 'location_detail' sales_point.slug %}">
-                                                                {{ sales_point.name }}
-                                                            </a>
-                                                        </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
+
                                         </li>
+
+                                    <li><a href="{% url 'service' %}">Services</a></li>
                                     </ul>
                                 </div>
 
@@ -461,19 +453,10 @@
 
                             <div id="mobileMenuPanel" class="mobile-menu-panel">
                                 <ul>
-                                    <li><a href="{% url 'service' %}">Services</a></li>
-                                    <li><a href="{% url 'product' %}">Products</a></li>
-                                    <li><a href="{% url 'locations_list' %}">Locations</a></li>
 
-                                    {% if all_cities %}
-                                        <li class="mobile-location-list">
-                                            {% for sales_point in all_cities %}
-                                                <a href="{% url 'location_detail' sales_point.slug %}">
-                                                    {{ sales_point.name }}
-                                                </a>
-                                            {% endfor %}
-                                        </li>
-                                    {% endif %}
+                                    <li><a href="{% url 'locations_list' %}">Locations</a></li>
+                                    <li><a href="{% url 'service' %}">Services</a></li>
+
 
                                     <li><a href="{% url 'video' %}">Videos</a></li>
                                     <li><a href="{% url 'galleries' %}">Gallery</a></li>
