@@ -107,3 +107,30 @@ class LeadForm(forms.ModelForm):
                 raise ValidationError(f"{f.name}: only image/video files are allowed.")
 
         return files
+
+
+
+
+
+# -----------------------------------------------------------------------
+# ADD this class to the bottom of home/forms.py
+# -----------------------------------------------------------------------
+
+
+
+
+
+class LeadUpdateForm(forms.ModelForm):
+    """Used by salespeople to update a lead's status and add internal notes."""
+
+    class Meta:
+        model = LeadModel
+        fields = ['status', 'internal_notes']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'internal_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Internal notes — not visible to the customer.',
+            }),
+        }

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+{% block seo_title %}Manager Dashboard | Garage Lions{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<section style="margin-top:120px; padding:50px 0 80px;">
+<div class="container">
+
+  {% include "sales/_topbar.html" with title="Location Dashboard" %}
+
+  <div class="row">
+
+    <div class="col-md-3" style="margin-bottom:24px;">
+      {% include "sales/_profile_card.html" %}
+    </div>
+
+    <div class="col-md-9">
+
+      {# Location KPIs #}
+      {% if salesperson.sales_point %}
+      <div style="margin-bottom:8px;">
+        <h2 style="margin:0; font-size:18px;">
+          {{ salesperson.sales_point.name }}
+          <span style="font-size:13px; font-weight:400; color:#888; margin-left:8px;">Location overview</span>
+        </h2>
+      </div>
+      {% endif %}
+
+      {% include "sales/_kpi_cards.html" %}
+
+      {# Team performance #}
+      {% if team_stats %}
+      <div style="margin:28px 0 16px;">
+        <h2 style="font-size:19px; margin:0;">Team performance</h2>
+      </div>
+      <div style="overflow-x:auto; margin-bottom:28px;">
+        <table class="table table-bordered" style="font-size:14px;">
+          <thead style="background:#f5f5f2;">
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th style="text-align:center;">Total</th>
+              <th style="text-align:center;">New</th>
+              <th style="text-align:center;">Appt</th>
+              <th style="text-align:center; color:#0F6E56;">Won</th>
+              <th style="text-align:center; color:#A32D2D;">Lost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in team_stats %}
+            <tr>
+              <td style="font-weight:500;">{{ row.salesperson.user.get_full_name }}</td>
+              <td style="font-size:12px; color:#888;">{{ row.salesperson.get_role_display }}</td>
+              <td style="text-align:center;">{{ row.counts.total }}</td>
+              <td style="text-align:center;">
+                <span style="background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:10px;font-size:11px;">{{ row.counts.new_count }}</span>
+              </td>
+              <td style="text-align:center;">{{ row.counts.appointment_count }}</td>
+              <td style="text-align:center; color:#0F6E56; font-weight:500;">{{ row.counts.won_count }}</td>
+              <td style="text-align:center; color:#A32D2D;">{{ row.counts.lost_count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center; color:#aaa; padding:24px;">No team members at this location.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <h2 style="margin:0 0 16px; font-size:19px;">Recent leads</h2>
+      {% include "sales/_lead_table.html" with leads=recent_leads show_location=False %}
+      <div style="margin-top:14px;">
+        <a href="{% url 'sales_lead_list' %}" class="button"><span>View all leads</span><i class="fa fa-arrow-right"></i></a>
+      </div>
+
+    </div>
+  </div>
+</div>
+</section>
+{% endblock %}

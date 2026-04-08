@@ -1,3 +1,5 @@
+# home/admin.py — COMPLETE FILE (replace your existing one)
+
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
@@ -11,9 +13,11 @@ from .models import (
     LeadAttachment,
     VideoReview,
     ServiceCity,
-
+    FranchiseAgreement,
 )
 
+
+# ── Inlines ──────────────────────────────────────────────────────────────
 
 class ZipCodeInline(admin.TabularInline):
     model = ZipCode
@@ -25,6 +29,42 @@ class SalesPointWorkingHourInline(admin.TabularInline):
     extra = 0
     fields = ("day", "is_open", "open_time", "close_time", "note")
 
+
+class CityInline(admin.TabularInline):
+    model = ServiceCity
+    extra = 1
+    fields = ("name", "state", "is_active", "order")
+
+
+class FranchiseAgreementInline(admin.StackedInline):
+    model = FranchiseAgreement
+    extra = 0
+    fields = (
+        "franchisee_legal_name", "franchisee_contact_name",
+        "franchisee_email", "franchisee_phone",
+        "status", "upfront_fee", "royalty_rate", "marketing_fee_rate",
+        "agreement_date", "start_date", "expiry_date", "renewal_date",
+        "territory_notes", "agreement_document", "internal_notes",
+    )
+
+
+class GalleryItemInline(admin.StackedInline):
+    model = GalleryItem
+    extra = 1
+    fields = (
+        "sort_order", "media_type", "file", "thumbnail",
+        "title", "section_heading", "text_before", "text_after",
+    )
+
+
+class LeadAttachmentInline(admin.TabularInline):
+    model = LeadAttachment
+    extra = 0
+    readonly_fields = ("uploaded_at",)
+
+
+# ── ServiceCity ───────────────────────────────────────────────────────────
+
 @admin.register(ServiceCity)
 class ServiceCityAdmin(admin.ModelAdmin):
     list_display = ("name", "state", "sales_point", "is_active", "order")
@@ -34,6 +74,8 @@ class ServiceCityAdmin(admin.ModelAdmin):
     inlines = [ZipCodeInline]
 
 
+# ── ZipCode ───────────────────────────────────────────────────────────────
+
 @admin.register(ZipCode)
 class ZipCodeAdmin(admin.ModelAdmin):
     list_display = ("code", "service_city", "sales_point_name")
@@ -41,79 +83,31 @@ class ZipCodeAdmin(admin.ModelAdmin):
 
     def sales_point_name(self, obj):
         return obj.service_city.sales_point.name
+    sales_point_name.short_description = "Sales Point"
 
 
-
-class CityInline(admin.TabularInline):
-    model = ServiceCity
-    extra = 1
+# ── SalesPoint ────────────────────────────────────────────────────────────
 
 @admin.register(SalesPoint)
 class SalesPointAdmin(admin.ModelAdmin):
     list_display = (
-        "name",
-        "local_phone",
-        "local_email",
-        "assigned_user",
-        "is_active",
-        "is_featured",
-        "order",
-        "related_cities",
-        "related_zip_codes",
+        "name", "location_type", "local_phone", "local_email",
+        "assigned_user", "is_active", "is_featured", "order",
+        "related_cities", "related_zip_codes",
     )
     list_editable = ("is_active", "is_featured", "order")
+    list_filter = ("location_type", "is_active", "is_featured")
     search_fields = ("name", "local_email", "lead_notification_email")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [SalesPointWorkingHourInline, CityInline]
+    inlines = [SalesPointWorkingHourInline, CityInline, FranchiseAgreementInline]
     readonly_fields = ("zip_codes_preview",)
-
-    def related_cities(self, obj):
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
-        return ", ".join(city.name for city in cities) or "-"
-    related_cities.short_description = "Cities"
-
-    def related_zip_codes(self, obj):
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
-        parts = []
-
-        for city in cities:
-            zip_codes = city.zip_codes.order_by("code")
-            codes = ", ".join(zip_code.code for zip_code in zip_codes)
-            if codes:
-                parts.append(f"{city.name}: {codes}")
-            else:
-                parts.append(f"{city.name}: -")
-
-        if not parts:
-            return "-"
-
-        return format_html("<br>".join(parts))
-    related_zip_codes.short_description = "Zip codes"
-
-    def zip_codes_preview(self, obj):
-        if not obj.pk:
-            return "-"
-
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
-        lines = []
-
-        for city in cities:
-            zip_codes = city.zip_codes.order_by("code")
-            codes = ", ".join(zip_code.code for zip_code in zip_codes)
-            if codes:
-                lines.append(f"{city.name}: {codes}")
-            else:
-                lines.append(f"{city.name}: -")
-
-        if not lines:
-            return "-"
-
-        return format_html("<br>".join(lines))
-    zip_codes_preview.short_description = "Related zip codes"
 
     fieldsets = (
         ("Basic", {
-            "fields": ("name", "slug", "is_active", "is_featured", "order")
+            "fields": (
+                "name", "slug", "location_type", "royalty_rate",
+                "is_active", "is_featured", "order",
+            )
         }),
         ("SEO", {
             "fields": ("page_title", "meta_description", "hero_title", "hero_subtitle")
@@ -122,7 +116,10 @@ class SalesPointAdmin(admin.ModelAdmin):
             "fields": ("address_line_1", "address_line_2", "local_phone", "local_email")
         }),
         ("Lead Routing", {
-            "fields": ("lead_notification_email", "from_email", "reply_to_email", "assigned_user", "assigned_salesperson")
+            "fields": (
+                "lead_notification_email", "from_email", "reply_to_email",
+                "assigned_user", "assigned_salesperson",
+            )
         }),
         ("Content", {
             "fields": ("intro_text", "seo_body", "zip_codes_preview")
@@ -132,23 +129,75 @@ class SalesPointAdmin(admin.ModelAdmin):
         }),
     )
 
+    def related_cities(self, obj):
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        return ", ".join(city.name for city in cities) or "-"
+    related_cities.short_description = "Cities"
+
+    def related_zip_codes(self, obj):
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        parts = []
+        for city in cities:
+            zip_codes = city.zip_codes.order_by("code")
+            codes = ", ".join(zip_code.code for zip_code in zip_codes)
+            parts.append(f"{city.name}: {codes or '-'}")
+        return format_html("<br>".join(parts)) if parts else "-"
+    related_zip_codes.short_description = "Zip codes"
+
+    def zip_codes_preview(self, obj):
+        if not obj.pk:
+            return "-"
+        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        lines = []
+        for city in cities:
+            zip_codes = city.zip_codes.order_by("code")
+            codes = ", ".join(zip_code.code for zip_code in zip_codes)
+            lines.append(f"{city.name}: {codes or '-'}")
+        return format_html("<br>".join(lines)) if lines else "-"
+    zip_codes_preview.short_description = "Related zip codes"
 
 
+# ── FranchiseAgreement ────────────────────────────────────────────────────
 
-class GalleryItemInline(admin.StackedInline):
-    model = GalleryItem
-    extra = 1
-    fields = (
-        "sort_order",
-        "media_type",
-        "file",
-        "thumbnail",
-        "title",
-        "section_heading",
-        "text_before",
-        "text_after",
+@admin.register(FranchiseAgreement)
+class FranchiseAgreementAdmin(admin.ModelAdmin):
+    list_display = (
+        "sales_point", "franchisee_legal_name", "status",
+        "royalty_rate", "agreement_date", "expiry_date",
+    )
+    list_filter = ("status",)
+    search_fields = (
+        "sales_point__name", "franchisee_legal_name",
+        "franchisee_email", "franchisee_contact_name",
+    )
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Location", {"fields": ("sales_point",)}),
+        ("Franchisee", {
+            "fields": (
+                "franchisee_legal_name", "franchisee_contact_name",
+                "franchisee_email", "franchisee_phone",
+            )
+        }),
+        ("Financial terms", {
+            "fields": ("upfront_fee", "royalty_rate", "marketing_fee_rate")
+        }),
+        ("Agreement lifecycle", {
+            "fields": (
+                "status", "agreement_date", "start_date",
+                "expiry_date", "renewal_date",
+            )
+        }),
+        ("Territory & documents", {
+            "fields": ("territory_notes", "agreement_document")
+        }),
+        ("Notes & audit", {
+            "fields": ("internal_notes", "created_at", "updated_at")
+        }),
     )
 
+
+# ── Gallery ───────────────────────────────────────────────────────────────
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):
@@ -159,17 +208,13 @@ class GalleryAdmin(admin.ModelAdmin):
     ordering = ("order", "name")
     inlines = [GalleryItemInline]
     fields = (
-        "name",
-        "slug",
-        "sales_points",
-        "thumbnail",
-        "page_title",
-        "intro_text",
-        "is_active",
-        "order",
+        "name", "slug", "sales_points", "thumbnail",
+        "page_title", "intro_text", "is_active", "order",
     )
     filter_horizontal = ("sales_points",)
 
+
+# ── Testimonial ───────────────────────────────────────────────────────────
 
 @admin.register(Testimonial)
 class TestimonialAdmin(admin.ModelAdmin):
@@ -179,28 +224,26 @@ class TestimonialAdmin(admin.ModelAdmin):
     ordering = ("order",)
 
 
-class LeadAttachmentInline(admin.TabularInline):
-    model = LeadAttachment
-    extra = 0
-    readonly_fields = ("uploaded_at",)
-
+# ── LeadModel ─────────────────────────────────────────────────────────────
 
 @admin.register(LeadModel)
 class LeadModelAdmin(admin.ModelAdmin):
     list_display = (
         "id", "first_name", "last_name", "email", "phone", "zip_code",
         "service_city", "sales_point", "assigned_user",
-        "status", "created_at"
+        "status", "created_at",
     )
     list_filter = ("sales_point", "service_city", "status", "created_at")
     search_fields = (
         "first_name", "last_name", "email", "phone", "zip_code",
-        "assigned_to", "message", "source_page"
+        "message", "source_page",
     )
     readonly_fields = ("created_at",)
     inlines = [LeadAttachmentInline]
     ordering = ("-created_at",)
 
+
+# ── VideoReview ───────────────────────────────────────────────────────────
 
 @admin.register(VideoReview)
 class VideoReviewAdmin(admin.ModelAdmin):

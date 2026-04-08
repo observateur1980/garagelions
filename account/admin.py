@@ -1,23 +1,27 @@
+# account/admin.py
+
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from .models import MyUser
 
+from .models import MyUser, Profile, Salesperson
+
+
+# ── Auth forms ────────────────────────────────────────────────────────────
 
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput)
 
     class Meta:
         model = MyUser
         fields = ('username', 'email')
 
     def clean_password2(self):
-        p1 = self.cleaned_data.get('password1')
-        p2 = self.cleaned_data.get('password2')
+        p1, p2 = self.cleaned_data.get('password1'), self.cleaned_data.get('password2')
         if p1 and p2 and p1 != p2:
-            raise forms.ValidationError("Passwords don't match")
+            raise forms.ValidationError("Passwords don't match.")
         return p2
 
     def save(self, commit=True):
@@ -30,35 +34,82 @@ class UserCreationForm(forms.ModelForm):
 
 class UserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField(
-        label="Password",
-        help_text=(
-            "Raw passwords are not stored, so there is no way to see "
-            "this user's password, but you can change the password "
-            "using <a href=\"../password/\">this form</a>."
-        ),
+        help_text='Raw passwords are not stored. <a href="../password/">Change it here</a>.',
     )
 
     class Meta:
         model = MyUser
-        fields = ('username', 'email', 'password', 'is_active', 'is_staff')
+        fields = ('username', 'email', 'password', 'is_active', 'is_staff', 'is_superuser')
 
     def clean_password(self):
-        return self.initial["password"]
+        return self.initial['password']
 
+
+# ── Inlines ───────────────────────────────────────────────────────────────
+
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
+    verbose_name = 'Profile'
+    verbose_name_plural = 'Profile'
+    fields = (
+        ('first_name', 'last_name'),
+        'photo', 'bio',
+        ('phone', 'mobile'),
+        'direct_email',
+        ('city', 'state', 'timezone'),
+        'linkedin_url', 'calendly_url',
+        ('notify_new_lead_email', 'notify_new_lead_sms'),
+        ('emergency_contact_name', 'emergency_contact_phone'),
+    )
+
+
+class SalespersonInline(admin.StackedInline):
+    model = Salesperson
+    can_delete = False
+    verbose_name = 'Business Role'
+    verbose_name_plural = 'Business Role'
+    fields = (
+        ('role', 'status', 'employment_type'),
+        ('sales_point', 'manager'),
+        ('base_salary', 'commission_rate', 'draw_amount'),
+        ('start_date', 'end_date'),
+        'territory_notes',
+        'internal_notes',
+    )
+    extra = 0
+
+
+# ── MyUser admin ──────────────────────────────────────────────────────────
 
 @admin.register(MyUser)
 class MyUserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
+    inlines = [ProfileInline, SalespersonInline]
 
-    list_display = ('username', 'email', 'get_first_name', 'get_last_name', 'is_staff')
-    list_filter = ('is_staff', 'is_active')
+    list_display = (
+        'username', 'email',
+        'get_full_name', 'get_role', 'get_location',
+        'get_status', 'is_staff', 'is_active',
+    )
+    list_filter = (
+        'is_staff', 'is_active',
+        'salesperson__role', 'salesperson__status',
+        'salesperson__sales_point',
+    )
+    search_fields = (
+        'username', 'email',
+        'profile__first_name', 'profile__last_name',
+        'profile__phone', 'profile__mobile',
+    )
+    ordering = ('username',)
+    filter_horizontal = ('groups', 'user_permissions')
 
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )
-
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -66,18 +117,84 @@ class MyUserAdmin(BaseUserAdmin):
         }),
     )
 
-    search_fields = ('username', 'email')
-    ordering = ('username',)
-    filter_horizontal = ()
+    def get_full_name(self, obj):
+        try:
+            return obj.profile.full_name
+        except Profile.DoesNotExist:
+            return '—'
+    get_full_name.short_description = 'Full Name'
 
-    def get_first_name(self, obj):
-        if hasattr(obj, 'profile'):
-            return obj.profile.first_name
-        return ''
-    get_first_name.short_description = 'First Name'
+    def get_role(self, obj):
+        try:
+            return obj.salesperson.get_role_display()
+        except Salesperson.DoesNotExist:
+            return '—'
+    get_role.short_description = 'Role'
 
-    def get_last_name(self, obj):
-        if hasattr(obj, 'profile'):
-            return obj.profile.last_name
-        return ''
-    get_last_name.short_description = 'Last Name'
+    def get_location(self, obj):
+        try:
+            sp = obj.salesperson.sales_point
+            return sp.name if sp else '—'
+        except Salesperson.DoesNotExist:
+            return '—'
+    get_location.short_description = 'Location'
+
+    def get_status(self, obj):
+        try:
+            return obj.salesperson.get_status_display()
+        except Salesperson.DoesNotExist:
+            return '—'
+    get_status.short_description = 'Status'
+
+
+# ── Standalone Salesperson admin ──────────────────────────────────────────
+
+@admin.register(Salesperson)
+class SalespersonAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_full_name', 'get_email',
+        'role', 'status', 'employment_type',
+        'sales_point', 'manager',
+        'commission_rate', 'start_date',
+    )
+    list_filter = ('role', 'status', 'employment_type', 'sales_point')
+    search_fields = (
+        'user__username', 'user__email',
+        'user__profile__first_name', 'user__profile__last_name',
+    )
+    readonly_fields = ('created_at', 'updated_at')
+    raw_id_fields = ('user',)
+
+    fieldsets = (
+        ('User', {'fields': ('user',)}),
+        ('Role & Status', {
+            'fields': (
+                ('role', 'status', 'employment_type'),
+                ('sales_point', 'manager'),
+            )
+        }),
+        ('Compensation', {
+            'fields': (
+                ('base_salary', 'commission_rate', 'draw_amount'),
+            )
+        }),
+        ('Dates', {
+            'fields': (('start_date', 'end_date'),)
+        }),
+        ('Territory & Notes', {
+            'fields': ('territory_notes', 'internal_notes'),
+        }),
+        ('Audit', {
+            'fields': (('created_at', 'updated_at'),),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
+    get_full_name.short_description = 'Name'
+    get_full_name.admin_order_field = 'user__profile__last_name'
+
+    def get_email(self, obj):
+        return obj.user.email
+    get_email.short_description = 'Email'

@@ -1,55 +1,153 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block seo_title %}Lead Detail | Garage Lions{% endblock %}
+{% block seo_title %}Lead #{{ lead.pk }} | Garage Lions{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
 
 {% block content %}
-<section style="margin-top: 120px; padding: 50px 0;">
-  <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;"><h1 style="margin:0;">{{ lead.name }}</h1><div style="display:flex; gap:12px; flex-wrap:wrap;"><a href="{% url 'sales_lead_list' %}" class="button button-white"><span>Back to Leads</span><i class="fa fa-arrow-left"></i></a><a href="{% url 'account:password_change' %}" class="button button-white"><span>Change Password</span><i class="fa fa-lock"></i></a></div></div>
+<section style="margin-top:120px; padding:50px 0 80px;">
+<div class="container">
 
-    <div class="row" style="margin-top: 24px;">
-      <div class="col-md-6">
-        <div class="gl-info-card">
-          <h3>Lead Information</h3>
-          <p><strong>Email:</strong> {{ lead.email }}</p>
-          <p><strong>Phone:</strong> {{ lead.phone }}</p>
-          <p><strong>ZIP Code:</strong> {{ lead.zip_code }}</p>
-          <p><strong>City:</strong> {% if lead.city %}{{ lead.city.name }}, {{ lead.city.state }}{% endif %}</p>
-          <p><strong>Services:</strong> {{ lead.get_consultation_types_display }}</p>
-          <p><strong>Message:</strong><br>{{ lead.message|linebreaksbr }}</p>
-        </div>
-
-        <div class="gl-info-card" style="margin-top:20px;">
-          <h3>Attachments</h3>
-          {% for item in lead.attachments.all %}
-            <p><a href="{{ item.file.url }}" target="_blank">{{ item.file.name }}</a></p>
-          {% empty %}
-            <p>No attachments.</p>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="gl-info-card">
-          <h3>Update Lead</h3>
-          <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-              <label>Status</label>
-              {{ form.status }}
-            </div>
-            <div class="form-group">
-              <label>Internal Notes</label>
-              {{ form.internal_notes }}
-            </div>
-            <button type="submit" class="button">
-              <span>Save Changes</span>
-              <i class="fa fa-check"></i>
-            </button>
-          </form>
-        </div>
-      </div>
+  {# ── Header ── #}
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:32px;">
+    <div>
+      <p style="margin:0 0 4px; font-size:12px; color:#aaa; text-transform:uppercase; letter-spacing:.5px;">
+        Lead #{{ lead.pk }} &middot; {{ lead.created_at|date:"F j, Y, g:i a" }}
+      </p>
+      <h1 style="margin:0;">{{ lead.first_name }} {{ lead.last_name }}</h1>
+      <p style="margin:4px 0 0; font-size:13px; color:#888;">
+        {% if lead.sales_point %}{{ lead.sales_point.name }}{% endif %}
+        {% if lead.assigned_user %}
+          &nbsp;&middot;&nbsp; Assigned to <strong>{{ lead.assigned_user.get_full_name }}</strong>
+        {% else %}
+          &nbsp;&middot;&nbsp; <span style="color:#E24B4A;">Unassigned</span>
+        {% endif %}
+      </p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{% url 'sales_lead_list' %}" class="button button-white"><span>Back to Leads</span><i class="fa fa-arrow-left"></i></a>
+      <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
     </div>
   </div>
+
+  <div class="row">
+
+    {# ── LEFT: Lead info ── #}
+    <div class="col-md-6" style="margin-bottom:24px;">
+
+      {# Contact #}
+      <div class="gl-info-card" style="margin-bottom:20px;">
+        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Contact</h3>
+        <p style="margin:0 0 8px; font-size:14px;">
+          <i class="fa fa-envelope" style="color:#ccc; width:18px;"></i>
+          <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+        </p>
+        <p style="margin:0 0 8px; font-size:14px;">
+          <i class="fa fa-phone" style="color:#ccc; width:18px;"></i>
+          <a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>
+        </p>
+        <p style="margin:0 0 8px; font-size:14px;">
+          <i class="fa fa-map-marker" style="color:#ccc; width:18px;"></i>
+          ZIP {{ lead.zip_code }}
+          {% if lead.service_city %} &mdash; {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}
+        </p>
+        {% if lead.source_page %}
+        <p style="margin:0; font-size:12px; color:#aaa;">
+          <i class="fa fa-globe" style="width:18px;"></i>
+          <a href="{{ lead.source_page }}" target="_blank" style="color:#aaa; word-break:break-all;">{{ lead.source_page }}</a>
+        </p>
+        {% endif %}
+      </div>
+
+      {# Services requested #}
+      <div class="gl-info-card" style="margin-bottom:20px;">
+        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Services requested</h3>
+        {% if lead.consultation_types %}
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+            {% for ct in lead.get_consultation_types_display %}
+              <span style="background:#E1F5EE; color:#0F6E56; padding:4px 12px; border-radius:12px; font-size:12px;">{{ ct }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color:#aaa; margin:0 0 16px;">None specified.</p>
+        {% endif %}
+        {% if lead.message %}
+          <p style="margin:0; font-size:14px; color:#555; white-space:pre-line;">{{ lead.message }}</p>
+        {% endif %}
+      </div>
+
+      {# Attachments #}
+      <div class="gl-info-card">
+        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Attachments</h3>
+        {% for item in lead.attachments.all %}
+          <p style="margin:0 0 8px; font-size:13px;">
+            <i class="fa fa-paperclip" style="color:#ccc;"></i>
+            <a href="{{ item.file.url }}" target="_blank">{{ item.file.name|slice:"30:" }}</a>
+            <span style="color:#ccc; font-size:11px; margin-left:6px;">{{ item.uploaded_at|date:"M d" }}</span>
+          </p>
+        {% empty %}
+          <p style="color:#aaa; margin:0; font-size:13px;">No attachments.</p>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    {# ── RIGHT: Update + quick actions ── #}
+    <div class="col-md-6" style="margin-bottom:24px;">
+
+      {# Status update form #}
+      <div class="gl-info-card" style="margin-bottom:20px; border-top:4px solid
+        {% if lead.status == 'new' %}#378ADD
+        {% elif lead.status == 'contacted' %}#534AB7
+        {% elif lead.status == 'appointment_set' %}#BA7517
+        {% elif lead.status == 'quoted' %}#888780
+        {% elif lead.status == 'closed_won' %}#1D9E75
+        {% elif lead.status == 'closed_lost' %}#E24B4A
+        {% else %}#ddd{% endif %};">
+        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Update lead</h3>
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label style="font-weight:500; font-size:13px;">Status</label>
+            {{ form.status }}
+          </div>
+          <div class="form-group" style="margin-top:16px;">
+            <label style="font-weight:500; font-size:13px;">Internal notes</label>
+            {{ form.internal_notes }}
+            <p style="font-size:11px; color:#aaa; margin:4px 0 0;">Not visible to the customer.</p>
+          </div>
+          <div style="margin-top:20px;">
+            <button type="submit" class="button"><span>Save changes</span><i class="fa fa-check"></i></button>
+          </div>
+        </form>
+      </div>
+
+      {# Quick actions #}
+      <div class="gl-info-card">
+        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Quick actions</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a href="tel:{{ lead.phone }}" class="button button-white">
+            <span>Call {{ lead.phone }}</span><i class="fa fa-phone"></i>
+          </a>
+          <a href="mailto:{{ lead.email }}" class="button button-white">
+            <span>Email {{ lead.email }}</span><i class="fa fa-envelope"></i>
+          </a>
+          {% if salesperson and salesperson.calendly_url %}
+          <a href="{{ salesperson.user.profile.calendly_url }}" target="_blank" class="button button-white">
+            <span>Send booking link</span><i class="fa fa-calendar"></i>
+          </a>
+          {% endif %}
+          {% if lead.sales_point and lead.sales_point.local_phone %}
+          <a href="tel:{{ lead.sales_point.local_phone }}" class="button button-white">
+            <span>Office: {{ lead.sales_point.local_phone }}</span><i class="fa fa-map-marker"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
 </section>
 {% endblock %}

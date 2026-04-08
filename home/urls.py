@@ -1,36 +1,58 @@
-from django.urls import path
-from . import views
+# garagelions/urls.py — COMPLETE FILE
+
+from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+from account import views as account_views
+from home import views_sales
+from home.sitemaps import StaticViewSitemap, LocationSitemap, GallerySitemap
+
+sitemaps = {
+    'static':    StaticViewSitemap,
+    'locations': LocationSitemap,
+    'galleries': GallerySitemap,
+}
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path('admin/', admin.site.urls),
+    path('', include('home.urls')),
+    path('account/', include('account.urls', namespace='account')),
 
-    path("service/", views.Service.as_view(), name="service"),
-    path("product/", views.Product.as_view(), name="product"),
+    # Auth shortcuts
+    path('login/',  account_views.user_login,  name='login_shortcut'),
+    path('logout/', account_views.user_logout, name='logout_shortcut'),
 
-    path("galleries/", views.galleries, name="galleries"),
-    path("galleries/<slug:slug>/", views.gallery_detail, name="gallery_detail"),
+    # ── Sales CRM ────────────────────────────────────────────────────────
+    # Salesperson dashboard (default — all logged-in users land here)
+    path('sales/dashboard/',
+         views_sales.sales_dashboard,
+         name='sales_dashboard'),
 
-    path("video/", views.Video.as_view(), name="video"),
-    path("about/", views.About.as_view(), name="about"),
-    path("videoreviews/", views.videoreviews, name="videoreviews"),
+    # Location Manager dashboard
+    path('sales/dashboard/manager/',
+         views_sales.sales_dashboard_manager,
+         name='sales_dashboard_manager'),
 
-    path("consultation/", views.create_lead, name="create_lead"),
-    path("consultation/success/", views.create_lead_success, name="create_lead_success"),
+    # Territory Manager dashboard
+    path('sales/dashboard/territory/',
+         views_sales.sales_dashboard_territory,
+         name='sales_dashboard_territory'),
 
-    path("locations/", views.locations_list, name="locations_list"),
-    path("locations/<slug:slug>/", views.location_detail, name="location_detail"),
-    path("set-location/<slug:slug>/", views.set_location, name="set_location"),
+    # Shared lead list + detail
+    path('sales/leads/',
+         views_sales.sales_lead_list,
+         name='sales_lead_list'),
+    path('sales/leads/<int:pk>/',
+         views_sales.sales_lead_detail,
+         name='sales_lead_detail'),
 
-    path("copyright/", views.CopyrightPage.as_view(), name="copyright"),
-    path("terms/", views.Terms.as_view(), name="terms"),
-    path("privacy/", views.Privacy.as_view(), name="privacy"),
-
-    path("garage_cabinet", views.GarageCabinet.as_view(), name="garage_cabinet"),
-    path("garage_flooring", views.GarageFlooring.as_view(), name="garage_flooring"),
-    path("garage_slatwall", views.GarageSlatwall.as_view(), name="garage_slatwall"),
-    path("storage_rack", views.StorageRack.as_view(), name="storage_rack"),
-    path("garage_makeover", views.GarageMakeover.as_view(), name="garage_makeover"),
-    path("garage_door", views.GarageDoor.as_view(), name="garage_door"),
-    path("garage_conversion", views.GarageConversion.as_view(), name="garage_conversion"),
-    path("car_lift", views.CarLift.as_view(), name="car_lift"),
+    # SEO sitemap
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

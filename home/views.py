@@ -1,3 +1,7 @@
+# home/views.py — COMPLETE FILE
+# Change from original: removed references to assigned_to CharField.
+# assigned_user FK is now the single source of truth.
+
 import smtplib
 
 from django.conf import settings
@@ -24,27 +28,14 @@ from .models import (
 def home(request):
     MAX_TESTIMONIALS = 6
 
-    featured = Testimonial.objects.filter(
-        is_active=True,
-        is_featured=True
-    ).order_by("order")
-
-    others = Testimonial.objects.filter(
-        is_active=True,
-        is_featured=False
-    ).order_by("order")
-
-    testimonials = list(featured) + list(others)
-    testimonials = testimonials[:MAX_TESTIMONIALS]
+    featured = Testimonial.objects.filter(is_active=True, is_featured=True).order_by("order")
+    others = Testimonial.objects.filter(is_active=True, is_featured=False).order_by("order")
+    testimonials = (list(featured) + list(others))[:MAX_TESTIMONIALS]
 
     selected_sales_point = None
     selected_slug = request.session.get("selected_sales_point_slug")
-
     if selected_slug:
-        selected_sales_point = SalesPoint.objects.filter(
-            slug=selected_slug,
-            is_active=True
-        ).first()
+        selected_sales_point = SalesPoint.objects.filter(slug=selected_slug, is_active=True).first()
 
     if selected_sales_point:
         consultation_url = f"{reverse('create_lead')}?sales_point={selected_sales_point.slug}"
@@ -88,7 +79,7 @@ def location_detail(request, slug):
         "sales_point": sales_point,
         "galleries": galleries,
         "cities": cities,
-        "city": sales_point,   # keeps current template compatibility where needed
+        "city": sales_point,
     })
 
 
@@ -117,7 +108,6 @@ class Video(TemplateView):
 
 def videoreviews(request):
     featured = VideoReview.objects.filter(is_active=True, is_featured=True).order_by("order", "-created_at")
-
     qs = VideoReview.objects.filter(is_active=True, is_featured=False).order_by("order", "-created_at")
     paginator = Paginator(qs, 6)
     page_number = request.GET.get("page", 1)
@@ -160,14 +150,11 @@ def create_lead(request):
             if matched_zip:
                 consultation_request.service_city = matched_zip.service_city
                 consultation_request.sales_point = matched_zip.service_city.sales_point
+                # Use assigned_user FK only — no more assigned_to CharField
                 consultation_request.assigned_user = matched_zip.service_city.sales_point.assigned_user
-                consultation_request.assigned_to = (
-                    matched_zip.service_city.sales_point.assigned_salesperson or ""
-                )
             elif selected_sales_point:
                 consultation_request.sales_point = selected_sales_point
                 consultation_request.assigned_user = selected_sales_point.assigned_user
-                consultation_request.assigned_to = selected_sales_point.assigned_salesperson or ""
 
             consultation_request.source_page = request.META.get("HTTP_REFERER", "")
             consultation_request.save()
@@ -185,7 +172,10 @@ def create_lead(request):
 
             sales_point_text = str(consultation_request.sales_point) if consultation_request.sales_point else "No sales point matched"
             city_text = str(consultation_request.service_city) if consultation_request.service_city else "No city matched"
-            assigned_text = consultation_request.assigned_to or "Not assigned"
+            assigned_text = (
+                consultation_request.assigned_user.get_full_name()
+                or consultation_request.assigned_user.username
+            ) if consultation_request.assigned_user else "Not assigned"
 
             full_message = (
                 f"First Name: {consultation_request.first_name}\n"
@@ -207,10 +197,8 @@ def create_lead(request):
             if consultation_request.sales_point:
                 if consultation_request.sales_point.lead_notification_email:
                     recipient_list = [consultation_request.sales_point.lead_notification_email]
-
                 if consultation_request.sales_point.from_email:
                     from_email = consultation_request.sales_point.from_email
-
                 if consultation_request.sales_point.reply_to_email:
                     reply_to = [consultation_request.sales_point.reply_to_email]
 

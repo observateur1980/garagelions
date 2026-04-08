@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block seo_title %}My Profile | Garage Lions{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<section style="margin-top:120px; padding:50px 0 80px;">
+<div class="container">
+
+  {# ── Header ── #}
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:36px;">
+    <div>
+      <h1 style="margin:0;">My Profile</h1>
+      <p style="margin:4px 0 0; color:#888; font-size:13px;">Personal information &amp; preferences</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
+      <a href="{% url 'account:logout' %}" class="button button-white"><span>Logout</span><i class="fa fa-sign-out"></i></a>
+    </div>
+  </div>
+
+  {# ── Messages ── #}
+  {% for message in messages %}
+  <div style="padding:12px 20px; margin-bottom:20px; border-radius:6px;
+    background:{% if message.tags == 'success' %}#E1F5EE{% else %}#FCEBEB{% endif %};
+    color:{% if message.tags == 'success' %}#0F6E56{% else %}#A32D2D{% endif %};
+    border:1px solid {% if message.tags == 'success' %}#9FE1CB{% else %}#F7C1C1{% endif %};">
+    {{ message }}
+  </div>
+  {% endfor %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="row">
+
+      {# ── LEFT: Photo + read-only info ── #}
+      <div class="col-md-4" style="margin-bottom:24px;">
+
+        {# Photo card #}
+        <div class="gl-info-card" style="text-align:center; padding:32px 24px;">
+          {% if profile.photo %}
+            <img src="{{ profile.photo.url }}" alt="Photo"
+              style="width:110px; height:110px; border-radius:50%; object-fit:cover;
+                     border:3px solid #ede9e3; margin-bottom:16px; display:block; margin-left:auto; margin-right:auto;">
+          {% else %}
+            <div style="width:110px; height:110px; border-radius:50%; background:#f0ede8;
+              display:flex; align-items:center; justify-content:center;
+              margin:0 auto 16px; font-size:38px; color:#c0bdb5; border:3px solid #ede9e3;">
+              <i class="fa fa-user"></i>
+            </div>
+          {% endif %}
+          <label style="font-weight:500; font-size:13px; display:block; margin-bottom:8px;">Profile photo</label>
+          {{ form.photo }}
+          <p style="font-size:11px; color:#aaa; margin:6px 0 0;">JPG or PNG · auto-resized to 400×400</p>
+        </div>
+
+        {# Account info (read-only) #}
+        <div class="gl-info-card" style="margin-top:16px;">
+          <h4 style="margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">Account</h4>
+          <p style="margin:0 0 8px; font-size:14px;"><i class="fa fa-user" style="color:#ccc; width:18px;"></i> {{ request.user.username }}</p>
+          <p style="margin:0 0 8px; font-size:14px; word-break:break-all;"><i class="fa fa-envelope" style="color:#ccc; width:18px;"></i> {{ request.user.email }}</p>
+          <div style="margin-top:14px; padding-top:14px; border-top:1px solid #eee;">
+            <a href="{% url 'account:password_change' %}" style="font-size:13px; color:#888;">
+              <i class="fa fa-lock"></i> Change password
+            </a>
+          </div>
+        </div>
+
+        {# Business role (read-only — admin manages this) #}
+        {% if salesperson %}
+        <div class="gl-info-card" style="margin-top:16px;">
+          <h4 style="margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">Business Role</h4>
+          <p style="margin:0 0 6px; font-size:13px; font-weight:500;">{{ salesperson.get_role_display }}</p>
+          <p style="margin:0 0 6px; font-size:12px; color:#888;">{{ salesperson.get_employment_type_display }}</p>
+          {% if salesperson.sales_point %}
+          <p style="margin:0 0 6px; font-size:12px; color:#888;">
+            <i class="fa fa-map-marker" style="width:14px;"></i> {{ salesperson.sales_point.name }}
+          </p>
+          {% endif %}
+          {% if salesperson.manager %}
+          <p style="margin:0; font-size:12px; color:#aaa;">
+            Reports to: {{ salesperson.manager.user.get_full_name }}
+          </p>
+          {% endif %}
+          {% if salesperson.start_date %}
+          <p style="margin:6px 0 0; font-size:11px; color:#bbb;">
+            Since {{ salesperson.start_date|date:"M Y" }}
+          </p>
+          {% endif %}
+          <p style="margin:10px 0 0; font-size:11px; color:#bbb;">Role managed by admin</p>
+        </div>
+        {% endif %}
+
+      </div>
+
+      {# ── RIGHT: Editable sections ── #}
+      <div class="col-md-8">
+
+        {# Personal info #}
+        <div class="gl-info-card" style="margin-bottom:20px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Personal information</h3>
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">First name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<p style="color:#E24B4A; font-size:12px; margin:4px 0 0;">{{ form.first_name.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Last name</label>
+                {{ form.last_name }}
+              </div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label style="font-size:13px; font-weight:500;">Bio</label>
+            {{ form.bio }}
+            <p style="font-size:11px; color:#aaa; margin:4px 0 0;">Not visible to customers.</p>
+          </div>
+        </div>
+
+        {# Contact info #}
+        <div class="gl-info-card" style="margin-bottom:20px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Contact information</h3>
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Office phone</label>
+                {{ form.phone }}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Mobile / cell</label>
+                {{ form.mobile }}
+              </div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label style="font-size:13px; font-weight:500;">Direct email</label>
+            {{ form.direct_email }}
+            <p style="font-size:11px; color:#aaa; margin:4px 0 0;">
+              Used for lead notifications if different from your login email ({{ request.user.email }}).
+            </p>
+          </div>
+        </div>
+
+        {# Location + timezone #}
+        <div class="gl-info-card" style="margin-bottom:20px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Location &amp; timezone</h3>
+          <div class="row">
+            <div class="col-sm-5">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">City</label>
+                {{ form.city }}
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">State</label>
+                {{ form.state }}
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Timezone</label>
+                {{ form.timezone }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Online presence #}
+        <div class="gl-info-card" style="margin-bottom:20px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Online presence</h3>
+          <div class="form-group">
+            <label style="font-size:13px; font-weight:500;">
+              <i class="fa fa-linkedin-square" style="color:#0077B5;"></i> LinkedIn URL
+            </label>
+            {{ form.linkedin_url }}
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label style="font-size:13px; font-weight:500;">
+              <i class="fa fa-calendar" style="color:#006BFF;"></i> Booking link (Calendly / Cal.com)
+            </label>
+            {{ form.calendly_url }}
+          </div>
+        </div>
+
+        {# Notifications #}
+        <div class="gl-info-card" style="margin-bottom:20px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Notifications</h3>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; margin:0;">
+              {{ form.notify_new_lead_email }}
+              <span>{{ form.notify_new_lead_email.label }}</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; margin:0;">
+              {{ form.notify_new_lead_sms }}
+              <span>{{ form.notify_new_lead_sms.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        {# Emergency contact #}
+        <div class="gl-info-card" style="margin-bottom:24px;">
+          <h3 style="margin:0 0 20px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">Emergency contact</h3>
+          <div class="row">
+            <div class="col-sm-7">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Name</label>
+                {{ form.emergency_contact_name }}
+              </div>
+            </div>
+            <div class="col-sm-5">
+              <div class="form-group">
+                <label style="font-size:13px; font-weight:500;">Phone</label>
+                {{ form.emergency_contact_phone }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Save #}
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="button"><span>Save profile</span><i class="fa fa-check"></i></button>
+          <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Cancel</span></a>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+</div>
+</section>
+{% endblock %}

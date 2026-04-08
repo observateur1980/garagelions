@@ -1,3 +1,10 @@
+# home/models.py — COMPLETE FILE (replace your existing one)
+# Changes from original:
+#   - SalesPoint: added location_type, royalty_rate fields
+#   - ServiceCity: slug uniqueness scoped to sales_point (not global)
+#   - LeadModel: removed assigned_to CharField, uses assigned_user FK only
+#   - FranchiseAgreement: new model at the bottom
+
 from django.db import models
 from django.core.validators import FileExtensionValidator
 from multiselectfield import MultiSelectField
@@ -47,23 +54,17 @@ class Testimonial(models.Model):
 
         if self.photo:
             img = Image.open(self.photo.path)
-
             TARGET_SIZE = (200, 200)
-
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
-
             width, height = img.size
             min_side = min(width, height)
-
             left = (width - min_side) / 2
             top = (height - min_side) / 2
             right = (width + min_side) / 2
             bottom = (height + min_side) / 2
-
             img = img.crop((left, top, right, bottom))
             img = img.resize(TARGET_SIZE, Image.LANCZOS)
-
             img.save(self.photo.path, optimize=True, quality=85)
 
 
@@ -87,52 +88,59 @@ def gallery_thumb_upload_to(instance, filename):
 def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, quality=98):
     if not file_field:
         return False
-
     try:
         watermark_path = os.path.join(settings.BASE_DIR, "static", "images", "watermark.png")
         if not os.path.exists(watermark_path):
             return False
-
         file_field.open("rb")
         base = Image.open(file_field)
         base = ImageOps.exif_transpose(base).convert("RGBA")
         file_field.close()
-
         wm = Image.open(watermark_path).convert("RGBA")
-
         wm_width = max(180, int(base.width * scale))
         ratio = wm_width / wm.width
         wm_height = int(wm.height * ratio)
         wm = wm.resize((wm_width, wm_height), Image.Resampling.LANCZOS)
-
         alpha = wm.split()[3]
         alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
         wm.putalpha(alpha)
-
         x = max(margin, base.width - wm.width - margin)
         y = max(margin, base.height - wm.height - margin)
         base.alpha_composite(wm, (x, y))
-
         base = base.convert("RGB")
-
         buffer = BytesIO()
         buffer_name = file_field.name
         if not buffer_name.lower().endswith((".jpg", ".jpeg")):
             buffer_name = buffer_name.rsplit(".", 1)[0] + ".jpg"
-
         base.save(buffer, format="JPEG", quality=quality, optimize=True)
         buffer.seek(0)
-
         file_field.save(buffer_name, ContentFile(buffer.read()), save=False)
         return True
-
     except Exception:
         return False
+
+
+LOCATION_TYPE_CHOICES = [
+    ("company", "Company-Owned"),
+    ("franchise", "Franchise"),
+    ("rental", "Rental / Licensed"),
+]
 
 
 class SalesPoint(models.Model):
     name = models.CharField(max_length=150)
     slug = models.SlugField(unique=True, blank=True)
+
+    # ── NEW: location type ──
+    location_type = models.CharField(
+        max_length=20,
+        choices=LOCATION_TYPE_CHOICES,
+        default="company",
+    )
+    royalty_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Royalty percentage (e.g. 6.00 for 6%)"
+    )
 
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
@@ -140,7 +148,6 @@ class SalesPoint(models.Model):
 
     page_title = models.CharField(max_length=255, blank=True)
     meta_description = models.CharField(max_length=255, blank=True)
-
     hero_title = models.CharField(max_length=255, blank=True)
     hero_subtitle = models.TextField(blank=True)
 
@@ -150,7 +157,6 @@ class SalesPoint(models.Model):
     local_phone = models.CharField(max_length=30, blank=True)
     local_email = models.EmailField(blank=True)
     lead_notification_email = models.EmailField(blank=True)
-
     from_email = models.EmailField(blank=True)
     reply_to_email = models.EmailField(blank=True)
 
@@ -190,7 +196,6 @@ class SalesPoint(models.Model):
     def full_address(self):
         parts = [self.address_line_1, self.address_line_2]
         return ", ".join([p for p in parts if p])
-
 
 
 class SalesPointWorkingHour(models.Model):
@@ -251,7 +256,8 @@ class ServiceCity(models.Model):
     )
     name = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, blank=True)
+    # ── FIXED: slug is now scoped to sales_point, not globally unique ──
+    slug = models.SlugField(max_length=120, blank=True)
 
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
@@ -262,7 +268,11 @@ class ServiceCity(models.Model):
             models.UniqueConstraint(
                 fields=["sales_point", "name", "state"],
                 name="unique_salespoint_city_state",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["sales_point", "slug"],
+                name="unique_salespoint_city_slug",
+            ),
         ]
 
     def save(self, *args, **kwargs):
@@ -270,7 +280,10 @@ class ServiceCity(models.Model):
             base = slugify(f"{self.name}-{self.state}")
             slug = base
             i = 1
-            while ServiceCity.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            # Scoped to this sales_point only — no more global collision
+            while ServiceCity.objects.filter(
+                sales_point=self.sales_point, slug=slug
+            ).exclude(pk=self.pk).exists():
                 i += 1
                 slug = f"{base}-{i}"
             self.slug = slug
@@ -403,7 +416,6 @@ class GalleryItem(models.Model):
 
     def save(self, *args, **kwargs):
         old_file_name = None
-
         if self.pk:
             old_values = GalleryItem.objects.filter(pk=self.pk).values("file").first()
             if old_values:
@@ -483,7 +495,7 @@ class LeadModel(models.Model):
         blank=True,
         related_name="leads",
     )
-
+    # ── assigned_to CharField REMOVED — use assigned_user FK only ──
     assigned_user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -491,7 +503,6 @@ class LeadModel(models.Model):
         blank=True,
         related_name="leads",
     )
-    assigned_to = models.CharField(max_length=120, blank=True)
 
     consultation_types = MultiSelectField(choices=CONSULTATION_CHOICES, blank=True)
     message = models.TextField(blank=True)
@@ -536,3 +547,68 @@ class VideoReview(models.Model):
 
     def __str__(self):
         return f"{self.order} - {self.title}"
+
+
+# ── NEW: FranchiseAgreement ──
+
+class FranchiseAgreement(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("expired", "Expired"),
+        ("terminated", "Terminated"),
+    ]
+
+    sales_point = models.OneToOneField(
+        SalesPoint,
+        on_delete=models.CASCADE,
+        related_name="franchise_agreement",
+    )
+
+    franchisee_legal_name = models.CharField(max_length=200)
+    franchisee_contact_name = models.CharField(max_length=120, blank=True)
+    franchisee_email = models.EmailField(blank=True)
+    franchisee_phone = models.CharField(max_length=30, blank=True)
+
+    upfront_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="One-time franchise fee in USD"
+    )
+    royalty_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Monthly royalty as % of gross revenue"
+    )
+    marketing_fee_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Marketing fund contribution as % of gross revenue"
+    )
+
+    territory_notes = models.TextField(blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    agreement_date = models.DateField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    renewal_date = models.DateField(null=True, blank=True)
+
+    agreement_document = models.FileField(
+        upload_to="franchise/agreements/",
+        blank=True, null=True,
+        help_text="Signed franchise agreement PDF"
+    )
+
+    internal_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Franchise Agreement"
+        verbose_name_plural = "Franchise Agreements"
+
+    def __str__(self):
+        return f"{self.sales_point.name} — {self.franchisee_legal_name}"
+
+    @property
+    def is_active(self):
+        return self.status == "active"

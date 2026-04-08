@@ -23,6 +23,8 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "imagekit",
     "home.apps.HomeConfig",
+
+    "django.contrib.sitemaps",
 ]
 
 MIDDLEWARE = [
@@ -102,5 +104,7 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_URL = "/account/login/"
 LOGIN_REDIRECT_URL = "/sales/dashboard/"
 LOGOUT_REDIRECT_URL = "/account/login/"
+
+
 
 
