@@ -5,7 +5,7 @@
 {% block seo_robots %}noindex,nofollow{% endblock %}
 
 {% block content %}
-<section style="margin-top:120px; padding:50px 0 80px;">
+<section class="sales-section" style="margin-top:120px; padding:50px 0 80px;">
 <div class="container">
 
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
@@ -13,6 +13,9 @@
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
       <a href="{% url 'account:logout' %}" class="button button-white"><span>Logout</span><i class="fa fa-sign-out"></i></a>
+        <a href="{% url 'sales_lead_create' %}" class="button" style="background:#1D9E75; border-color:#1D9E75;">
+  <span>Add Lead</span><i class="fa fa-plus"></i>
+</a>
     </div>
   </div>
 
@@ -101,7 +104,10 @@
           </td>
           <td>
             <a href="{% url 'sales_lead_detail' lead.pk %}"
-               class="button button-white" style="padding:4px 12px;"><span>Open</span></a>
+   class="button button-white" style="padding:4px 0; width:44px; text-align:center;"
+   title="Open lead">
+  <i class="fa fa-eye" style="float:none; display:inline-block; padding:10px 14px; width:auto;"></i>
+</a>
           </td>
         </tr>
         {% empty %}

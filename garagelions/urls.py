@@ -49,9 +49,13 @@ urlpatterns = [
          views_sales.sales_lead_detail,
          name='sales_lead_detail'),
 
+    path('sales/leads/add/', views_sales.sales_lead_create, name='sales_lead_create'),
+
     # SEO sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap'),
+
+
 ]
 
 if settings.DEBUG:

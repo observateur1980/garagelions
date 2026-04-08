@@ -274,3 +274,63 @@ def sales_lead_detail(request, pk):
         'form': form,
         'salesperson': sp,
     })
+
+
+
+
+
+
+
+
+
+# ── ADD to the bottom of home/views_sales.py ────────────────────────────────
+# Also add ManualLeadForm to the import at the top:
+#   from .forms import LeadUpdateForm, ManualLeadForm
+
+from django.contrib import messages as django_messages
+
+
+@login_required
+def sales_lead_create(request):
+    """Manually create a lead from inside the CRM."""
+    from .forms import ManualLeadForm
+
+    sp = _get_salesperson(request.user)
+
+    if request.method == 'POST':
+        form = ManualLeadForm(request.POST, user=request.user)
+        if form.is_valid():
+            lead = form.save(commit=False)
+
+            # If sales_point was disabled (locked to user's location), set it manually
+            if not lead.sales_point and sp and sp.sales_point:
+                lead.sales_point = sp.sales_point
+
+            # Auto-assign to current user if no one assigned
+            if not lead.assigned_user:
+                lead.assigned_user = request.user
+
+            # If no source_page provided, mark as manually entered
+            if not lead.source_page:
+                lead.source_page = f'Manual entry by {request.user.get_full_name()}'
+
+            lead.save()
+            form.save_m2m()
+
+            django_messages.success(request, f'Lead for {lead.first_name} {lead.last_name} created successfully.')
+            return redirect('sales_lead_detail', pk=lead.pk)
+        else:
+            django_messages.error(request, 'Please correct the errors below.')
+    else:
+        # Pre-fill sales_point and assigned_user for salespeople
+        initial = {}
+        if sp and sp.sales_point:
+            initial['sales_point'] = sp.sales_point
+        initial['assigned_user'] = request.user
+        initial['status'] = 'new'
+        form = ManualLeadForm(user=request.user, initial=initial)
+
+    return render(request, 'sales/lead_create.html', {
+        'form': form,
+        'salesperson': sp,
+    })

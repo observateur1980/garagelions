@@ -1,145 +1,223 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block seo_title %}Lead #{{ lead.pk }} | Garage Lions{% endblock %}
+{% block seo_title %}Lead #{{ lead.pk }} — {{ lead.first_name }} {{ lead.last_name }} | Garage Lions{% endblock %}
 {% block seo_robots %}noindex,nofollow{% endblock %}
 
 {% block content %}
-<section style="margin-top:120px; padding:50px 0 80px;">
+
+<style>
+.lead-meta { font-size:11px; color:#bbb; text-transform:uppercase; letter-spacing:.8px; margin:0 0 6px; }
+.lead-name { font-size:32px; font-weight:600; margin:0 0 6px; color:#2c2c2a; }
+.lead-sub  { font-size:13px; color:#888; margin:0; }
+.info-card { background:#fff; border:1px solid #ece9e3; border-radius:10px; padding:24px; margin-bottom:20px; }
+.info-card h4 { font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:#bbb; margin:0 0 16px; font-weight:500; }
+.info-row  { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; font-size:14px; color:#444; }
+.info-row:last-child { margin-bottom:0; }
+.info-row i { color:#ccc; width:16px; text-align:center; margin-top:2px; flex-shrink:0; }
+.info-row a { color:#444; text-decoration:none; }
+.info-row a:hover { color:#c64d1e; }
+.service-tag {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#f0faf5; color:#0F6E56;
+  border:1px solid #9FE1CB;
+  padding:6px 14px; border-radius:20px;
+  font-size:13px; font-weight:500;
+}
+.service-tag i { font-size:11px; }
+.status-bar { height:4px; border-radius:4px 4px 0 0; }
+.status-new       { background:#378ADD; }
+.status-contacted  { background:#534AB7; }
+.status-appt      { background:#BA7517; }
+.status-quoted    { background:#888780; }
+.status-won       { background:#1D9E75; }
+.status-lost      { background:#E24B4A; }
+.action-btn {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-radius:8px;
+  border:1px solid #ece9e3; background:#fafaf8;
+  text-decoration:none; color:#444; font-size:14px;
+  transition: border-color .15s, background .15s;
+}
+.action-btn:hover { border-color:#c64d1e; background:#fff8f5; color:#c64d1e; }
+.action-btn i { color:#ccc; font-size:15px; }
+.action-btn:hover i { color:#c64d1e; }
+</style>
+
+<section class="sales-section" style="margin-top:120px; padding:40px 0 80px; background:#f9f8f6; min-height:70vh;">
 <div class="container">
 
   {# ── Header ── #}
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:32px;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:32px;">
     <div>
-      <p style="margin:0 0 4px; font-size:12px; color:#aaa; text-transform:uppercase; letter-spacing:.5px;">
-        Lead #{{ lead.pk }} &middot; {{ lead.created_at|date:"F j, Y, g:i a" }}
-      </p>
-      <h1 style="margin:0;">{{ lead.first_name }} {{ lead.last_name }}</h1>
-      <p style="margin:4px 0 0; font-size:13px; color:#888;">
-        {% if lead.sales_point %}{{ lead.sales_point.name }}{% endif %}
+      <p class="lead-meta">Lead #{{ lead.pk }} &nbsp;&middot;&nbsp; {{ lead.created_at|date:"F j, Y" }} at {{ lead.created_at|date:"g:i a" }}</p>
+      <h1 class="lead-name">{{ lead.first_name }} {{ lead.last_name }}</h1>
+      <p class="lead-sub">
+        {% if lead.sales_point %}<i class="fa fa-map-marker" style="color:#ccc;"></i> {{ lead.sales_point.name }}{% endif %}
         {% if lead.assigned_user %}
-          &nbsp;&middot;&nbsp; Assigned to <strong>{{ lead.assigned_user.get_full_name }}</strong>
+          &nbsp;&middot;&nbsp; Assigned to <strong style="color:#2c2c2a;">{{ lead.assigned_user.get_full_name }}</strong>
         {% else %}
-          &nbsp;&middot;&nbsp; <span style="color:#E24B4A;">Unassigned</span>
+          &nbsp;&middot;&nbsp; <span style="color:#E24B4A; font-weight:500;">Unassigned</span>
         {% endif %}
       </p>
     </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <a href="{% url 'sales_lead_list' %}" class="button button-white"><span>Back to Leads</span><i class="fa fa-arrow-left"></i></a>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      {# Status badge #}
+      <span style="padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500;
+        {% if lead.status == 'new' %}background:#E6F1FB; color:#185FA5;
+        {% elif lead.status == 'contacted' %}background:#EEEDFE; color:#3C3489;
+        {% elif lead.status == 'appointment_set' %}background:#FAEEDA; color:#854F0B;
+        {% elif lead.status == 'quoted' %}background:#F1EFE8; color:#5F5E5A;
+        {% elif lead.status == 'closed_won' %}background:#E1F5EE; color:#0F6E56;
+        {% elif lead.status == 'closed_lost' %}background:#FCEBEB; color:#A32D2D;
+        {% endif %}">
+        {{ lead.get_status_display }}
+      </span>
+      <a href="{% url 'sales_lead_list' %}" class="button button-white"><span>All Leads</span><i class="fa fa-list"></i></a>
       <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
     </div>
   </div>
 
   <div class="row">
 
-    {# ── LEFT: Lead info ── #}
-    <div class="col-md-6" style="margin-bottom:24px;">
+    {# ── LEFT column ── #}
+    <div class="col-md-7" style="margin-bottom:24px;">
 
-      {# Contact #}
-      <div class="gl-info-card" style="margin-bottom:20px;">
-        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Contact</h3>
-        <p style="margin:0 0 8px; font-size:14px;">
-          <i class="fa fa-envelope" style="color:#ccc; width:18px;"></i>
+      {# Contact card #}
+      <div class="info-card">
+        <h4>Contact information</h4>
+        <div class="info-row">
+          <i class="fa fa-envelope"></i>
           <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
-        </p>
-        <p style="margin:0 0 8px; font-size:14px;">
-          <i class="fa fa-phone" style="color:#ccc; width:18px;"></i>
+        </div>
+        <div class="info-row">
+          <i class="fa fa-phone"></i>
           <a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>
-        </p>
-        <p style="margin:0 0 8px; font-size:14px;">
-          <i class="fa fa-map-marker" style="color:#ccc; width:18px;"></i>
-          ZIP {{ lead.zip_code }}
-          {% if lead.service_city %} &mdash; {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}
-        </p>
+        </div>
+        <div class="info-row">
+          <i class="fa fa-map-marker"></i>
+          <span>ZIP {{ lead.zip_code }}{% if lead.service_city %} &mdash; {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}</span>
+        </div>
         {% if lead.source_page %}
-        <p style="margin:0; font-size:12px; color:#aaa;">
-          <i class="fa fa-globe" style="width:18px;"></i>
-          <a href="{{ lead.source_page }}" target="_blank" style="color:#aaa; word-break:break-all;">{{ lead.source_page }}</a>
-        </p>
+        <div class="info-row">
+          <i class="fa fa-globe"></i>
+          <a href="{{ lead.source_page }}" target="_blank" style="font-size:12px; color:#aaa; word-break:break-all;">{{ lead.source_page }}</a>
+        </div>
         {% endif %}
       </div>
 
       {# Services requested #}
-      <div class="gl-info-card" style="margin-bottom:20px;">
-        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Services requested</h3>
+      <div class="info-card">
+        <h4>Services requested</h4>
         {% if lead.consultation_types %}
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
-            {% for ct in lead.get_consultation_types_display %}
-              <span style="background:#E1F5EE; color:#0F6E56; padding:4px 12px; border-radius:12px; font-size:12px;">{{ ct }}</span>
+
+          {# Build a lookup dict so we get proper display labels #}
+          {% with choices=lead.CONSULTATION_CHOICES %}
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:{% if lead.message %}16px{% else %}0{% endif %};">
+            {% for val, label in choices %}
+              {% if val in lead.consultation_types %}
+                <span class="service-tag">
+                  {% if val == "garage_flooring" %}<i class="fa fa-th-large"></i>
+                  {% elif val == "garage_cabinets" %}<i class="fa fa-archive"></i>
+                  {% elif val == "garage_slatwall" %}<i class="fa fa-align-justify"></i>
+                  {% elif val == "storage_racks" %}<i class="fa fa-inbox"></i>
+                  {% elif val == "garage_door" %}<i class="fa fa-toggle-up"></i>
+                  {% elif val == "garage_makeover" %}<i class="fa fa-magic"></i>
+                  {% elif val == "garage_conversion" %}<i class="fa fa-exchange"></i>
+                  {% elif val == "car_lift" %}<i class="fa fa-car"></i>
+                  {% endif %}
+                  {{ label }}
+                </span>
+              {% endif %}
             {% endfor %}
           </div>
+          {% endwith %}
+
         {% else %}
-          <p style="color:#aaa; margin:0 0 16px;">None specified.</p>
+          <p style="color:#aaa; margin:0; font-size:14px;">No services specified.</p>
         {% endif %}
+
         {% if lead.message %}
-          <p style="margin:0; font-size:14px; color:#555; white-space:pre-line;">{{ lead.message }}</p>
+        <div style="border-top:1px solid #eee; padding-top:16px; margin-top:{% if lead.consultation_types %}0{% else %}0{% endif %};">
+          <p style="margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:#bbb;">Message</p>
+          <p style="margin:0; font-size:14px; color:#555; line-height:1.7; white-space:pre-line;">{{ lead.message }}</p>
+        </div>
         {% endif %}
       </div>
 
       {# Attachments #}
-      <div class="gl-info-card">
-        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Attachments</h3>
+      {% if lead.attachments.all %}
+      <div class="info-card">
+        <h4>Attachments ({{ lead.attachments.count }})</h4>
         {% for item in lead.attachments.all %}
-          <p style="margin:0 0 8px; font-size:13px;">
-            <i class="fa fa-paperclip" style="color:#ccc;"></i>
-            <a href="{{ item.file.url }}" target="_blank">{{ item.file.name|slice:"30:" }}</a>
-            <span style="color:#ccc; font-size:11px; margin-left:6px;">{{ item.uploaded_at|date:"M d" }}</span>
-          </p>
-        {% empty %}
-          <p style="color:#aaa; margin:0; font-size:13px;">No attachments.</p>
+          <div class="info-row">
+            <i class="fa fa-paperclip"></i>
+            <a href="{{ item.file.url }}" target="_blank" style="font-size:13px;">{{ item.file.name|slice:"25:" }}</a>
+            <span style="color:#ccc; font-size:11px; margin-left:auto;">{{ item.uploaded_at|date:"M d" }}</span>
+          </div>
         {% endfor %}
       </div>
+      {% endif %}
 
     </div>
 
-    {# ── RIGHT: Update + quick actions ── #}
-    <div class="col-md-6" style="margin-bottom:24px;">
+    {# ── RIGHT column ── #}
+    <div class="col-md-5" style="margin-bottom:24px;">
 
-      {# Status update form #}
-      <div class="gl-info-card" style="margin-bottom:20px; border-top:4px solid
-        {% if lead.status == 'new' %}#378ADD
-        {% elif lead.status == 'contacted' %}#534AB7
-        {% elif lead.status == 'appointment_set' %}#BA7517
-        {% elif lead.status == 'quoted' %}#888780
-        {% elif lead.status == 'closed_won' %}#1D9E75
-        {% elif lead.status == 'closed_lost' %}#E24B4A
-        {% else %}#ddd{% endif %};">
-        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Update lead</h3>
-        <form method="post">
-          {% csrf_token %}
-          <div class="form-group">
-            <label style="font-weight:500; font-size:13px;">Status</label>
-            {{ form.status }}
-          </div>
-          <div class="form-group" style="margin-top:16px;">
-            <label style="font-weight:500; font-size:13px;">Internal notes</label>
-            {{ form.internal_notes }}
-            <p style="font-size:11px; color:#aaa; margin:4px 0 0;">Not visible to the customer.</p>
-          </div>
-          <div style="margin-top:20px;">
-            <button type="submit" class="button"><span>Save changes</span><i class="fa fa-check"></i></button>
-          </div>
-        </form>
+      {# Update lead form #}
+      <div style="border-radius:10px; overflow:hidden; margin-bottom:20px; border:1px solid #ece9e3; background:#fff;">
+        <div class="status-bar
+          {% if lead.status == 'new' %}status-new
+          {% elif lead.status == 'contacted' %}status-contacted
+          {% elif lead.status == 'appointment_set' %}status-appt
+          {% elif lead.status == 'quoted' %}status-quoted
+          {% elif lead.status == 'closed_won' %}status-won
+          {% elif lead.status == 'closed_lost' %}status-lost{% endif %}">
+        </div>
+        <div style="padding:24px;">
+          <h4 style="font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:#bbb; margin:0 0 16px; font-weight:500;">Update lead</h4>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label style="font-weight:500; font-size:13px; color:#444;">Status</label>
+              {{ form.status }}
+            </div>
+            <div class="form-group" style="margin-top:14px;">
+              <label style="font-weight:500; font-size:13px; color:#444;">Internal notes</label>
+              {{ form.internal_notes }}
+              <p style="font-size:11px; color:#bbb; margin:4px 0 0;">Not visible to the customer.</p>
+            </div>
+            <div style="margin-top:18px;">
+              <button type="submit" class="button" style="width:100%;">
+                <span>Save changes</span><i class="fa fa-check"></i>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       {# Quick actions #}
-      <div class="gl-info-card">
-        <h3 style="margin:0 0 16px; border-bottom:1px solid #eee; padding-bottom:10px; font-size:15px;">Quick actions</h3>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <a href="tel:{{ lead.phone }}" class="button button-white">
-            <span>Call {{ lead.phone }}</span><i class="fa fa-phone"></i>
+      <div class="info-card">
+        <h4>Quick actions</h4>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <a href="tel:{{ lead.phone }}" class="action-btn">
+            <span><i class="fa fa-phone" style="color:#1D9E75; margin-right:8px;"></i>Call {{ lead.phone }}</span>
+            <i class="fa fa-chevron-right"></i>
           </a>
-          <a href="mailto:{{ lead.email }}" class="button button-white">
-            <span>Email {{ lead.email }}</span><i class="fa fa-envelope"></i>
+          <a href="mailto:{{ lead.email }}" class="action-btn">
+            <span><i class="fa fa-envelope" style="color:#378ADD; margin-right:8px;"></i>{{ lead.email }}</span>
+            <i class="fa fa-chevron-right"></i>
           </a>
-          {% if salesperson and salesperson.calendly_url %}
-          <a href="{{ salesperson.user.profile.calendly_url }}" target="_blank" class="button button-white">
-            <span>Send booking link</span><i class="fa fa-calendar"></i>
+          {% if salesperson and salesperson.user.profile.calendly_url %}
+          <a href="{{ salesperson.user.profile.calendly_url }}" target="_blank" class="action-btn">
+            <span><i class="fa fa-calendar" style="color:#534AB7; margin-right:8px;"></i>Send booking link</span>
+            <i class="fa fa-chevron-right"></i>
           </a>
           {% endif %}
           {% if lead.sales_point and lead.sales_point.local_phone %}
-          <a href="tel:{{ lead.sales_point.local_phone }}" class="button button-white">
-            <span>Office: {{ lead.sales_point.local_phone }}</span><i class="fa fa-map-marker"></i>
+          <a href="tel:{{ lead.sales_point.local_phone }}" class="action-btn">
+            <span><i class="fa fa-building" style="color:#BA7517; margin-right:8px;"></i>Office: {{ lead.sales_point.local_phone }}</span>
+            <i class="fa fa-chevron-right"></i>
           </a>
           {% endif %}
         </div>

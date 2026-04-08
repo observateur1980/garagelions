@@ -134,3 +134,82 @@ class LeadUpdateForm(forms.ModelForm):
                 'placeholder': 'Internal notes — not visible to the customer.',
             }),
         }
+
+
+
+
+
+
+
+
+
+
+# ── ADD to the bottom of home/forms.py ──────────────────────────────────────
+
+class ManualLeadForm(forms.ModelForm):
+    """
+    Used by salespeople to manually add a lead from inside the CRM.
+    Includes all LeadModel fields plus explicit assignment controls.
+    """
+
+    class Meta:
+        model = LeadModel
+        fields = [
+            'first_name', 'last_name', 'email', 'phone', 'zip_code',
+            'consultation_types', 'message',
+            'sales_point', 'service_city', 'assigned_user',
+            'status', 'internal_notes', 'source_page',
+        ]
+        widgets = {
+            'first_name':         forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name':          forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'email':              forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@example.com'}),
+            'phone':              forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
+            'zip_code':           forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ZIP code'}),
+            'consultation_types': forms.CheckboxSelectMultiple(),
+            'message':            forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes about the lead…'}),
+            'sales_point':        forms.Select(attrs={'class': 'form-control'}),
+            'service_city':       forms.Select(attrs={'class': 'form-control'}),
+            'assigned_user':      forms.Select(attrs={'class': 'form-control'}),
+            'status':             forms.Select(attrs={'class': 'form-control'}),
+            'internal_notes':     forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Internal notes (not visible to customer)'}),
+            'source_page':        forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Phone call, Walk-in, Referral'}),
+        }
+        labels = {
+            'source_page': 'Source / How did they find us?',
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Make assignment fields optional
+        self.fields['sales_point'].required = False
+        self.fields['service_city'].required = False
+        self.fields['assigned_user'].required = False
+        self.fields['internal_notes'].required = False
+        self.fields['source_page'].required = False
+        self.fields['message'].required = False
+        self.fields['consultation_types'].required = False
+
+        # Add blank option to dropdowns
+        self.fields['sales_point'].empty_label = '— Select location —'
+        self.fields['service_city'].empty_label = '— Select city —'
+        self.fields['assigned_user'].empty_label = '— Unassigned —'
+
+        # If a regular salesperson (not staff), lock sales_point to their own location
+        if user and not user.is_staff and not user.is_superuser:
+            try:
+                sp = user.salesperson.sales_point
+                if sp:
+                    self.fields['sales_point'].initial = sp
+                    self.fields['sales_point'].queryset = \
+                        self.fields['sales_point'].queryset.filter(pk=sp.pk)
+                    self.fields['sales_point'].widget.attrs['disabled'] = True
+                    self.fields['service_city'].queryset = \
+                        self.fields['service_city'].queryset.filter(sales_point=sp)
+                    self.fields['assigned_user'].queryset = \
+                        self.fields['assigned_user'].queryset.filter(
+                            salesperson__sales_point=sp
+                        )
+            except Exception:
+                pass

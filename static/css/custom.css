@@ -373,3 +373,54 @@ input.button:focus {
 }
 
 
+/* ── Sales CRM button overrides ──────────────────────────────────────── */
+
+/* Primary action button (dark, clear text) */
+.sales-section .button,
+.sales-section a.button,
+.sales-section button.button {
+  background: #2c2c2a !important;
+  color: #fff !important;
+}
+.sales-section .button span,
+.sales-section a.button span {
+  color: #fff !important;
+}
+.sales-section .button i,
+.sales-section a.button i {
+  color: #fff !important;
+  background: rgba(255,255,255,0.1) !important;
+}
+
+/* White/outline button */
+.sales-section .button.button-white,
+.sales-section a.button.button-white {
+  background: #f5f4f1 !important;
+  border: 1px solid #ddd !important;
+  color: #444 !important;
+}
+.sales-section .button.button-white span,
+.sales-section a.button.button-white span {
+  color: #444 !important;
+}
+.sales-section .button.button-white i,
+.sales-section a.button.button-white i {
+  color: #666 !important;
+  background: rgba(0,0,0,0.05) !important;
+}
+
+/* Green "Add Lead" button */
+.sales-section .button.button-green,
+.sales-section a.button.button-green {
+  background: #1D9E75 !important;
+  border-color: #1D9E75 !important;
+}
+.sales-section .button.button-green span,
+.sales-section a.button.button-green span {
+  color: #fff !important;
+}
+.sales-section .button.button-green i,
+.sales-section a.button.button-green i {
+  color: #fff !important;
+  background: rgba(0,0,0,0.1) !important;
+}
