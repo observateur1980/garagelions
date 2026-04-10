@@ -4,6 +4,7 @@ import logging
 
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -195,6 +196,8 @@ def create_lead(request):
             notify_new_lead_to_salesperson(lead)
             notify_new_lead_to_location(lead, attachment_names=attachment_names)
 
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"redirect_url": reverse("create_lead_success")})
             return redirect("create_lead_success")
         else:
             messages.error(request, "Please correct the errors below.")
