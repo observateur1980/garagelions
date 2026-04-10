@@ -171,9 +171,13 @@ def create_lead(request):
 
             # ── Save attachments ──
             uploaded_files = lead_form.cleaned_data.get("attachments") or []
+            attachment_names = []
             for f in uploaded_files:
-                LeadAttachment.objects.create(lead=lead, file=f)
-            attachment_names = [f.name for f in uploaded_files]
+                try:
+                    LeadAttachment.objects.create(lead=lead, file=f)
+                    attachment_names.append(f.name)
+                except Exception:
+                    logger.exception("Failed to save attachment %s for lead %s", f.name, lead.pk)
 
             # ── Audit log ──
             LeadActivity.objects.create(
