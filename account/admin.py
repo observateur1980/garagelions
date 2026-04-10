@@ -117,6 +117,20 @@ class MyUserAdmin(BaseUserAdmin):
         }),
     )
 
+    def save_related(self, request, form, formsets, change):
+        # On both add AND edit: if a ProfileInline form has no pk yet,
+        # check whether a Profile already exists for this user and reuse it
+        # (UPDATE) instead of trying to INSERT a duplicate (IntegrityError).
+        for formset in formsets:
+            if formset.model == Profile:
+                for f in formset.forms:
+                    if not f.instance.pk:
+                        try:
+                            f.instance = Profile.objects.get(user=form.instance)
+                        except Profile.DoesNotExist:
+                            pass
+        super().save_related(request, form, formsets, change)
+
     def get_full_name(self, obj):
         try:
             return obj.profile.full_name
