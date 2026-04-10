@@ -230,6 +230,17 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
 
 
+{% if location_auto_detected and selected_city %}
+<div style="background:#ff6811;color:#fff;text-align:center;padding:10px 16px;font-size:14px;position:relative;z-index:999;">
+  <i class="fa fa-map-marker" style="margin-right:6px;"></i>
+  We detected you're near <strong>{{ selected_city.name }}</strong> — showing your local Garage Lions team.
+  &nbsp;
+  <a href="{% url 'locations_list' %}" style="color:#fff;text-decoration:underline;font-weight:600;">Change location</a>
+  &nbsp;&nbsp;
+  <a href="{% url 'set_location' selected_city.slug %}?next=/" style="color:#fff;opacity:.7;font-size:12px;">Dismiss</a>
+</div>
+{% endif %}
+
  <section>
     <div class="img_sld" id="img2">
         <img loading="lazy" src="{% static 'images/slider/bg_vertical.png' %}" alt="Garage transformation mobile">

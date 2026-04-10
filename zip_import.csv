@@ -1,5 +1,267 @@
 sales_point_name,sales_point_slug,city_name,state,city_slug,zip_code
+Bay Area,bay-area,Acampo,CA,acampo-ca,95220
+Bay Area,bay-area,Alameda,CA,alameda-ca,94501
+Bay Area,bay-area,Alameda,CA,alameda-ca,94502
+Bay Area,bay-area,Alamo,CA,alamo-ca,94507
+Bay Area,bay-area,Albany,CA,albany-ca,94706
+Bay Area,bay-area,Alviso,CA,alviso-ca,95002
+Bay Area,bay-area,Angwin,CA,angwin-ca,94508
+Bay Area,bay-area,Annapolis,CA,annapolis-ca,95412
+Bay Area,bay-area,Antioch,CA,antioch-ca,94509
+Bay Area,bay-area,Aptos,CA,aptos-ca,95003
+Bay Area,bay-area,Aromas,CA,aromas-ca,95004
+Bay Area,bay-area,Atherton,CA,atherton-ca,94027
+Bay Area,bay-area,Belmont,CA,belmont-ca,94002
+Bay Area,bay-area,Belvedere Tiburon,CA,belvedere-tiburon-ca,94920
+Bay Area,bay-area,Ben Lomond,CA,ben-lomond-ca,95005
+Bay Area,bay-area,Benicia,CA,benicia-ca,94510
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94702
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94703
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94704
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94705
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94707
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94708
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94709
+Bay Area,bay-area,Berkeley,CA,berkeley-ca,94710
+Bay Area,bay-area,Bethel Island,CA,bethel-island-ca,94511
+Bay Area,bay-area,Big Sur,CA,big-sur-ca,93920
+Bay Area,bay-area,Birds Landing,CA,birds-landing-ca,94512
+Bay Area,bay-area,Bodega,CA,bodega-ca,94922
+Bay Area,bay-area,Bodega Bay,CA,bodega-bay-ca,94923
+Bay Area,bay-area,Bolinas,CA,bolinas-ca,94924
+Bay Area,bay-area,Boulder Creek,CA,boulder-creek-ca,95006
+Bay Area,bay-area,Bradley,CA,bradley-ca,93426
+Bay Area,bay-area,Brentwood,CA,brentwood-ca,94513
+Bay Area,bay-area,Brisbane,CA,brisbane-ca,94005
+Bay Area,bay-area,Brookdale,CA,brookdale-ca,95007
+Bay Area,bay-area,Burlingame,CA,burlingame-ca,94010
+Bay Area,bay-area,Byron,CA,byron-ca,94514
+Bay Area,bay-area,Calistoga,CA,calistoga-ca,94515
+Bay Area,bay-area,Camp Meeker,CA,camp-meeker-ca,95419
+Bay Area,bay-area,Campbell,CA,campbell-ca,95008
+Bay Area,bay-area,Capitola,CA,capitola-ca,95010
+Bay Area,bay-area,Carmel,CA,carmel-ca,93923
+Bay Area,bay-area,Carmel By The Sea,CA,carmel-by-the-sea-ca,93921
+Bay Area,bay-area,Carmel Valley,CA,carmel-valley-ca,93924
+Bay Area,bay-area,Castro Valley,CA,castro-valley-ca,94546
+Bay Area,bay-area,Castro Valley,CA,castro-valley-ca,94552
+Bay Area,bay-area,Castroville,CA,castroville-ca,95012
+Bay Area,bay-area,Cazadero,CA,cazadero-ca,95421
+Bay Area,bay-area,Ceres,CA,ceres-ca,95307
+Bay Area,bay-area,Chualar,CA,chualar-ca,93925
+Bay Area,bay-area,Clayton,CA,clayton-ca,94517
+Bay Area,bay-area,Clements,CA,clements-ca,95227
+Bay Area,bay-area,Cloverdale,CA,cloverdale-ca,95425
+Bay Area,bay-area,Concord,CA,concord-ca,94518
+Bay Area,bay-area,Concord,CA,concord-ca,94519
+Bay Area,bay-area,Concord,CA,concord-ca,94520
+Bay Area,bay-area,Concord,CA,concord-ca,94521
+Bay Area,bay-area,Corte Madera,CA,corte-madera-ca,94925
+Bay Area,bay-area,Cotati,CA,cotati-ca,94931
+Bay Area,bay-area,Crockett,CA,crockett-ca,94525
+Bay Area,bay-area,Crows Landing,CA,crows-landing-ca,95313
+Bay Area,bay-area,Cupertino,CA,cupertino-ca,95014
+Bay Area,bay-area,Daly City,CA,daly-city-ca,94014
+Bay Area,bay-area,Daly City,CA,daly-city-ca,94015
+Bay Area,bay-area,Danville,CA,danville-ca,94506
+Bay Area,bay-area,Danville,CA,danville-ca,94526
+Bay Area,bay-area,Davenport,CA,davenport-ca,95017
+Bay Area,bay-area,Deer Park,CA,deer-park-ca,94576
+Bay Area,bay-area,Denair,CA,denair-ca,95316
+Bay Area,bay-area,Dillon Beach,CA,dillon-beach-ca,94929
+Bay Area,bay-area,Dixon,CA,dixon-ca,95620
+Bay Area,bay-area,Dublin,CA,dublin-ca,94568
+Bay Area,bay-area,Duncans Mills,CA,duncans-mills-ca,95430
+Bay Area,bay-area,El Cerrito,CA,el-cerrito-ca,94530
+Bay Area,bay-area,El Sobrante,CA,el-sobrante-ca,94803
+Bay Area,bay-area,Eldridge,CA,eldridge-ca,95431
+Bay Area,bay-area,Elmira,CA,elmira-ca,95625
+Bay Area,bay-area,Emeryville,CA,emeryville-ca,94608
+Bay Area,bay-area,Escalon,CA,escalon-ca,95320
+Bay Area,bay-area,Fairfax,CA,fairfax-ca,94930
+Bay Area,bay-area,Fairfield,CA,fairfield-ca,94533
+Bay Area,bay-area,Farmington,CA,farmington-ca,95230
+Bay Area,bay-area,Felton,CA,felton-ca,95018
+Bay Area,bay-area,Forest Knolls,CA,forest-knolls-ca,94933
+Bay Area,bay-area,Forestville,CA,forestville-ca,95436
+Bay Area,bay-area,Foster City,CA,foster-city-ca,94404
+Bay Area,bay-area,Freedom,CA,freedom-ca,95019
+Bay Area,bay-area,Fremont,CA,fremont-ca,94536
+Bay Area,bay-area,Fremont,CA,fremont-ca,94538
+Bay Area,bay-area,Fremont,CA,fremont-ca,94539
+Bay Area,bay-area,Fremont,CA,fremont-ca,94555
+Bay Area,bay-area,French Camp,CA,french-camp-ca,95231
+Bay Area,bay-area,Fulton,CA,fulton-ca,95439
+Bay Area,bay-area,Geyserville,CA,geyserville-ca,95441
+Bay Area,bay-area,Gilroy,CA,gilroy-ca,95020
+Bay Area,bay-area,Glen Ellen,CA,glen-ellen-ca,95442
+Bay Area,bay-area,Gonzales,CA,gonzales-ca,93926
+Bay Area,bay-area,Graton,CA,graton-ca,95444
+Bay Area,bay-area,Greenbrae,CA,greenbrae-ca,94904
+Bay Area,bay-area,Greenfield,CA,greenfield-ca,93927
+Bay Area,bay-area,Guerneville,CA,guerneville-ca,95446
+Bay Area,bay-area,Half Moon Bay,CA,half-moon-bay-ca,94019
+Bay Area,bay-area,Hayward,CA,hayward-ca,94541
+Bay Area,bay-area,Hayward,CA,hayward-ca,94542
+Bay Area,bay-area,Hayward,CA,hayward-ca,94544
+Bay Area,bay-area,Hayward,CA,hayward-ca,94545
+Bay Area,bay-area,Healdsburg,CA,healdsburg-ca,95448
+Bay Area,bay-area,Hercules,CA,hercules-ca,94547
+Bay Area,bay-area,Hickman,CA,hickman-ca,95323
+Bay Area,bay-area,Hollister,CA,hollister-ca,95023
+Bay Area,bay-area,Hughson,CA,hughson-ca,95326
+Bay Area,bay-area,Inverness,CA,inverness-ca,94937
+Bay Area,bay-area,Jenner,CA,jenner-ca,95450
+Bay Area,bay-area,Jolon,CA,jolon-ca,93928
+Bay Area,bay-area,Kenwood,CA,kenwood-ca,95452
+Bay Area,bay-area,Keyes,CA,keyes-ca,95328
+Bay Area,bay-area,King City,CA,king-city-ca,93930
+Bay Area,bay-area,La Honda,CA,la-honda-ca,94020
+Bay Area,bay-area,Lafayette,CA,lafayette-ca,94549
+Bay Area,bay-area,Lagunitas,CA,lagunitas-ca,94938
+Bay Area,bay-area,Larkspur,CA,larkspur-ca,94939
+Bay Area,bay-area,Lathrop,CA,lathrop-ca,95330
+Bay Area,bay-area,Linden,CA,linden-ca,95236
+Bay Area,bay-area,Livermore,CA,livermore-ca,94550
+Bay Area,bay-area,Lockeford,CA,lockeford-ca,95237
+Bay Area,bay-area,Lockwood,CA,lockwood-ca,93932
+Bay Area,bay-area,Lodi,CA,lodi-ca,95240
+Bay Area,bay-area,Lodi,CA,lodi-ca,95242
+Bay Area,bay-area,Loma Mar,CA,loma-mar-ca,94021
+Bay Area,bay-area,Los Altos,CA,los-altos-ca,94022
+Bay Area,bay-area,Los Altos,CA,los-altos-ca,94024
+Bay Area,bay-area,Los Gatos,CA,los-gatos-ca,95030
 Bay Area,bay-area,Los Gatos,CA,los-gatos-ca,95032
+Bay Area,bay-area,Los Gatos,CA,los-gatos-ca,95033
+Bay Area,bay-area,Manteca,CA,manteca-ca,95336
+Bay Area,bay-area,Manteca,CA,manteca-ca,95337
+Bay Area,bay-area,Marina,CA,marina-ca,93933
+Bay Area,bay-area,Marshall,CA,marshall-ca,94940
+Bay Area,bay-area,Martinez,CA,martinez-ca,94553
+Bay Area,bay-area,Menlo Park,CA,menlo-park-ca,94025
+Bay Area,bay-area,Mill Valley,CA,mill-valley-ca,94941
+Bay Area,bay-area,Millbrae,CA,millbrae-ca,94030
+Bay Area,bay-area,Milpitas,CA,milpitas-ca,95035
+Bay Area,bay-area,Modesto,CA,modesto-ca,95350
+Bay Area,bay-area,Modesto,CA,modesto-ca,95351
+Bay Area,bay-area,Modesto,CA,modesto-ca,95354
+Bay Area,bay-area,Modesto,CA,modesto-ca,95355
+Bay Area,bay-area,Modesto,CA,modesto-ca,95356
+Bay Area,bay-area,Modesto,CA,modesto-ca,95357
+Bay Area,bay-area,Modesto,CA,modesto-ca,95358
+Bay Area,bay-area,Montara,CA,montara-ca,94037
+Bay Area,bay-area,Monte Rio,CA,monte-rio-ca,95462
+Bay Area,bay-area,Monterey,CA,monterey-ca,93940
+Bay Area,bay-area,Moraga,CA,moraga-ca,94556
+Bay Area,bay-area,Morgan Hill,CA,morgan-hill-ca,95037
+Bay Area,bay-area,Moss Beach,CA,moss-beach-ca,94038
+Bay Area,bay-area,Moss Landing,CA,moss-landing-ca,95039
+Bay Area,bay-area,Mount Hamilton,CA,mount-hamilton-ca,95140
+Bay Area,bay-area,Mount Hermon,CA,mount-hermon-ca,95041
+Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94040
+Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94041
+Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94043
+Bay Area,bay-area,Napa,CA,napa-ca,94558
+Bay Area,bay-area,Napa,CA,napa-ca,94559
+Bay Area,bay-area,Newark,CA,newark-ca,94560
+Bay Area,bay-area,Newman,CA,newman-ca,95360
+Bay Area,bay-area,Nicasio,CA,nicasio-ca,94946
+Bay Area,bay-area,Novato,CA,novato-ca,94945
+Bay Area,bay-area,Novato,CA,novato-ca,94947
+Bay Area,bay-area,Novato,CA,novato-ca,94949
+Bay Area,bay-area,Oakdale,CA,oakdale-ca,95361
+Bay Area,bay-area,Oakland,CA,oakland-ca,94601
+Bay Area,bay-area,Oakland,CA,oakland-ca,94602
+Bay Area,bay-area,Oakland,CA,oakland-ca,94603
+Bay Area,bay-area,Oakland,CA,oakland-ca,94605
+Bay Area,bay-area,Oakland,CA,oakland-ca,94606
+Bay Area,bay-area,Oakland,CA,oakland-ca,94607
+Bay Area,bay-area,Oakland,CA,oakland-ca,94609
+Bay Area,bay-area,Oakland,CA,oakland-ca,94610
+Bay Area,bay-area,Oakland,CA,oakland-ca,94611
+Bay Area,bay-area,Oakland,CA,oakland-ca,94612
+Bay Area,bay-area,Oakland,CA,oakland-ca,94618
+Bay Area,bay-area,Oakland,CA,oakland-ca,94619
+Bay Area,bay-area,Oakland,CA,oakland-ca,94621
+Bay Area,bay-area,Oakley,CA,oakley-ca,94561
+Bay Area,bay-area,Occidental,CA,occidental-ca,95465
+Bay Area,bay-area,Olema,CA,olema-ca,94950
+Bay Area,bay-area,Orinda,CA,orinda-ca,94563
+Bay Area,bay-area,Pacific Grove,CA,pacific-grove-ca,93950
+Bay Area,bay-area,Pacifica,CA,pacifica-ca,94044
+Bay Area,bay-area,Paicines,CA,paicines-ca,95043
+Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94301
+Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94303
+Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94304
+Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94306
+Bay Area,bay-area,Patterson,CA,patterson-ca,95363
+Bay Area,bay-area,Pebble Beach,CA,pebble-beach-ca,93953
+Bay Area,bay-area,Penngrove,CA,penngrove-ca,94951
+Bay Area,bay-area,Pescadero,CA,pescadero-ca,94060
+Bay Area,bay-area,Petaluma,CA,petaluma-ca,94952
+Bay Area,bay-area,Petaluma,CA,petaluma-ca,94954
+Bay Area,bay-area,Pinole,CA,pinole-ca,94564
+Bay Area,bay-area,Pittsburg,CA,pittsburg-ca,94565
+Bay Area,bay-area,Pleasant Hill,CA,pleasant-hill-ca,94523
+Bay Area,bay-area,Pleasanton,CA,pleasanton-ca,94566
+Bay Area,bay-area,Pleasanton,CA,pleasanton-ca,94588
+Bay Area,bay-area,Point Reyes Station,CA,point-reyes-station-ca,94956
+Bay Area,bay-area,Pope Valley,CA,pope-valley-ca,94567
+Bay Area,bay-area,Port Costa,CA,port-costa-ca,94569
+Bay Area,bay-area,Portola Valley,CA,portola-valley-ca,94028
+Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94061
+Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94062
+Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94063
+Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94065
+Bay Area,bay-area,Richmond,CA,richmond-ca,94801
+Bay Area,bay-area,Richmond,CA,richmond-ca,94804
+Bay Area,bay-area,Richmond,CA,richmond-ca,94805
+Bay Area,bay-area,Rio Nido,CA,rio-nido-ca,95471
+Bay Area,bay-area,Rio Vista,CA,rio-vista-ca,94571
+Bay Area,bay-area,Ripon,CA,ripon-ca,95366
+Bay Area,bay-area,Riverbank,CA,riverbank-ca,95367
+Bay Area,bay-area,Rodeo,CA,rodeo-ca,94572
+Bay Area,bay-area,Rohnert Park,CA,rohnert-park-ca,94928
+Bay Area,bay-area,Saint Helena,CA,saint-helena-ca,94574
+Bay Area,bay-area,Salida,CA,salida-ca,95368
+Bay Area,bay-area,Salinas,CA,salinas-ca,93901
+Bay Area,bay-area,Salinas,CA,salinas-ca,93905
+Bay Area,bay-area,Salinas,CA,salinas-ca,93906
+Bay Area,bay-area,Salinas,CA,salinas-ca,93907
+Bay Area,bay-area,Salinas,CA,salinas-ca,93908
+Bay Area,bay-area,San Anselmo,CA,san-anselmo-ca,94960
+Bay Area,bay-area,San Ardo,CA,san-ardo-ca,93450
+Bay Area,bay-area,San Bruno,CA,san-bruno-ca,94066
+Bay Area,bay-area,San Carlos,CA,san-carlos-ca,94070
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94102
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94103
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94104
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94105
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94107
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94108
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94109
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94110
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94111
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94112
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94114
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94115
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94116
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94117
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94118
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94121
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94122
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94123
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94124
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94127
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94128
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94129
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94130
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94131
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94132
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94133
+Bay Area,bay-area,San Francisco,CA,san-francisco-ca,94134
+Bay Area,bay-area,San Geronimo,CA,san-geronimo-ca,94963
+Bay Area,bay-area,San Gregorio,CA,san-gregorio-ca,94074
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95110
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95111
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95112
@@ -7,6 +269,7 @@ Bay Area,bay-area,San Jose,CA,san-jose-ca,95113
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95116
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95117
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95118
+Bay Area,bay-area,San Jose,CA,san-jose-ca,95119
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95120
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95121
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95122
@@ -27,41 +290,89 @@ Bay Area,bay-area,San Jose,CA,san-jose-ca,95136
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95138
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95139
 Bay Area,bay-area,San Jose,CA,san-jose-ca,95148
-Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95050
-Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95051
-Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95054
-Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94085
-Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94086
-Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94087
-Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94089
-Bay Area,bay-area,Cupertino,CA,cupertino-ca,95014
-Bay Area,bay-area,Campbell,CA,campbell-ca,95008
-Bay Area,bay-area,Saratoga,CA,saratoga-ca,95070
-Bay Area,bay-area,Los Altos,CA,los-altos-ca,94022
-Bay Area,bay-area,Los Altos,CA,los-altos-ca,94024
-Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94040
-Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94041
-Bay Area,bay-area,Mountain View,CA,mountain-view-ca,94043
-Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94301
-Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94303
-Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94304
-Bay Area,bay-area,Palo Alto,CA,palo-alto-ca,94306
-Bay Area,bay-area,Milpitas,CA,milpitas-ca,95035
-Bay Area,bay-area,Fremont,CA,fremont-ca,94536
-Bay Area,bay-area,Fremont,CA,fremont-ca,94538
-Bay Area,bay-area,Fremont,CA,fremont-ca,94539
-Bay Area,bay-area,Fremont,CA,fremont-ca,94555
-Bay Area,bay-area,Union City,CA,union-city-ca,94587
-Bay Area,bay-area,Newark,CA,newark-ca,94560
-Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94061
-Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94062
-Bay Area,bay-area,Redwood City,CA,redwood-city-ca,94063
-Bay Area,bay-area,Menlo Park,CA,menlo-park-ca,94025
+Bay Area,bay-area,San Juan Bautista,CA,san-juan-bautista-ca,95045
+Bay Area,bay-area,San Leandro,CA,san-leandro-ca,94577
+Bay Area,bay-area,San Leandro,CA,san-leandro-ca,94578
+Bay Area,bay-area,San Leandro,CA,san-leandro-ca,94579
+Bay Area,bay-area,San Lorenzo,CA,san-lorenzo-ca,94580
+Bay Area,bay-area,San Lucas,CA,san-lucas-ca,93954
+Bay Area,bay-area,San Martin,CA,san-martin-ca,95046
 Bay Area,bay-area,San Mateo,CA,san-mateo-ca,94401
 Bay Area,bay-area,San Mateo,CA,san-mateo-ca,94402
 Bay Area,bay-area,San Mateo,CA,san-mateo-ca,94403
-Bay Area,bay-area,Burlingame,CA,burlingame-ca,94010
-Bay Area,bay-area,Foster City,CA,foster-city-ca,94404
+Bay Area,bay-area,San Pablo,CA,san-pablo-ca,94806
+Bay Area,bay-area,San Quentin,CA,san-quentin-ca,94964
+Bay Area,bay-area,San Rafael,CA,san-rafael-ca,94901
+Bay Area,bay-area,San Rafael,CA,san-rafael-ca,94903
+Bay Area,bay-area,San Ramon,CA,san-ramon-ca,94583
+Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95050
+Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95051
+Bay Area,bay-area,Santa Clara,CA,santa-clara-ca,95054
+Bay Area,bay-area,Santa Cruz,CA,santa-cruz-ca,95060
+Bay Area,bay-area,Santa Cruz,CA,santa-cruz-ca,95062
+Bay Area,bay-area,Santa Cruz,CA,santa-cruz-ca,95064
+Bay Area,bay-area,Santa Cruz,CA,santa-cruz-ca,95065
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95401
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95403
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95404
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95405
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95407
+Bay Area,bay-area,Santa Rosa,CA,santa-rosa-ca,95409
+Bay Area,bay-area,Saratoga,CA,saratoga-ca,95070
+Bay Area,bay-area,Sausalito,CA,sausalito-ca,94965
+Bay Area,bay-area,Scotts Valley,CA,scotts-valley-ca,95066
+Bay Area,bay-area,Seaside,CA,seaside-ca,93955
+Bay Area,bay-area,Sebastopol,CA,sebastopol-ca,95472
+Bay Area,bay-area,Soledad,CA,soledad-ca,93960
+Bay Area,bay-area,Sonoma,CA,sonoma-ca,95476
+Bay Area,bay-area,Soquel,CA,soquel-ca,95073
+Bay Area,bay-area,South San Francisco,CA,south-san-francisco-ca,94080
+Bay Area,bay-area,Spreckels,CA,spreckels-ca,93962
+Bay Area,bay-area,Stanford,CA,stanford-ca,94305
+Bay Area,bay-area,Stewarts Point,CA,stewarts-point-ca,95480
+Bay Area,bay-area,Stinson Beach,CA,stinson-beach-ca,94970
+Bay Area,bay-area,Stockton,CA,stockton-ca,95202
+Bay Area,bay-area,Stockton,CA,stockton-ca,95203
+Bay Area,bay-area,Stockton,CA,stockton-ca,95204
+Bay Area,bay-area,Stockton,CA,stockton-ca,95205
+Bay Area,bay-area,Stockton,CA,stockton-ca,95206
+Bay Area,bay-area,Stockton,CA,stockton-ca,95207
+Bay Area,bay-area,Stockton,CA,stockton-ca,95209
+Bay Area,bay-area,Stockton,CA,stockton-ca,95210
+Bay Area,bay-area,Stockton,CA,stockton-ca,95212
+Bay Area,bay-area,Stockton,CA,stockton-ca,95215
+Bay Area,bay-area,Stockton,CA,stockton-ca,95219
+Bay Area,bay-area,Suisun City,CA,suisun-city-ca,94585
+Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94086
+Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94087
+Bay Area,bay-area,Sunnyvale,CA,sunnyvale-ca,94089
+Bay Area,bay-area,Sunol,CA,sunol-ca,94586
+Bay Area,bay-area,The Sea Ranch,CA,the-sea-ranch-ca,95497
+Bay Area,bay-area,Thornton,CA,thornton-ca,95686
+Bay Area,bay-area,Tomales,CA,tomales-ca,94971
+Bay Area,bay-area,Tracy,CA,tracy-ca,95376
+Bay Area,bay-area,Travis Afb,CA,travis-afb-ca,94535
+Bay Area,bay-area,Turlock,CA,turlock-ca,95380
+Bay Area,bay-area,Turlock,CA,turlock-ca,95382
+Bay Area,bay-area,Union City,CA,union-city-ca,94587
+Bay Area,bay-area,Vacaville,CA,vacaville-ca,95687
+Bay Area,bay-area,Vacaville,CA,vacaville-ca,95688
+Bay Area,bay-area,Vallejo,CA,vallejo-ca,94589
+Bay Area,bay-area,Vallejo,CA,vallejo-ca,94590
+Bay Area,bay-area,Vallejo,CA,vallejo-ca,94591
+Bay Area,bay-area,Vallejo,CA,vallejo-ca,94592
+Bay Area,bay-area,Valley Ford,CA,valley-ford-ca,94972
+Bay Area,bay-area,Vernalis,CA,vernalis-ca,95385
+Bay Area,bay-area,Walnut Creek,CA,walnut-creek-ca,94595
+Bay Area,bay-area,Walnut Creek,CA,walnut-creek-ca,94596
+Bay Area,bay-area,Walnut Creek,CA,walnut-creek-ca,94598
+Bay Area,bay-area,Waterford,CA,waterford-ca,95386
+Bay Area,bay-area,Watsonville,CA,watsonville-ca,95076
+Bay Area,bay-area,Westley,CA,westley-ca,95387
+Bay Area,bay-area,Windsor,CA,windsor-ca,95492
+Bay Area,bay-area,Woodacre,CA,woodacre-ca,94973
+Bay Area,bay-area,Woodbridge,CA,woodbridge-ca,95258
+Bay Area,bay-area,Yountville,CA,yountville-ca,94599
 Los Angeles County,los-angeles-county,Los Angeles,CA,los-angeles-ca,90001
 Los Angeles County,los-angeles-county,Los Angeles,CA,los-angeles-ca,90002
 Los Angeles County,los-angeles-county,Los Angeles,CA,los-angeles-ca,90003

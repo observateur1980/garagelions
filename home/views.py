@@ -1,12 +1,8 @@
-# home/views.py — COMPLETE FILE
-# Change from original: removed references to assigned_to CharField.
-# assigned_user FK is now the single source of truth.
+# home/views.py
 
-import smtplib
+import logging
 
-from django.conf import settings
 from django.contrib import messages
-from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView
@@ -15,6 +11,7 @@ from django.urls import reverse
 from .forms import LeadForm
 from .models import (
     Gallery,
+    LeadActivity,
     LeadAttachment,
     Testimonial,
     VideoReview,
@@ -23,10 +20,21 @@ from .models import (
     ZipCode,
     LeadModel,
 )
+from .notifications import (
+    notify_new_lead_to_customer,
+    notify_new_lead_to_salesperson,
+    notify_new_lead_to_location,
+)
+from .geo import auto_set_location
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
     MAX_TESTIMONIALS = 6
+
+    # Auto-detect visitor location via IP (only on first visit, won't override manual pick)
+    auto_detected = auto_set_location(request)
 
     featured = Testimonial.objects.filter(is_active=True, is_featured=True).order_by("order")
     others = Testimonial.objects.filter(is_active=True, is_featured=False).order_by("order")
@@ -46,6 +54,7 @@ def home(request):
         "testimonials": testimonials,
         "selected_city": selected_sales_point,
         "consultation_url": consultation_url,
+        "location_auto_detected": bool(auto_detected),
     })
 
 
@@ -86,6 +95,7 @@ def location_detail(request, slug):
 def set_location(request, slug):
     sales_point = get_object_or_404(SalesPoint, slug=slug, is_active=True)
     request.session["selected_sales_point_slug"] = sales_point.slug
+    request.session["location_auto_detected"] = False   # hide banner after manual pick/dismiss
     next_url = request.GET.get("next") or reverse("location_detail", args=[sales_point.slug])
     return redirect(next_url)
 
@@ -133,10 +143,10 @@ def create_lead(request):
         lead_form = LeadForm(request.POST, request.FILES)
 
         if lead_form.is_valid():
-            consultation_request = lead_form.save(commit=False)
+            lead = lead_form.save(commit=False)
 
-            submitted_zip = (consultation_request.zip_code or "").strip()
-
+            # ── Route lead to the right sales point via ZIP code ──
+            submitted_zip = (lead.zip_code or "").strip()
             matched_zip = ZipCode.objects.select_related(
                 "service_city",
                 "service_city__sales_point",
@@ -148,72 +158,40 @@ def create_lead(request):
             ).first()
 
             if matched_zip:
-                consultation_request.service_city = matched_zip.service_city
-                consultation_request.sales_point = matched_zip.service_city.sales_point
-                # Use assigned_user FK only — no more assigned_to CharField
-                consultation_request.assigned_user = matched_zip.service_city.sales_point.assigned_user
+                lead.service_city = matched_zip.service_city
+                lead.sales_point = matched_zip.service_city.sales_point
+                lead.assigned_user = matched_zip.service_city.sales_point.assigned_user
             elif selected_sales_point:
-                consultation_request.sales_point = selected_sales_point
-                consultation_request.assigned_user = selected_sales_point.assigned_user
+                lead.sales_point = selected_sales_point
+                lead.assigned_user = selected_sales_point.assigned_user
 
-            consultation_request.source_page = request.META.get("HTTP_REFERER", "")
-            consultation_request.save()
+            lead.source_page = request.META.get("HTTP_REFERER", "")
+            lead.save()
             lead_form.save_m2m()
 
+            # ── Save attachments ──
             uploaded_files = lead_form.cleaned_data.get("attachments") or []
             for f in uploaded_files:
-                LeadAttachment.objects.create(lead=consultation_request, file=f)
-
-            consultation_types_display = ", ".join(consultation_request.consultation_types) if consultation_request.consultation_types else ""
+                LeadAttachment.objects.create(lead=lead, file=f)
             attachment_names = [f.name for f in uploaded_files]
-            attachments_text = (
-                "\n\nAttachments:\n" + "\n".join(f"- {n}" for n in attachment_names)
-            ) if attachment_names else ""
 
-            sales_point_text = str(consultation_request.sales_point) if consultation_request.sales_point else "No sales point matched"
-            city_text = str(consultation_request.service_city) if consultation_request.service_city else "No city matched"
-            assigned_text = (
-                consultation_request.assigned_user.get_full_name()
-                or consultation_request.assigned_user.username
-            ) if consultation_request.assigned_user else "Not assigned"
+            # ── Audit log ──
+            LeadActivity.objects.create(
+                lead=lead,
+                user=None,
+                action=LeadActivity.ACTION_CREATED,
+                detail=(
+                    f"New lead from {lead.first_name} {lead.last_name} "
+                    f"({lead.zip_code}) via website."
+                ),
+            )
 
-            full_message = (
-                f"First Name: {consultation_request.first_name}\n"
-                f"Last Name: {consultation_request.last_name}\n"
-                f"Email: {consultation_request.email}\n"
-                f"Phone: {consultation_request.phone}\n"
-                f"ZIP Code: {consultation_request.zip_code}\n"
-                f"Sales Point: {sales_point_text}\n"
-                f"Service City: {city_text}\n"
-                f"Assigned To: {assigned_text}\n"
-                f"Consultation Types: {consultation_types_display}\n\n"
-                f"Message:\n{consultation_request.message}"
-            ) + attachments_text
+            # ── Notifications (all failures are caught internally) ──
+            notify_new_lead_to_customer(lead)
+            notify_new_lead_to_salesperson(lead)
+            notify_new_lead_to_location(lead, attachment_names=attachment_names)
 
-            recipient_list = ["info@garagelions.com"]
-            from_email = settings.DEFAULT_FROM_EMAIL
-            reply_to = []
-
-            if consultation_request.sales_point:
-                if consultation_request.sales_point.lead_notification_email:
-                    recipient_list = [consultation_request.sales_point.lead_notification_email]
-                if consultation_request.sales_point.from_email:
-                    from_email = consultation_request.sales_point.from_email
-                if consultation_request.sales_point.reply_to_email:
-                    reply_to = [consultation_request.sales_point.reply_to_email]
-
-            try:
-                email_message = EmailMessage(
-                    subject=f"Garage Lions Consultation - {consultation_request.first_name} {consultation_request.last_name}",
-                    body=full_message,
-                    from_email=from_email,
-                    to=recipient_list,
-                    reply_to=reply_to,
-                )
-                email_message.send(fail_silently=False)
-                return redirect("create_lead_success")
-            except smtplib.SMTPException:
-                messages.error(request, "There was an error sending your request. Please try again later.")
+            return redirect("create_lead_success")
         else:
             messages.error(request, "Please correct the errors below.")
     else:

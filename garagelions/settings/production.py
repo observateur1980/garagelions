@@ -53,11 +53,19 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # ----------------------------------------------------------------------
-# Email
+# Email — SendGrid SMTP relay
 # ----------------------------------------------------------------------
 
-EMAIL_HOST_USER = "smtpforwebpages@gmail.com"
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_APP_PASSWORD")
+EMAIL_HOST_USER = "apikey"
+EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY")
+
+# ----------------------------------------------------------------------
+# Twilio SMS (optional)
+# ----------------------------------------------------------------------
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 
 # ----------------------------------------------------------------------
 # reCAPTCHA

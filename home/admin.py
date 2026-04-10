@@ -2,6 +2,9 @@
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.timezone import now
+from datetime import timedelta
+
 from .models import (
     SalesPoint,
     SalesPointWorkingHour,
@@ -10,6 +13,7 @@ from .models import (
     GalleryItem,
     Testimonial,
     LeadModel,
+    LeadActivity,
     LeadAttachment,
     VideoReview,
     ServiceCity,
@@ -61,6 +65,18 @@ class LeadAttachmentInline(admin.TabularInline):
     model = LeadAttachment
     extra = 0
     readonly_fields = ("uploaded_at",)
+
+
+class LeadActivityInline(admin.TabularInline):
+    model = LeadActivity
+    extra = 0
+    readonly_fields = ("created_at", "user", "action", "detail")
+    fields = ("created_at", "user", "action", "detail")
+    ordering = ("-created_at",)
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 # ── ServiceCity ───────────────────────────────────────────────────────────
@@ -224,7 +240,52 @@ class TestimonialAdmin(admin.ModelAdmin):
     ordering = ("order",)
 
 
+# ── LeadActivity (standalone admin) ───────────────────────────────────────
+
+@admin.register(LeadActivity)
+class LeadActivityAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "lead_link", "action", "user", "detail_short")
+    list_filter = ("action", "created_at")
+    search_fields = ("lead__first_name", "lead__last_name", "detail", "user__email")
+    readonly_fields = ("created_at", "lead", "user", "action", "detail")
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def lead_link(self, obj):
+        return format_html(
+            '<a href="/admin/home/leadmodel/{}/change/">Lead #{}</a>',
+            obj.lead_id, obj.lead_id,
+        )
+    lead_link.short_description = "Lead"
+
+    def detail_short(self, obj):
+        return obj.detail[:80] + "…" if len(obj.detail) > 80 else obj.detail
+    detail_short.short_description = "Detail"
+
+
 # ── LeadModel ─────────────────────────────────────────────────────────────
+
+class StaleLeadFilter(admin.SimpleListFilter):
+    title = "Stale leads"
+    parameter_name = "stale"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("24h", "New — over 24 hours old"),
+            ("48h", "New — over 48 hours old"),
+            ("7d", "New — over 7 days old"),
+        ]
+
+    def queryset(self, request, queryset):
+        cutoffs = {"24h": 1, "48h": 2, "7d": 7}
+        days = cutoffs.get(self.value())
+        if days:
+            threshold = now() - timedelta(days=days)
+            return queryset.filter(status="new", created_at__lte=threshold)
+        return queryset
+
 
 @admin.register(LeadModel)
 class LeadModelAdmin(admin.ModelAdmin):
@@ -233,14 +294,16 @@ class LeadModelAdmin(admin.ModelAdmin):
         "service_city", "sales_point", "assigned_user",
         "status", "created_at",
     )
-    list_filter = ("sales_point", "service_city", "status", "created_at")
+    list_filter = ("sales_point", "service_city", "status", StaleLeadFilter, "created_at")
+    list_editable = ("status",)
     search_fields = (
         "first_name", "last_name", "email", "phone", "zip_code",
         "message", "source_page",
     )
     readonly_fields = ("created_at",)
-    inlines = [LeadAttachmentInline]
+    inlines = [LeadAttachmentInline, LeadActivityInline]
     ordering = ("-created_at",)
+    save_on_top = True
 
 
 # ── VideoReview ───────────────────────────────────────────────────────────

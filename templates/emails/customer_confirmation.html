@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Garage Lions — Request Received</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#333;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+
+      <!-- ═══ HEADER ═══ Edit your logo, brand name, and tagline here -->
+      <tr>
+        <td style="background:#ffffff;padding:28px 32px;text-align:center;">
+          <img src="https://garagelions.com/static/images/logo-dark.png"
+               alt="Garage Lions"
+               width="180"
+               style="display:block;margin:0 auto 12px;max-width:180px;">
+
+        </td>
+      </tr>
+
+      <!-- ═══ CONFIRMATION BANNER ═══ -->
+      <tr>
+        <td style="background:#ff6811;padding:16px 32px;text-align:center;">
+          <p style="margin:0;color:#fff;font-size:18px;font-weight:bold;">&#10003; &nbsp;Request Received!</p>
+        </td>
+      </tr>
+
+      <!-- ═══ BODY ═══ -->
+      <tr>
+        <td style="padding:32px;">
+
+          <p style="font-size:16px;">Hi <strong>{{ first }}</strong>,</p>
+
+          <!-- ═══ INTRO TEXT ═══ Edit your message here -->
+          <p style="line-height:1.7;">
+            Thank you for reaching out to <strong>Garage Lions</strong>! We have received
+            your consultation request and our team is reviewing it now.
+          </p>
+
+          <!-- ═══ NEXT STEPS BOX ═══ -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+            <tr>
+              <td style="background:#f0f7ff;border-left:4px solid #1a1a2e;padding:16px 20px;border-radius:4px;">
+                <strong style="font-size:15px;">What happens next?</strong><br>
+                <p style="margin:8px 0 0;font-size:14px;line-height:1.6;">
+                  One of our specialists will contact you <strong>shortly</strong> to discuss
+                  your project and provide your <strong style="color:#e63946;">FREE estimate</strong>.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- ═══ REQUEST SUMMARY ═══ -->
+          <p style="font-weight:bold;margin-bottom:8px;">Your Request Summary</p>
+          <table width="100%" cellpadding="6" cellspacing="0" style="border:1px solid #eee;border-radius:6px;font-size:14px;">
+            <tr style="background:#fafafa;">
+              <td style="font-weight:bold;color:#555;width:110px;padding:8px 12px;">Name</td>
+              <td style="padding:8px 12px;">{{ lead.first_name }} {{ lead.last_name }}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold;color:#555;padding:8px 12px;">Phone</td>
+              <td style="padding:8px 12px;">{{ lead.phone }}</td>
+            </tr>
+            <tr style="background:#fafafa;">
+              <td style="font-weight:bold;color:#555;padding:8px 12px;">ZIP Code</td>
+              <td style="padding:8px 12px;">{{ lead.zip_code }}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold;color:#555;padding:8px 12px;">Services</td>
+              <td style="padding:8px 12px;">{{ services }}</td>
+            </tr>
+          </table>
+
+          <!-- ═══ CUSTOMER MESSAGE (shown only if they left one) ═══ -->
+          {% if lead.message %}
+          <p style="font-weight:bold;margin:20px 0 8px;">Your Message</p>
+          <p style="background:#fffbf0;border-left:4px solid #ffc107;padding:12px 16px;border-radius:4px;font-size:14px;line-height:1.6;">
+            {{ lead.message }}
+          </p>
+          {% endif %}
+
+          <!-- ═══ CLOSING TEXT ═══ Edit your sign-off here -->
+          <p style="margin-top:24px;font-size:14px;line-height:1.7;">
+            If you need to reach us immediately, simply reply to this email or visit
+            <a href="https://garagelions.com" style="color:#1a1a2e;">garagelions.com</a>.
+          </p>
+          <p style="font-size:14px;">Best regards,<br><strong>The Garage Lions Team</strong></p>
+
+        </td>
+      </tr>
+
+      <!-- ═══ FOOTER ═══ Physical address required by CAN-SPAM / Google guidelines -->
+      <tr>
+        <td style="background:#f5f5f5;padding:20px 32px;text-align:center;font-size:12px;color:#999;line-height:1.8;">
+          <p style="margin:0;">
+            <strong style="color:#555;">Garage Lions</strong> &bull;
+            <a href="https://garagelions.com" style="color:#555;">garagelions.com</a> &bull;
+            <a href="mailto:leads@garagelions.com" style="color:#555;">leads@garagelions.com</a>
+          </p>
+          <!-- ═══ UPDATE with your real mailing address ═══ -->
+          <p style="margin:6px 0 0;">123 Main Street, Los Angeles, CA 90001, United States</p>
+          <p style="margin:6px 0 0;">
+            You received this email because you submitted a consultation request on our website.<br>
+            This is a transactional email — <a href="mailto:leads@garagelions.com?subject=unsubscribe" style="color:#999;">unsubscribe</a>.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

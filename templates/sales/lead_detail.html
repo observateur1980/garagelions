@@ -226,6 +226,44 @@
     </div>
   </div>
 
+  {# ── Activity Log ── #}
+  {% if activities %}
+  <div style="margin-top:8px;">
+    <div class="info-card">
+      <h4>Activity log</h4>
+      <div style="display:flex; flex-direction:column; gap:0;">
+        {% for activity in activities %}
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid #f0ede8; font-size:13px; color:#555; align-items:flex-start;">
+          {# Icon #}
+          <div style="flex-shrink:0; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            {% if activity.action == 'created' %}background:#E6F1FB; color:#185FA5;
+            {% elif activity.action == 'status_changed' %}background:#E1F5EE; color:#0F6E56;
+            {% elif activity.action == 'notes_updated' %}background:#FAEEDA; color:#854F0B;
+            {% elif activity.action == 'assigned' %}background:#EEEDFE; color:#3C3489;
+            {% elif activity.action == 'reminder_sent' %}background:#FCEBEB; color:#A32D2D;
+            {% endif %}">
+            {% if activity.action == 'created' %}<i class="fa fa-plus" style="font-size:11px;"></i>
+            {% elif activity.action == 'status_changed' %}<i class="fa fa-exchange" style="font-size:11px;"></i>
+            {% elif activity.action == 'notes_updated' %}<i class="fa fa-pencil" style="font-size:11px;"></i>
+            {% elif activity.action == 'assigned' %}<i class="fa fa-user" style="font-size:11px;"></i>
+            {% elif activity.action == 'reminder_sent' %}<i class="fa fa-bell" style="font-size:11px;"></i>
+            {% endif %}
+          </div>
+          {# Detail #}
+          <div style="flex:1;">
+            <p style="margin:0; line-height:1.5;">{{ activity.detail }}</p>
+            <p style="margin:2px 0 0; font-size:11px; color:#bbb;">
+              {{ activity.created_at|date:"M j, Y" }} at {{ activity.created_at|date:"g:i a" }}
+              {% if activity.user %}&nbsp;&middot;&nbsp; {{ activity.user.get_full_name }}{% else %}&nbsp;&middot;&nbsp; System{% endif %}
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 </section>
 {% endblock %}

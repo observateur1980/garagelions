@@ -532,6 +532,53 @@ class LeadAttachment(models.Model):
         return f"Lead #{self.lead_id} - {self.file.name}"
 
 
+class LeadActivity(models.Model):
+    """
+    Immutable audit log: every status change, note update, and assignment
+    for a lead is recorded here so admins and managers can see the full history.
+    """
+
+    ACTION_CREATED = "created"
+    ACTION_STATUS = "status_changed"
+    ACTION_NOTES = "notes_updated"
+    ACTION_ASSIGNED = "assigned"
+    ACTION_REMINDER = "reminder_sent"
+
+    ACTION_CHOICES = [
+        (ACTION_CREATED, "Lead Created"),
+        (ACTION_STATUS, "Status Changed"),
+        (ACTION_NOTES, "Notes Updated"),
+        (ACTION_ASSIGNED, "Reassigned"),
+        (ACTION_REMINDER, "Stale Reminder Sent"),
+    ]
+
+    lead = models.ForeignKey(
+        LeadModel,
+        on_delete=models.CASCADE,
+        related_name="activities",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lead_activities",
+        help_text="Who triggered this event (null = system/automated).",
+    )
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    detail = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Lead Activity"
+        verbose_name_plural = "Lead Activities"
+
+    def __str__(self):
+        actor = self.user.get_short_name() if self.user else "System"
+        return f"[{self.get_action_display()}] Lead #{self.lead_id} by {actor}"
+
+
 class VideoReview(models.Model):
     title = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100, blank=True)

@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from account.models import Salesperson
 from .forms import LeadUpdateForm
-from .models import LeadModel, SalesPoint
+from .models import LeadActivity, LeadModel, SalesPoint
 
 
 # ---------------------------------------------------------------------------
@@ -264,15 +264,42 @@ def sales_lead_detail(request, pk):
     if request.method == 'POST':
         form = LeadUpdateForm(request.POST, instance=lead)
         if form.is_valid():
-            form.save()
+            old_status = lead.status
+            old_notes = lead.internal_notes
+            updated = form.save()
+
+            # ── Record activity for status change ──
+            if updated.status != old_status:
+                LeadActivity.objects.create(
+                    lead=updated,
+                    user=request.user,
+                    action=LeadActivity.ACTION_STATUS,
+                    detail=(
+                        f"Status changed from '{lead.get_status_display()}' "
+                        f"to '{updated.get_status_display()}'."
+                    ),
+                )
+
+            # ── Record activity for notes update ──
+            if updated.internal_notes != old_notes:
+                LeadActivity.objects.create(
+                    lead=updated,
+                    user=request.user,
+                    action=LeadActivity.ACTION_NOTES,
+                    detail="Internal notes updated.",
+                )
+
             return redirect('sales_lead_detail', pk=pk)
     else:
         form = LeadUpdateForm(instance=lead)
+
+    activities = lead.activities.select_related('user', 'user__profile').order_by('-created_at')[:20]
 
     return render(request, 'sales/lead_detail.html', {
         'lead': lead,
         'form': form,
         'salesperson': sp,
+        'activities': activities,
     })
 
 

@@ -15,3 +15,9 @@ psycopg2-binary==2.9.10
 Pillow==11.1.0
 django-imagekit==5.0.0
 python-dotenv==1.0.1
+
+# SendGrid email
+sendgrid==6.11.0
+
+# Twilio SMS
+twilio==9.3.7

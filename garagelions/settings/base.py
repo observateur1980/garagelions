@@ -87,13 +87,20 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 
+# SendGrid SMTP relay
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.sendgrid.net"
 EMAIL_PORT = 587
-EMAIL_HOST_USER = ""
-EMAIL_HOST_PASSWORD = ""
-DEFAULT_FROM_EMAIL = "PC New Lead <info@garagelions.com>"
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "apikey"
+EMAIL_HOST_PASSWORD = ""          # set SENDGRID_API_KEY in .env
+DEFAULT_FROM_EMAIL = "Garage Lions <leads@garagelions.com>"
+SERVER_EMAIL = "leads@garagelions.com"
+
+# Twilio SMS (optional — SMS is silently skipped if these are blank)
+TWILIO_ACCOUNT_SID = ""
+TWILIO_AUTH_TOKEN = ""
+TWILIO_FROM_NUMBER = ""           # e.g. "+18005551234"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
