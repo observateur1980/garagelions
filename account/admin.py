@@ -42,7 +42,7 @@ class UserChangeForm(forms.ModelForm):
         fields = ('username', 'email', 'password', 'is_active', 'is_staff', 'is_superuser')
 
     def clean_password(self):
-        return self.initial['password']
+        return self.initial.get('password')
 
 
 # ── Inlines ───────────────────────────────────────────────────────────────
