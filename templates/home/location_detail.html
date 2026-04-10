@@ -1,17 +1,3 @@
-{# -----------------------------------------------------------------------
-   templates/home/location_detail.html
-   -----------------------------------------------------------------------
-   Replace your existing location_detail.html with this version.
-   It adds:
-     1. JSON-LD LocalBusiness schema in <head> via block seo_schema
-     2. Proper SEO title/description blocks
-     3. Everything your existing template had (adapt the body as needed)
-   -----------------------------------------------------------------------
-   IMPORTANT: You need to add {% block seo_schema %}{% endblock %} to
-   your base.html inside <head>, right before </head>:
-       {% block seo_schema %}{% endblock %}
-   ----------------------------------------------------------------------- #}
-
 {% extends "base.html" %}
 {% load static %}
 
@@ -82,9 +68,6 @@
 {% endblock %}
 
 {% block content %}
-{# ── Your existing location_detail content goes here.
-      The schema above is all that changes in this template.
-      Below is a minimal placeholder — keep your real HTML body. ── #}
 <section style="margin-top: 120px; padding: 50px 0;">
   <div class="container">
 

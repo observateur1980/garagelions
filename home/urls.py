@@ -20,6 +20,9 @@ urlpatterns = [
     path('locations/', views.locations_list, name='locations_list'),
     path('locations/<slug:slug>/', views.location_detail, name='location_detail'),
     path('set-location/<slug:slug>/', views.set_location, name='set_location'),
+    path('set-location-by-coords/', views.set_location_by_coords, name='set_location_by_coords'),
+    path('geo-debug/', views.geo_debug, name='geo_debug'),
+    path('geo-reset/', views.geo_reset, name='geo_reset'),
 
     path('copyright/', views.CopyrightPage.as_view(), name='copyright'),
     path('terms/', views.Terms.as_view(), name='terms'),

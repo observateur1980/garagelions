@@ -166,3 +166,5 @@ __MACOSX/
 
 *.zip
 
+deploy.sh
+

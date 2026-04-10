@@ -325,13 +325,19 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
             {% endif %}
 
             <div class="gl-hero-cta">
-                <a href="{% url 'create_lead' %}" class="button gl-hero-btn-main mt-15" style="background-color: #c64d1e!important;">
+                <a href="{{ consultation_url }}" class="button gl-hero-btn-main mt-15" style="background-color: #c64d1e!important;">
                     <span>Get a Free Estimate</span>
                 </a>
 
+                {% if selected_city.local_phone %}
+                <a class="button gl-hero-btn-alt mt-15" href="tel:{{ selected_city.local_phone }}">
+                    <span>Call {{ selected_city.local_phone }}</span>
+                </a>
+                {% else %}
                 <a href="{% url 'galleries' %}" class="button gl-hero-btn-alt mt-15">
                     <span>View Gallery</span>
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -534,7 +540,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 </div>
                 <div class="col-lg-4 col-md-4 text-right action-box-button" >
 
-                    <a href="{% url 'create_lead' %}"
+                    <a href="{{ consultation_url }}"
                           class="button button-white mt-15 btn-lg"
                        style="background: whitesmoke !important; border: 1px solid whitesmoke !important; color: #555 !important;">
                         <span style="background: whitesmoke !important; color: #555 !important;">REQUEST YOUR FREE CONSULTATION</span>
@@ -651,5 +657,37 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         </div>
     </section>
 
+
+{% if not selected_city %}
+<script>
+(function () {
+  if (!navigator.geolocation) return;
+
+  // Don't ask again if user already dismissed or set manually
+  if (sessionStorage.getItem("gl_geo_asked")) return;
+  sessionStorage.setItem("gl_geo_asked", "1");
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      var data = new FormData();
+      data.append("lat", pos.coords.latitude);
+      data.append("lng", pos.coords.longitude);
+      data.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+      fetch("{% url 'set_location_by_coords' %}", { method: "POST", body: data })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+          if (json.ok && json.slug) {
+            window.location.reload();
+          }
+        })
+        .catch(function () {});
+    },
+    function () {},  // user denied — do nothing
+    { timeout: 8000, maximumAge: 300000 }
+  );
+})();
+</script>
+{% endif %}
 
 {% endblock %}

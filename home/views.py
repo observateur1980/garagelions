@@ -1,11 +1,13 @@
 # home/views.py
 
 import logging
+import math
 
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 from django.urls import reverse
 
@@ -99,6 +101,104 @@ def set_location(request, slug):
     request.session["location_auto_detected"] = False   # hide banner after manual pick/dismiss
     next_url = request.GET.get("next") or reverse("location_detail", args=[sales_point.slug])
     return redirect(next_url)
+
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+@require_POST
+def set_location_by_coords(request):
+    """
+    Called by the browser after the user grants geolocation permission.
+    Finds the nearest SalesPoint by:
+      1. Distance (lat/lng) — for sales points that have coordinates set
+      2. ZIP code reverse-lookup via ip-api — fallback when lat/lng is missing
+    """
+    try:
+        lat = float(request.POST.get("lat", ""))
+        lng = float(request.POST.get("lng", ""))
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "invalid coords"}, status=400)
+
+    # Only set if the user hasn't already picked a location manually
+    if request.session.get("selected_sales_point_slug"):
+        return JsonResponse({"ok": True, "already_set": True})
+
+    # ── Pass 1: distance match for sales points that have lat/lng ────────────
+    candidates = SalesPoint.objects.filter(
+        is_active=True,
+        latitude__isnull=False,
+        longitude__isnull=False,
+    )
+
+    nearest = None
+    nearest_km = None
+    for sp in candidates:
+        km = _haversine_km(lat, lng, float(sp.latitude), float(sp.longitude))
+        if nearest_km is None or km < nearest_km:
+            nearest = sp
+            nearest_km = km
+
+    MAX_KM = 200
+    if nearest and nearest_km <= MAX_KM:
+        request.session["selected_sales_point_slug"] = nearest.slug
+        request.session["location_auto_detected"] = True
+        return JsonResponse({"ok": True, "slug": nearest.slug, "name": nearest.name})
+
+    # ── Pass 2: ZIP/city fallback via the visitor's IP ───────────────────────
+    # Useful when lat/lng is not filled in on some SalesPoint records
+    from .geo import detect_sales_point
+    sales_point = detect_sales_point(request)
+    if sales_point:
+        request.session["selected_sales_point_slug"] = sales_point.slug
+        request.session["location_auto_detected"] = True
+        return JsonResponse({"ok": True, "slug": sales_point.slug, "name": sales_point.name})
+
+    return JsonResponse({"ok": False, "reason": "no_coverage"})
+
+
+def geo_debug(request):
+    """Temporary debug view — remove after troubleshooting."""
+    from .geo import _get_client_ip, _lookup_ip, detect_sales_point
+    ip = _get_client_ip(request)
+    geo = _lookup_ip(ip)
+
+    zip_match = None
+    city_match = None
+    if geo:
+        zip_match = ZipCode.objects.select_related(
+            "service_city__sales_point"
+        ).filter(code=geo["zip"]).first()
+
+        city_match = ServiceCity.objects.select_related("sales_point").filter(
+            name__iexact=geo["city"]
+        ).first()
+
+    detected_sp = detect_sales_point(request)
+    session_slug = request.session.get("selected_sales_point_slug")
+
+    return JsonResponse({
+        "ip": ip,
+        "geo": geo,
+        "session_slug": session_slug,
+        "zip_match": str(zip_match) if zip_match else None,
+        "zip_match_sales_point": str(zip_match.service_city.sales_point) if zip_match else None,
+        "city_match": str(city_match) if city_match else None,
+        "city_match_sales_point": str(city_match.sales_point) if city_match else None,
+        "detected_sales_point": str(detected_sp) if detected_sp else None,
+    })
+
+
+def geo_reset(request):
+    """Clears location from session so detection runs fresh."""
+    request.session.pop("selected_sales_point_slug", None)
+    request.session.pop("location_auto_detected", None)
+    return JsonResponse({"ok": True, "message": "Session location cleared. Reload the home page."})
 
 
 class Service(TemplateView):
