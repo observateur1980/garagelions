@@ -1,6 +1,11 @@
 # home/admin.py — COMPLETE FILE (replace your existing one)
 
-from django.contrib import admin
+import csv
+import io
+
+from django.contrib import admin, messages
+from django.shortcuts import redirect, render
+from django.urls import path
 from django.utils.html import format_html
 from django.utils.timezone import now
 from datetime import timedelta
@@ -171,6 +176,83 @@ class SalesPointAdmin(admin.ModelAdmin):
             lines.append(f"{city.name}: {codes or '-'}")
         return format_html("<br>".join(lines)) if lines else "-"
     zip_codes_preview.short_description = "Related zip codes"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        extra = [
+            path(
+                "import-csv/",
+                self.admin_site.admin_view(self.import_csv_view),
+                name="home_salespoint_import_csv",
+            ),
+        ]
+        return extra + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["import_csv_url"] = "import-csv/"
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def import_csv_view(self, request):
+        if request.method == "POST":
+            csv_file = request.FILES.get("csv_file")
+            if not csv_file or not csv_file.name.endswith(".csv"):
+                messages.error(request, "Please upload a valid .csv file.")
+                return redirect(".")
+
+            created_sp = created_cities = created_zips = 0
+            errors = []
+
+            text = io.TextIOWrapper(csv_file, encoding="utf-8-sig")
+            reader = csv.DictReader(text)
+
+            for i, row in enumerate(reader, start=2):
+                try:
+                    sales_point, sp_created = SalesPoint.objects.get_or_create(
+                        slug=row["sales_point_slug"].strip(),
+                        defaults={"name": row["sales_point_name"].strip(), "is_active": True},
+                    )
+                    if sp_created:
+                        created_sp += 1
+
+                    city, city_created = ServiceCity.objects.get_or_create(
+                        sales_point=sales_point,
+                        slug=row["city_slug"].strip(),
+                        defaults={
+                            "name": row["city_name"].strip(),
+                            "state": row["state"].strip(),
+                            "is_active": True,
+                        },
+                    )
+                    if city_created:
+                        created_cities += 1
+
+                    _, zip_created = ZipCode.objects.get_or_create(
+                        code=row["zip_code"].strip(),
+                        defaults={"service_city": city},
+                    )
+                    if zip_created:
+                        created_zips += 1
+
+                except Exception as e:
+                    errors.append(f"Row {i}: {e}")
+
+            if errors:
+                for err in errors[:10]:
+                    messages.warning(request, err)
+
+            messages.success(
+                request,
+                f"Import complete — SalesPoints: {created_sp}, Cities: {created_cities}, ZIPs: {created_zips}",
+            )
+            return redirect("..")
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Import ZIP codes from CSV",
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/home/salespoint/import_csv.html", context)
 
 
 # ── FranchiseAgreement ────────────────────────────────────────────────────
