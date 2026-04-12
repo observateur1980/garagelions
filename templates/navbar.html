@@ -5,6 +5,7 @@
     border-bottom: 1px solid rgb(76, 73, 73);
     height: 96px;
     background: whitesmoke;
+    position: relative;
 }
 
 .header-9 .mega-menu > section.menu-list-items {
@@ -167,16 +168,178 @@
     color: #333 !important;
 }
 
+/* ── Services Mega-Menu ── */
+.gl-services-trigger {
+    position: static !important;
+}
+
+.header-9 .mega-menu > section.menu-list-items,
+.header-9 .mega-menu.desktopTopFixed .menu-list-items {
+    position: relative !important;
+}
+
+.gl-services-trigger > a {
+    cursor: pointer;
+}
+
+.gl-services-mega {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+    top: 96px; /* overridden by JS at runtime */
+    z-index: 9990;
+    background: #fff;
+    border-top: 3px solid #c64d1e;
+    box-shadow: 0 12px 40px rgba(0,0,0,.14);
+    padding: 36px 0 40px;
+}
+
+.gl-services-trigger:hover .gl-services-mega,
+.gl-services-mega:hover {
+    display: block;
+}
+
+.gl-services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.gl-services-card {
+    display: block;
+    text-decoration: none !important;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ebebeb;
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+    background: #fff;
+}
+
+.gl-services-card:hover {
+    box-shadow: 0 6px 24px rgba(173,86,53,.18);
+    transform: translateY(-3px);
+    border-color: #c64d1e;
+}
+
+.gl-services-card-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+}
+
+.gl-services-card-body {
+    padding: 12px 14px 14px;
+}
+
+.gl-services-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0b2545;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin: 0 0 4px;
+    line-height: 1.3;
+}
+
+.gl-services-card-desc {
+    font-size: 12px;
+    color: #777;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.gl-services-card:hover .gl-services-card-title {
+    color: #c64d1e;
+}
+
+.gl-services-mega-footer {
+    max-width: 1100px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+    border-top: 1px solid #efefef;
+    padding-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gl-services-mega-footer a {
+    font-size: 13px;
+    color: #c64d1e !important;
+    font-weight: 600;
+    text-decoration: none !important;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.gl-services-mega-footer a:hover {
+    color: #0b2545 !important;
+}
+
+/* mobile services accordion */
+.mobile-services-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    color: #626262;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #eeeeee;
+    cursor: pointer;
+    background: none;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+}
+
+.mobile-services-list {
+    display: none;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.mobile-services-list.is-open {
+    display: block;
+}
+
+.mobile-services-list a {
+    padding-left: 34px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    font-size: 13px;
+    color: #444 !important;
+}
+
+@media screen and (max-width: 992px) {
+    .gl-services-mega { display: none !important; }
+}
+
+@media screen and (max-width: 1200px) {
+    .gl-services-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .gl-services-card-img { height: 110px; }
+}
+
 .selected-location-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     margin-left: 12px;
     padding: 10px 14px;
-    background: #f7f2ed;
-    border: 1px solid #d7c2b3;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
     border-radius: 999px;
-    color: #7d4b2a;
+    color: #fff;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -365,6 +528,34 @@
 }
 </style>
 
+<script>
+(function () {
+    function positionMega() {
+        var header = document.querySelector('#header .menu-list-items');
+        var mega = document.querySelector('.gl-services-mega');
+        if (!header || !mega) return;
+        var bottom = header.getBoundingClientRect().bottom;
+        mega.style.position = 'fixed';
+        mega.style.top = bottom + 'px';
+        mega.style.left = '0';
+        mega.style.right = '0';
+        mega.style.width = '100%';
+        mega.style.transform = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        positionMega();
+        window.addEventListener('scroll', positionMega, { passive: true });
+        window.addEventListener('resize', positionMega, { passive: true });
+
+        var trigger = document.querySelector('.gl-services-trigger');
+        if (trigger) {
+            trigger.addEventListener('mouseenter', positionMega);
+        }
+    });
+})();
+</script>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 {% if selected_city %}
@@ -425,7 +616,84 @@
 
                                         </li>
 
-                                    <li><a href="{% url 'service' %}">Services</a></li>
+                                    <li class="gl-services-trigger">
+                                        <a href="{% url 'service' %}">Services <i class="fa fa-angle-down" style="font-size:11px;margin-left:3px;"></i></a>
+
+                                        <div class="gl-services-mega">
+                                            <div class="gl-services-grid">
+
+                                                <a href="{% url 'garage_makeover' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="Garage Makeovers">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Garage Makeovers</p>
+                                                        <p class="gl-services-card-desc">Complete top-to-bottom garage transformations</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'garage_cabinet' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf garage cabinets.jpg' %}" alt="Garage Cabinets">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Garage Cabinets</p>
+                                                        <p class="gl-services-card-desc">Custom storage cabinetry built for your space</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'garage_flooring' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf epoxy floor.jpg' %}" alt="Garage Flooring">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Garage Flooring</p>
+                                                        <p class="gl-services-card-desc">Epoxy & polyurea coatings, durable and beautiful</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'garage_slatwall' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf slat wall.jpg' %}" alt="Slatwall Solutions">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Slatwall Solutions</p>
+                                                        <p class="gl-services-card-desc">Flexible wall storage for tools, bikes & gear</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'storage_rack' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf overhead storage.jpg' %}" alt="Storage Racks">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Storage Racks</p>
+                                                        <p class="gl-services-card-desc">Overhead & wall-mount racks that free the floor</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'garage_door' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildorf garage door.jpg' %}" alt="Garage Doors">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Garage Doors</p>
+                                                        <p class="gl-services-card-desc">New doors, smart openers & curb-appeal upgrades</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'garage_conversion' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/schildrof garage conversion.jpg' %}" alt="Garage Conversion">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Garage Conversion</p>
+                                                        <p class="gl-services-card-desc">Office, gym, ADU — transform unused space</p>
+                                                    </div>
+                                                </a>
+
+                                                <a href="{% url 'car_lift' %}" class="gl-services-card">
+                                                    <img class="gl-services-card-img" src="{% static 'images/services/car lift.jpg' %}" alt="Car Lifts">
+                                                    <div class="gl-services-card-body">
+                                                        <p class="gl-services-card-title">Car Lifts</p>
+                                                        <p class="gl-services-card-desc">Two-post & four-post vehicle lifts, professionally installed</p>
+                                                    </div>
+                                                </a>
+
+                                            </div>
+
+                                            <div class="gl-services-mega-footer">
+                                                <span style="font-size:12px;color:#999;">Not sure where to start?</span>
+                                                <a href="{% url 'create_lead' %}">Get a Free In-Home Estimate &rarr;</a>
+                                            </div>
+                                        </div>
+                                    </li>
                                     </ul>
                                 </div>
 
@@ -455,7 +723,21 @@
                                 <ul>
 
                                     <li><a href="{% url 'locations_list' %}">Locations</a></li>
-                                    <li><a href="{% url 'service' %}">Services</a></li>
+                                    <li>
+                                        <button class="mobile-services-toggle" onclick="this.nextElementSibling.classList.toggle('is-open'); this.querySelector('i').classList.toggle('fa-angle-up'); this.querySelector('i').classList.toggle('fa-angle-down');">
+                                            Services <i class="fa fa-angle-down"></i>
+                                        </button>
+                                        <ul class="mobile-services-list">
+                                            <li><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></li>
+                                            <li><a href="{% url 'garage_cabinet' %}">Garage Cabinets</a></li>
+                                            <li><a href="{% url 'garage_flooring' %}">Garage Flooring</a></li>
+                                            <li><a href="{% url 'garage_slatwall' %}">Slatwall Solutions</a></li>
+                                            <li><a href="{% url 'storage_rack' %}">Storage Racks</a></li>
+                                            <li><a href="{% url 'garage_door' %}">Garage Doors</a></li>
+                                            <li><a href="{% url 'garage_conversion' %}">Garage Conversion</a></li>
+                                            <li><a href="{% url 'car_lift' %}">Car Lifts</a></li>
+                                        </ul>
+                                    </li>
 
 
                                     <li><a href="{% url 'video' %}">Videos</a></li>

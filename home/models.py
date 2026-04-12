@@ -197,6 +197,16 @@ class SalesPoint(models.Model):
         parts = [self.address_line_1, self.address_line_2]
         return ", ".join([p for p in parts if p])
 
+    @property
+    def formatted_phone(self):
+        """Return phone as (NXX) NXX-XXXX if exactly 10 digits, otherwise raw."""
+        digits = "".join(c for c in (self.local_phone or "") if c.isdigit())
+        if len(digits) == 10:
+            return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        if len(digits) == 11 and digits[0] == "1":
+            return f"({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
+        return self.local_phone
+
 
 class SalesPointWorkingHour(models.Model):
     DAY_CHOICES = [

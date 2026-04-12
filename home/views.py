@@ -87,11 +87,31 @@ def location_detail(request, slug):
 
     request.session["selected_sales_point_slug"] = sales_point.slug
 
+    default_services = [
+        {"name": "Garage Makeovers",  "icon": "&#127968;", "url": "/garage_makeover"},
+        {"name": "Garage Cabinets",   "icon": "&#128736;", "url": "/garage_cabinet"},
+        {"name": "Garage Flooring",   "icon": "&#11035;",  "url": "/garage_flooring"},
+        {"name": "Slatwall Solutions","icon": "&#128295;", "url": "/garage_slatwall"},
+        {"name": "Storage Racks",     "icon": "&#128584;", "url": "/storage_rack"},
+        {"name": "Garage Doors",      "icon": "&#127968;", "url": "/garage_door"},
+        {"name": "Garage Conversion", "icon": "&#128188;", "url": "/garage_conversion"},
+        {"name": "Car Lifts",         "icon": "&#128665;", "url": "/car_lift"},
+    ]
+
+    # Build a map search query from service area cities (for service-area map)
+    city_names = [f"{c.name}, {c.state}" for c in cities]
+    map_query = " | ".join(city_names[:6]) if city_names else (
+        sales_point.full_address or sales_point.name
+    )
+
     return render(request, "home/location_detail.html", {
         "sales_point": sales_point,
         "galleries": galleries,
         "cities": cities,
         "city": sales_point,
+        "default_services": default_services,
+        "map_query": map_query,
+        "map_center_city": city_names[0] if city_names else None,
     })
 
 

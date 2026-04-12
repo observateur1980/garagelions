@@ -14,7 +14,6 @@
   "url": "{{ request.build_absolute_uri }}",
   "telephone": "{{ sales_point.local_phone }}",
   "email": "{{ sales_point.local_email }}",
-  "image": "{% block og_image_url %}{% endblock %}",
   "description": "{{ sales_point.meta_description|default:"Professional garage remodeling, flooring, cabinets, storage, and full makeover solutions." }}",
   "address": {
     "@type": "PostalAddress",
@@ -29,116 +28,249 @@
     "longitude": {{ sales_point.longitude }}
   },
   {% endif %}
-  "areaServed": [
-    {% for city in cities %}
-    {
-      "@type": "City",
-      "name": "{{ city.name }}, {{ city.state }}"
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ],
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "Garage Remodeling Services",
-    "itemListElement": [
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Garage Flooring"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Garage Cabinets"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Garage Slatwall"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Storage Racks"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Garage Door"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Garage Makeover"}},
-      {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Car Lift"}}
-    ]
-  },
+  "areaServed": [{% for city in cities %}{"@type":"City","name":"{{ city.name }}, {{ city.state }}"}{% if not forloop.last %},{% endif %}{% endfor %}],
   "openingHoursSpecification": [
-    {% for wh in sales_point.working_hours.all %}
-    {% if wh.is_open and wh.open_time and wh.close_time %}
-    {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": "https://schema.org/{{ wh.day|title }}",
-      "opens": "{{ wh.open_time|time:'H:i' }}",
-      "closes": "{{ wh.close_time|time:'H:i' }}"
-    }{% if not forloop.last %},{% endif %}
-    {% endif %}
-    {% endfor %}
-  ],
-  "sameAs": []
+    {% for wh in sales_point.working_hours.all %}{% if wh.is_open and wh.open_time and wh.close_time %}
+    {"@type":"OpeningHoursSpecification","dayOfWeek":"https://schema.org/{{ wh.day|title }}","opens":"{{ wh.open_time|time:'H:i' }}","closes":"{{ wh.close_time|time:'H:i' }}"}{% if not forloop.last %},{% endif %}
+    {% endif %}{% endfor %}
+  ]
 }
 </script>
 {% endblock %}
 
 {% block content %}
-<section style="margin-top: 120px; padding: 50px 0;">
-  <div class="container">
 
-    <h1>{{ sales_point.hero_title|default:sales_point.name }}</h1>
-    {% if sales_point.hero_subtitle %}
-    <p>{{ sales_point.hero_subtitle }}</p>
-    {% endif %}
-
-    {% if sales_point.intro_text %}
-    <div style="margin: 32px 0;">{{ sales_point.intro_text|linebreaksbr }}</div>
-    {% endif %}
-
-    {# Service area cities #}
-    {% if cities %}
-    <div style="margin: 32px 0;">
-      <h3>Service Area</h3>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-        {% for city in cities %}
-        <span style="background:#E1F5EE; color:#0F6E56; padding:4px 12px; border-radius:12px; font-size:13px;">
-          {{ city.name }}, {{ city.state }}
-        </span>
-        {% endfor %}
-      </div>
+<!-- ── Hero ── -->
+<section style="
+    position:relative;
+    margin-top:90px;
+    min-height:420px;
+    display:flex;
+    align-items:center;
+    background:url('{% static "images/services/schildorf garage makeover.jpg" %}') center/cover no-repeat;
+    padding:110px 0 90px;
+">
+    <div style="position:absolute;inset:0;background:rgba(20,20,20,.65);"></div>
+    <div class="container" style="position:relative;z-index:1;">
+        <p style="color:#c64d1e;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:13px;margin-bottom:10px;">
+            <a href="{% url 'locations_list' %}" style="color:#c64d1e;text-decoration:none;">Locations</a>
+            &nbsp;/
+        </p>
+        <h1 style="color:#fff;font-size:42px;font-weight:800;margin:0 0 14px;line-height:1.2;">
+            {{ sales_point.hero_title|default:sales_point.name }}
+        </h1>
+        {% if sales_point.hero_subtitle %}
+        <p style="color:rgba(255,255,255,.82);font-size:17px;max-width:600px;margin:0;line-height:1.7;">
+            {{ sales_point.hero_subtitle }}
+        </p>
+        {% endif %}
     </div>
-    {% endif %}
-
-    {# Hours #}
-    {% if sales_point.working_hours.all %}
-    <div style="margin: 32px 0;">
-      <h3>Hours</h3>
-      <table style="font-size:14px; border-collapse:collapse;">
-        {% for wh in sales_point.working_hours.all %}
-        <tr>
-          <td style="padding:4px 16px 4px 0; font-weight:500;">{{ wh.get_day_display }}</td>
-          <td style="padding:4px 0;">
-            {% if wh.is_open and wh.open_time and wh.close_time %}
-              {{ wh.open_time|time:"g:i A" }} – {{ wh.close_time|time:"g:i A" }}
-              {% if wh.note %}<span style="color:#aaa; font-size:12px;"> ({{ wh.note }})</span>{% endif %}
-            {% else %}
-              <span style="color:#aaa;">Closed</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </table>
-    </div>
-    {% endif %}
-
-    {# Address + contact #}
-    {% if sales_point.address_line_1 %}
-    <div style="margin: 32px 0;">
-      <h3>Address</h3>
-      <p>{{ sales_point.address_line_1 }}{% if sales_point.address_line_2 %}<br>{{ sales_point.address_line_2 }}{% endif %}</p>
-      {% if sales_point.local_phone %}<p><a href="tel:{{ sales_point.local_phone }}">{{ sales_point.local_phone }}</a></p>{% endif %}
-    </div>
-    {% endif %}
-
-    {# SEO body text #}
-    {% if sales_point.seo_body %}
-    <div style="margin: 40px 0; color:#666; font-size:15px; line-height:1.8;">
-      {{ sales_point.seo_body|linebreaksbr }}
-    </div>
-    {% endif %}
-
-    {# CTA #}
-    <div style="margin: 40px 0;">
-      <a href="{% url 'create_lead' %}?sales_point={{ sales_point.slug }}" class="button">
-        <span>Get a Free Consultation</span><i class="fa fa-arrow-right"></i>
-      </a>
-    </div>
-
-  </div>
 </section>
+
+<!-- ── Main content ── -->
+<section style="padding:70px 0;background:#fff;">
+    <div class="container">
+        <div class="row">
+
+            <!-- ── Left: content ── -->
+            <div class="col-md-7 col-sm-12" style="padding-right:40px;">
+
+                {% if sales_point.intro_text %}
+                <p style="font-size:16px;color:#555;line-height:1.8;margin-bottom:36px;">
+                    {{ sales_point.intro_text|linebreaksbr }}
+                </p>
+                {% endif %}
+
+                <!-- Hours -->
+                {% if sales_point.working_hours.all %}
+                <div style="margin-bottom:40px;">
+                    <h3 style="color:#0b2545;font-size:20px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #f0f0f0;">
+                        Hours of Operation
+                    </h3>
+                    <table style="width:100%;font-size:14px;border-collapse:collapse;">
+                        {% for wh in sales_point.working_hours.all %}
+                        <tr style="border-bottom:1px solid #f5f5f5;">
+                            <td style="padding:10px 0;font-weight:600;color:#333;width:130px;">{{ wh.get_day_display }}</td>
+                            <td style="padding:10px 0;color:#555;">
+                                {% if wh.is_open and wh.open_time and wh.close_time %}
+                                    {{ wh.open_time|time:"g:i A" }} – {{ wh.close_time|time:"g:i A" }}
+                                    {% if wh.note %}<span style="color:#aaa;font-size:12px;margin-left:6px;">({{ wh.note }})</span>{% endif %}
+                                {% else %}
+                                    <span style="color:#bbb;">Closed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Service area -->
+                {% if cities %}
+                <div style="margin-bottom:40px;">
+                    <h3 style="color:#0b2545;font-size:20px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #f0f0f0;">
+                        Service Area
+                    </h3>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        {% for city in cities %}
+                        <span style="background:#f5f5f5;color:#555;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;border:1px solid #e8e8e8;">
+                            {{ city.name }}, {{ city.state }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SEO body -->
+                {% if sales_point.seo_body %}
+                <div style="font-size:15px;color:#666;line-height:1.85;margin-bottom:40px;">
+                    {{ sales_point.seo_body|linebreaksbr }}
+                </div>
+                {% endif %}
+
+                <!-- CTA -->
+                <a href="{% url 'create_lead' %}?sales_point={{ sales_point.slug }}"
+                   style="display:inline-block;background:#c64d1e;color:#fff;padding:15px 36px;border-radius:5px;text-decoration:none;font-weight:700;font-size:15px;">
+                    Get a Free Consultation &rarr;
+                </a>
+
+            </div>
+
+            <!-- ── Right: contact card + map ── -->
+            <div class="col-md-5 col-sm-12" style="margin-top:0;">
+
+                <div style="background:#f5f5f5;border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;">
+
+                    <!-- Contact info -->
+                    <div style="padding:28px 28px 24px;">
+                        <h3 style="color:#0b2545;font-size:18px;font-weight:700;margin:0 0 20px;">
+                            Contact This Location
+                        </h3>
+
+                        {% if sales_point.address_line_1 %}
+                        <div style="display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;">
+                            <span style="color:#c64d1e;font-size:16px;margin-top:2px;">&#128205;</span>
+                            <div style="font-size:14px;color:#444;line-height:1.6;">
+                                {{ sales_point.address_line_1 }}<br>
+                                {% if sales_point.address_line_2 %}{{ sales_point.address_line_2 }}<br>{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if sales_point.local_phone %}
+                        <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;">
+                            <span style="color:#c64d1e;font-size:16px;">&#128222;</span>
+                            <a href="tel:{{ sales_point.local_phone }}"
+                               style="font-size:15px;color:#0b2545;font-weight:600;text-decoration:none;">
+                                {{ sales_point.formatted_phone }}
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if sales_point.local_email %}
+                        <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;">
+                            <span style="color:#c64d1e;font-size:16px;">&#9993;</span>
+                            <a href="mailto:{{ sales_point.local_email }}"
+                               style="font-size:14px;color:#0b2545;text-decoration:none;word-break:break-all;">
+                                {{ sales_point.local_email }}
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if sales_point.assigned_user %}
+                        {% with sp=sales_point.assigned_user %}
+                        <div style="border-top:1px solid #e8e8e8;margin-top:16px;padding-top:16px;">
+                            <p style="font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px;">Your Specialist</p>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                {% if sp.profile.photo %}
+                                <img src="{{ sp.profile.photo.url }}" alt="{{ sp.get_full_name }}"
+                                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #e8e8e8;">
+                                {% else %}
+                                <div style="width:44px;height:44px;border-radius:50%;background:#0b2545;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;">
+                                    {{ sp.get_short_name|first }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <p style="margin:0;font-size:14px;font-weight:600;color:#0b2545;">{{ sp.get_full_name }}</p>
+                                    {% if sp.profile.display_email %}
+                                    <a href="mailto:{{ sp.profile.display_email }}"
+                                       style="font-size:13px;color:#c64d1e;text-decoration:none;">
+                                        {{ sp.profile.display_email }}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+
+                        <a href="{% url 'create_lead' %}?sales_point={{ sales_point.slug }}"
+                           style="display:block;margin-top:20px;background:#c64d1e;color:#fff;padding:13px;border-radius:5px;text-decoration:none;font-weight:700;font-size:14px;text-align:center;">
+                            Request a Free Estimate
+                        </a>
+                    </div>
+
+                    <!-- Google Map — sales point location -->
+                    {% if sales_point.latitude and sales_point.longitude %}
+                    <iframe
+                        width="100%"
+                        height="300"
+                        frameborder="0"
+                        style="display:block;border:0;"
+                        loading="lazy"
+                        allowfullscreen
+                        src="https://maps.google.com/maps?q={{ sales_point.latitude }},{{ sales_point.longitude }}&z=14&output=embed">
+                    </iframe>
+                    {% elif sales_point.address_line_1 %}
+                    <iframe
+                        width="100%"
+                        height="300"
+                        frameborder="0"
+                        style="display:block;border:0;"
+                        loading="lazy"
+                        allowfullscreen
+                        src="https://maps.google.com/maps?q={{ sales_point.address_line_1|urlencode }}{% if sales_point.address_line_2 %}+{{ sales_point.address_line_2|urlencode }}{% endif %}&z=14&output=embed">
+                    </iframe>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ── Services strip ── -->
+<section style="padding:70px 0;background:#f5f5f5;border-top:1px solid #e8e8e8;">
+    <div class="container">
+        <div style="text-align:center;margin-bottom:44px;">
+            <h2 style="color:#0b2545;font-size:28px;font-weight:800;margin-bottom:8px;">Our Services in {{ sales_point.name }}</h2>
+            <p style="color:#666;font-size:15px;">Everything you need to transform your garage, professionally installed.</p>
+        </div>
+        <div class="row text-center">
+            {% for svc in services_list %}
+            <div class="col-md-3 col-sm-6" style="margin-bottom:24px;">
+                <a href="{{ svc.url }}" style="display:block;text-decoration:none;color:inherit;">
+                    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:22px 16px;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(173,86,53,.15)';this.style.borderColor='#c64d1e';" onmouseout="this.style.boxShadow='none';this.style.borderColor='#e8e8e8';">
+                        <div style="font-size:30px;margin-bottom:10px;">{{ svc.icon }}</div>
+                        <p style="font-size:13px;font-weight:700;color:#0b2545;text-transform:uppercase;letter-spacing:.4px;margin:0;">{{ svc.name }}</p>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            {% for item in default_services %}
+            <div class="col-md-3 col-sm-6" style="margin-bottom:24px;">
+                <a href="{{ item.url }}" style="display:block;text-decoration:none;color:inherit;">
+                    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:22px 16px;">
+                        <div style="font-size:30px;margin-bottom:10px;">{{ item.icon }}</div>
+                        <p style="font-size:13px;font-weight:700;color:#0b2545;text-transform:uppercase;letter-spacing:.4px;margin:0;">{{ item.name }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
 {% endblock %}

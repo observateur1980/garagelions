@@ -1,25 +1,84 @@
-{% extends 'home/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
+{% block seo_title %}Car Lifts | Garage Lions{% endblock %}
+{% block seo_description %}Professional car lift installation by Garage Lions. Store two vehicles in the space of one, or build the ultimate home mechanic setup with a quality vehicle lift.{% endblock %}
+
 {% block content %}
 
+<!-- Hero -->
+<section style="background:url('{% static "images/services/car lift.jpg" %}') center 40%/cover no-repeat;margin-top:90px;min-height:420px;display:flex;align-items:center;padding:110px 0 90px;position:relative;">
+  <div style="position:absolute;inset:0;background:rgba(20,20,20,.65);"></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <p style="color:#c64d1e;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Our Services</p>
+    <h1 style="color:#fff;font-size:42px;font-weight:800;margin-bottom:16px;">Car Lifts</h1>
+    <p style="color:rgba(255,255,255,.85);font-size:18px;max-width:560px;margin-bottom:32px;">Professional vehicle lift installation for car collectors, enthusiasts, and homeowners who want to fit more into their garage without sacrificing convenience.</p>
+    <a href="{% url 'create_lead' %}" style="display:inline-block;background:#c64d1e;color:#fff;padding:14px 32px;border-radius:5px;text-decoration:none;font-weight:700;font-size:15px;">Get Your Free Estimate &rarr;</a>
+  </div>
+</section>
 
-    <section class="action-box" style="margin-top: 90px">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-md-8">
-                    <h1 class="text-white">Car Lift</h1>
+<!-- Overview -->
+<section style="padding:80px 0;background:#fff;">
+  <div class="container">
+    <div class="row" style="align-items:center;">
+      <div class="col-md-6" style="padding-right:40px;">
+        <h2 style="color:#0b2545;font-size:32px;font-weight:700;margin-bottom:16px;">Park Two Cars Where You Could Only Fit One</h2>
+        <p style="color:#555;font-size:16px;line-height:1.8;margin-bottom:20px;">Whether you're a car collector short on space or a home mechanic who needs proper under-vehicle access, a professionally installed car lift changes everything about your garage.</p>
+        <p style="color:#555;font-size:16px;line-height:1.8;margin-bottom:28px;">We handle site assessment, concrete evaluation, lift selection, and full installation. Every lift is inspected and load-tested before we hand over the keys.</p>
+        <ul style="list-style:none;padding:0;margin:0;">
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Two-post and four-post lift options</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Parking and maintenance lift configurations</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Concrete assessment and reinforcement</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Capacity from 7,000 to 18,000 lbs</li>
+          <li style="display:flex;align-items:center;gap:10px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Full load test and safety certification</li>
+        </ul>
+      </div>
+      <div class="col-md-6" style="margin-top:30px;">
+        <img src="{% static 'images/services/car lift.jpg' %}" alt="Car Lifts" style="width:100%;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);">
+      </div>
+    </div>
+  </div>
+</section>
 
-                </div>
+<!-- Types -->
+<section style="padding:70px 0;background:#f5f5f5;">
+  <div class="container">
+    <div class="row text-center" style="margin-bottom:50px;">
+      <div class="col-12">
+        <h2 style="color:#0b2545;font-size:30px;font-weight:700;">Lift Types We Install</h2>
+      </div>
+    </div>
+    <div class="row text-center">
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#128665;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Four-Post Parking</h5>
+        <p style="color:#666;font-size:14px;">Stack two vehicles vertically — perfect for car collectors and storage.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#128736;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Two-Post Service</h5>
+        <p style="color:#666;font-size:14px;">Full undercarriage access for the serious home mechanic.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#9195;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Scissor / Low-Rise</h5>
+        <p style="color:#666;font-size:14px;">Quick under-car access without full ceiling clearance requirements.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#9889;</div>
+        <h5 style="color:#0b2545;font-weight:700;">220V Electrical</h5>
+        <p style="color:#666;font-size:14px;">We handle the dedicated circuit your lift requires, start to finish.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-            </div>
-        </div>
-    </section>
-
-
-
-
-
-
-
+<!-- CTA -->
+<section style="background:#f5f5f5;padding:70px 0;text-align:center;border-top:1px solid #e8e8e8;">
+  <div class="container">
+    <h2 style="color:#0b2545;font-size:32px;font-weight:700;margin-bottom:14px;">Build Your Dream Garage Setup</h2>
+    <p style="color:#555;font-size:16px;margin-bottom:32px;">Get a free in-home assessment to see which lift fits your garage and vehicles best.</p>
+    <a href="{% url 'create_lead' %}" style="display:inline-block;background:#c64d1e;color:#fff;padding:16px 40px;border-radius:5px;text-decoration:none;font-weight:700;font-size:16px;">Request a Free Estimate</a>
+  </div>
+</section>
 
 {% endblock %}

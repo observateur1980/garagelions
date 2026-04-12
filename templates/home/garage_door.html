@@ -1,25 +1,84 @@
-{% extends 'home/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
+{% block seo_title %}Garage Doors | Garage Lions{% endblock %}
+{% block seo_description %}New garage doors, openers, and smart systems installed by Garage Lions. Upgrade your curb appeal and home security with a premium garage door.{% endblock %}
+
 {% block content %}
 
+<!-- Hero -->
+<section style="background:url('{% static "images/services/schildorf garage door.jpg" %}') center 40%/cover no-repeat;margin-top:90px;min-height:420px;display:flex;align-items:center;padding:110px 0 90px;position:relative;">
+  <div style="position:absolute;inset:0;background:rgba(20,20,20,.65);"></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <p style="color:#c64d1e;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Our Services</p>
+    <h1 style="color:#fff;font-size:42px;font-weight:800;margin-bottom:16px;">Garage Doors</h1>
+    <p style="color:rgba(255,255,255,.85);font-size:18px;max-width:560px;margin-bottom:32px;">New doors, smart openers, and full replacements that boost curb appeal, improve insulation, and enhance your home's security.</p>
+    <a href="{% url 'create_lead' %}" style="display:inline-block;background:#c64d1e;color:#fff;padding:14px 32px;border-radius:5px;text-decoration:none;font-weight:700;font-size:15px;">Get Your Free Estimate &rarr;</a>
+  </div>
+</section>
 
-    <section class="action-box" style="margin-top: 90px">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-md-8">
-                    <h1 class="text-white">Garage Door</h1>
+<!-- Overview -->
+<section style="padding:80px 0;background:#fff;">
+  <div class="container">
+    <div class="row" style="align-items:center;">
+      <div class="col-md-6" style="padding-right:40px;">
+        <h2 style="color:#0b2545;font-size:32px;font-weight:700;margin-bottom:16px;">The First Thing Guests See. Make It Count.</h2>
+        <p style="color:#555;font-size:16px;line-height:1.8;margin-bottom:20px;">Your garage door takes up a significant portion of your home's front facade. An updated door instantly transforms curb appeal and can add thousands to your home's value.</p>
+        <p style="color:#555;font-size:16px;line-height:1.8;margin-bottom:28px;">We carry a wide selection of insulated steel, wood-look, and modern aluminum doors along with quiet, smart-enabled openers for seamless integration with your lifestyle.</p>
+        <ul style="list-style:none;padding:0;margin:0;">
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Wide range of styles and materials</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Insulated doors for energy efficiency</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Smart opener systems with app control</li>
+          <li style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Quiet belt & chain drive options</li>
+          <li style="display:flex;align-items:center;gap:10px;color:#333;font-size:15px;"><span style="color:#c64d1e;font-size:18px;">&#10003;</span> Professional removal and installation</li>
+        </ul>
+      </div>
+      <div class="col-md-6" style="margin-top:30px;">
+        <img src="{% static 'images/services/schildorf garage door.jpg' %}" alt="Garage Doors" style="width:100%;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);">
+      </div>
+    </div>
+  </div>
+</section>
 
-                </div>
+<!-- Features -->
+<section style="padding:70px 0;background:#f5f5f5;">
+  <div class="container">
+    <div class="row text-center" style="margin-bottom:50px;">
+      <div class="col-12">
+        <h2 style="color:#0b2545;font-size:30px;font-weight:700;">Everything in One Upgrade</h2>
+      </div>
+    </div>
+    <div class="row text-center">
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#127968;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Curb Appeal</h5>
+        <p style="color:#666;font-size:14px;">A new door is one of the highest-ROI home improvements available.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#10052;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Insulated Options</h5>
+        <p style="color:#666;font-size:14px;">Keep your garage warmer in winter and cooler in summer.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#128241;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Smart Control</h5>
+        <p style="color:#666;font-size:14px;">Open, close, and monitor your door from anywhere with your phone.</p>
+      </div>
+      <div class="col-md-3 col-sm-6" style="margin-bottom:30px;">
+        <div style="font-size:36px;margin-bottom:12px;">&#128274;</div>
+        <h5 style="color:#0b2545;font-weight:700;">Better Security</h5>
+        <p style="color:#666;font-size:14px;">Modern doors with rolling-code technology keep intruders out.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-            </div>
-        </div>
-    </section>
-
-
-
-
-
-
-
+<!-- CTA -->
+<section style="background:#f5f5f5;padding:70px 0;text-align:center;border-top:1px solid #e8e8e8;">
+  <div class="container">
+    <h2 style="color:#0b2545;font-size:32px;font-weight:700;margin-bottom:14px;">Upgrade Your Garage Door Today</h2>
+    <p style="color:#555;font-size:16px;margin-bottom:32px;">Get a free estimate and browse our full door catalog in person.</p>
+    <a href="{% url 'create_lead' %}" style="display:inline-block;background:#c64d1e;color:#fff;padding:16px 40px;border-radius:5px;text-decoration:none;font-weight:700;font-size:16px;">Request a Free Estimate</a>
+  </div>
+</section>
 
 {% endblock %}
