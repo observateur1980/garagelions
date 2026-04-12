@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Import Territory from CSV{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+  <a href="{% url 'admin:home_salespoint_changelist' %}">Sales Points</a> &rsaquo;
+  Import Territory CSV
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Import Territory from CSV</h1>
+
+<div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start;">
+
+  <!-- ── Upload form ── -->
+  <div style="flex:1;min-width:320px;">
+    <p>
+      Upload a CSV with the following columns:<br>
+      <code>sales_point_slug, city_name, state, zip_code</code>
+    </p>
+    <p>
+      Cities are created (if new) and assigned to the sales point.<br>
+      Zip codes already in the system are skipped. Sales points must already exist.
+    </p>
+
+    <h2 style="font-size:14px;margin-top:20px;">Example</h2>
+    <pre style="background:#f8f8f8;padding:10px;border:1px solid #ddd;display:inline-block;font-size:12px;">sales_point_slug,city_name,state,zip_code
+los-angeles,Burbank,CA,91501
+los-angeles,Burbank,CA,91502
+los-angeles,Glendale,CA,91201
+san-diego,Chula Vista,CA,91910</pre>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top:24px;">
+      {% csrf_token %}
+      <div class="form-row">
+        <label for="csv_file"><strong>CSV file (territory_import.csv):</strong></label>
+        <br><br>
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+      </div>
+      <br>
+      <input type="submit" value="Import" class="button default">
+      &nbsp;
+      <a href="{% url 'admin:home_salespoint_changelist' %}" class="button cancel-link">Cancel</a>
+    </form>
+  </div>
+
+  <!-- ── Active sales points reference ── -->
+  <div style="flex:0 0 260px;">
+    <h2 style="font-size:14px;margin-bottom:8px;">Active sales point slugs</h2>
+    <table style="font-size:12px;border-collapse:collapse;width:100%;">
+      <thead>
+        <tr style="background:#f0f0f0;">
+          <th style="padding:5px 8px;text-align:left;border:1px solid #ddd;">Name</th>
+          <th style="padding:5px 8px;text-align:left;border:1px solid #ddd;">Slug</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sp in sales_points %}
+        <tr>
+          <td style="padding:4px 8px;border:1px solid #eee;">{{ sp.name }}</td>
+          <td style="padding:4px 8px;border:1px solid #eee;font-family:monospace;color:#555;">{{ sp.slug }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" style="padding:8px;color:#aaa;">No active sales points.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

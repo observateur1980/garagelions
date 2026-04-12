@@ -284,8 +284,82 @@ class SalesPointAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.manage_territory_view),
                 name="home_salespoint_manage_territory",
             ),
+            path(
+                "import-territory-csv/",
+                self.admin_site.admin_view(self.import_territory_csv_view),
+                name="home_salespoint_import_territory_csv",
+            ),
         ]
         return extra + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["import_territory_csv_url"] = "import-territory-csv/"
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def import_territory_csv_view(self, request):
+        if request.method == "POST":
+            csv_file = request.FILES.get("csv_file")
+            if not csv_file or not csv_file.name.endswith(".csv"):
+                messages.error(request, "Please upload a valid .csv file.")
+                return redirect(".")
+
+            created_cities = created_zips = assigned = 0
+            errors = []
+
+            text = io.TextIOWrapper(csv_file, encoding="utf-8-sig")
+            reader = csv.DictReader(text)
+
+            for i, row in enumerate(reader, start=2):
+                try:
+                    slug = row["sales_point_slug"].strip()
+                    try:
+                        sales_point = SalesPoint.objects.get(slug=slug)
+                    except SalesPoint.DoesNotExist:
+                        errors.append(
+                            f"Row {i}: Sales point '{slug}' not found — create it first."
+                        )
+                        continue
+
+                    city, city_created = ServiceCity.objects.get_or_create(
+                        name=row["city_name"].strip(),
+                        state=row["state"].strip(),
+                        defaults={"is_active": True, "sales_point": sales_point},
+                    )
+                    if city_created:
+                        created_cities += 1
+                    elif city.sales_point != sales_point:
+                        city.sales_point = sales_point
+                        city.save(update_fields=["sales_point"])
+                        assigned += 1
+
+                    _, zip_created = ZipCode.objects.get_or_create(
+                        code=row["zip_code"].strip(),
+                        defaults={"service_city": city},
+                    )
+                    if zip_created:
+                        created_zips += 1
+
+                except Exception as e:
+                    errors.append(f"Row {i}: {e}")
+
+            for err in errors[:10]:
+                messages.warning(request, err)
+
+            messages.success(
+                request,
+                f"Import complete — {created_cities} new cities, "
+                f"{assigned} reassigned, {created_zips} new zip codes.",
+            )
+            return redirect("..")
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Import territory from CSV",
+            "opts": self.model._meta,
+            "sales_points": SalesPoint.objects.filter(is_active=True).order_by("name"),
+        }
+        return render(request, "admin/home/salespoint/import_territory_csv.html", context)
 
     def manage_territory_link(self, obj):
         if not obj.pk:
