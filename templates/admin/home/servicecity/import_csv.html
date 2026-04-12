@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Import cities &amp; ZIP codes from CSV{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+  <a href="{% url 'admin:home_servicecity_changelist' %}">Service Cities</a> &rsaquo;
+  Import CSV
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Import cities &amp; ZIP codes from CSV</h1>
+
+<p>
+  Upload a CSV file with the following columns:<br>
+  <code>city_name, state, zip_code</code>
+</p>
+<p>
+  Cities are created without a sales point assigned — you can assign them later
+  by editing each city. Existing cities and zip codes are skipped (no duplicates).
+</p>
+
+<h2 style="font-size:14px;margin-top:20px;">Example CSV</h2>
+<pre style="background:#f8f8f8;padding:10px;border:1px solid #ddd;display:inline-block;">city_name,state,zip_code
+Alpharetta,Georgia,30004
+Alpharetta,Georgia,30005
+Roswell,Georgia,30075
+Plano,Texas,75023</pre>
+
+<form method="post" enctype="multipart/form-data" style="margin-top:20px;">
+  {% csrf_token %}
+  <div class="form-row">
+    <label for="csv_file"><strong>CSV file:</strong></label><br><br>
+    <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+  </div>
+  <br>
+  <input type="submit" value="Import" class="button default">
+  &nbsp;
+  <a href="{% url 'admin:home_servicecity_changelist' %}" class="button cancel-link">Cancel</a>
+</form>
+{% endblock %}

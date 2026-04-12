@@ -2,8 +2,10 @@
 
 import csv
 import io
+import re
 
 from django.contrib import admin, messages
+from django.db import models
 from django.shortcuts import redirect, render
 from django.urls import path
 from django.utils.html import format_html
@@ -37,12 +39,6 @@ class SalesPointWorkingHourInline(admin.TabularInline):
     model = SalesPointWorkingHour
     extra = 0
     fields = ("day", "is_open", "open_time", "close_time", "note")
-
-
-class CityInline(admin.TabularInline):
-    model = ServiceCity
-    extra = 1
-    fields = ("name", "state", "is_active", "order")
 
 
 class FranchiseAgreementInline(admin.StackedInline):
@@ -88,11 +84,114 @@ class LeadActivityInline(admin.TabularInline):
 
 @admin.register(ServiceCity)
 class ServiceCityAdmin(admin.ModelAdmin):
-    list_display = ("name", "state", "sales_point", "is_active", "order")
+    list_display = ("name", "state", "sales_point", "active_toggle", "order")
     list_filter = ("sales_point", "state", "is_active")
     search_fields = ("name", "state", "sales_point__name")
     prepopulated_fields = {"slug": ("name",)}
     inlines = [ZipCodeInline]
+
+    fieldsets = (
+        ("City", {
+            "fields": ("name", "slug", "state", "is_active", "order")
+        }),
+        ("Sales Point (optional)", {
+            "fields": ("sales_point",),
+            "description": "Assign this city to a sales point. Leave blank to assign later.",
+        }),
+    )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        extra = [
+            path(
+                "<int:pk>/toggle-active/",
+                self.admin_site.admin_view(self.toggle_active_view),
+                name="home_servicecity_toggle_active",
+            ),
+            path(
+                "import-csv/",
+                self.admin_site.admin_view(self.import_csv_view),
+                name="home_servicecity_import_csv",
+            ),
+        ]
+        return extra + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["import_csv_url"] = "import-csv/"
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def toggle_active_view(self, request, pk):
+        city = ServiceCity.objects.get(pk=pk)
+        city.is_active = not city.is_active
+        city.save(update_fields=["is_active"])
+        return redirect(request.META.get("HTTP_REFERER", ".."))
+
+    def active_toggle(self, obj):
+        if obj.is_active:
+            label, color = "Active", "#28a745"
+        else:
+            label, color = "Inactive", "#dc3545"
+        return format_html(
+            '<a href="{}" style="'
+            'display:inline-block;padding:2px 10px;border-radius:4px;'
+            'background:{};color:#fff;text-decoration:none;font-size:12px;'
+            'font-weight:600;">{}</a>',
+            f"{obj.pk}/toggle-active/",
+            color,
+            label,
+        )
+    active_toggle.short_description = "Active"
+
+    def import_csv_view(self, request):
+        if request.method == "POST":
+            csv_file = request.FILES.get("csv_file")
+            if not csv_file or not csv_file.name.endswith(".csv"):
+                messages.error(request, "Please upload a valid .csv file.")
+                return redirect(".")
+
+            created_cities = created_zips = 0
+            errors = []
+
+            text = io.TextIOWrapper(csv_file, encoding="utf-8-sig")
+            reader = csv.DictReader(text)
+
+            for i, row in enumerate(reader, start=2):
+                try:
+                    city, city_created = ServiceCity.objects.get_or_create(
+                        name=row["city_name"].strip(),
+                        state=row["state"].strip(),
+                        defaults={"is_active": True},
+                    )
+                    if city_created:
+                        created_cities += 1
+
+                    _, zip_created = ZipCode.objects.get_or_create(
+                        code=row["zip_code"].strip(),
+                        defaults={"service_city": city},
+                    )
+                    if zip_created:
+                        created_zips += 1
+
+                except Exception as e:
+                    errors.append(f"Row {i}: {e}")
+
+            if errors:
+                for err in errors[:10]:
+                    messages.warning(request, err)
+
+            messages.success(
+                request,
+                f"Import complete — Cities: {created_cities}, ZIPs: {created_zips}",
+            )
+            return redirect("..")
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Import cities & ZIP codes from CSV",
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/home/servicecity/import_csv.html", context)
 
 
 # ── ZipCode ───────────────────────────────────────────────────────────────
@@ -114,13 +213,13 @@ class SalesPointAdmin(admin.ModelAdmin):
     list_display = (
         "name", "location_type", "local_phone", "local_email",
         "assigned_user", "is_active", "is_featured", "order",
-        "related_cities", "related_zip_codes",
+        "related_cities", "manage_territory_link",
     )
     list_editable = ("is_active", "is_featured", "order")
     list_filter = ("location_type", "is_active", "is_featured")
     search_fields = ("name", "local_email", "lead_notification_email")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [SalesPointWorkingHourInline, CityInline, FranchiseAgreementInline]
+    inlines = [SalesPointWorkingHourInline, FranchiseAgreementInline]
     readonly_fields = ("zip_codes_preview",)
 
     fieldsets = (
@@ -151,12 +250,12 @@ class SalesPointAdmin(admin.ModelAdmin):
     )
 
     def related_cities(self, obj):
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        cities = ServiceCity.objects.filter(sales_point=obj, is_active=True).order_by("order", "name")
         return ", ".join(city.name for city in cities) or "-"
     related_cities.short_description = "Cities"
 
     def related_zip_codes(self, obj):
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        cities = ServiceCity.objects.filter(sales_point=obj, is_active=True).order_by("order", "name")
         parts = []
         for city in cities:
             zip_codes = city.zip_codes.order_by("code")
@@ -168,7 +267,7 @@ class SalesPointAdmin(admin.ModelAdmin):
     def zip_codes_preview(self, obj):
         if not obj.pk:
             return "-"
-        cities = ServiceCity.objects.filter(sales_point=obj).order_by("order", "name")
+        cities = ServiceCity.objects.filter(sales_point=obj, is_active=True).order_by("order", "name")
         lines = []
         for city in cities:
             zip_codes = city.zip_codes.order_by("code")
@@ -181,78 +280,142 @@ class SalesPointAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         extra = [
             path(
-                "import-csv/",
-                self.admin_site.admin_view(self.import_csv_view),
-                name="home_salespoint_import_csv",
+                "<int:pk>/manage-territory/",
+                self.admin_site.admin_view(self.manage_territory_view),
+                name="home_salespoint_manage_territory",
             ),
         ]
         return extra + urls
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context["import_csv_url"] = "import-csv/"
-        return super().changelist_view(request, extra_context=extra_context)
+    def manage_territory_link(self, obj):
+        if not obj.pk:
+            return "-"
+        return format_html(
+            '<a href="{}/manage-territory/" class="button" '
+            'style="padding:3px 10px;font-size:12px;">Manage Territory</a>',
+            obj.pk,
+        )
+    manage_territory_link.short_description = "Territory"
 
-    def import_csv_view(self, request):
+    def manage_territory_view(self, request, pk):
+        sales_point = SalesPoint.objects.get(pk=pk)
+
+        def build_assigned(sp):
+            cities = ServiceCity.objects.filter(sales_point=sp).order_by("state", "name")
+            lines = []
+            for city in cities:
+                codes = ", ".join(z.code for z in city.zip_codes.order_by("code"))
+                lines.append(f"{city.name}, {city.state}: {codes}")
+            return "\n".join(lines)
+
         if request.method == "POST":
-            csv_file = request.FILES.get("csv_file")
-            if not csv_file or not csv_file.name.endswith(".csv"):
-                messages.error(request, "Please upload a valid .csv file.")
-                return redirect(".")
+            action = request.POST.get("action")
 
-            created_sp = created_cities = created_zips = 0
-            errors = []
-
-            text = io.TextIOWrapper(csv_file, encoding="utf-8-sig")
-            reader = csv.DictReader(text)
-
-            for i, row in enumerate(reader, start=2):
-                try:
-                    sales_point, sp_created = SalesPoint.objects.get_or_create(
-                        slug=row["sales_point_slug"].strip(),
-                        defaults={"name": row["sales_point_name"].strip(), "is_active": True},
+            # ── action: assign checked cities ──────────────────────────────
+            if action == "assign":
+                city_ids = request.POST.getlist("city_ids")
+                if city_ids:
+                    assigned = ServiceCity.objects.filter(pk__in=city_ids).update(
+                        sales_point=sales_point
                     )
-                    if sp_created:
-                        created_sp += 1
+                    messages.success(request, f"{assigned} city/cities assigned to {sales_point.name}.")
+                else:
+                    messages.warning(request, "No cities selected.")
+
+            # ── action: unassign checked cities ────────────────────────────
+            elif action == "unassign":
+                city_ids = request.POST.getlist("assigned_city_ids")
+                if city_ids:
+                    removed = ServiceCity.objects.filter(
+                        pk__in=city_ids, sales_point=sales_point
+                    ).update(sales_point=None)
+                    messages.success(request, f"{removed} city/cities removed from {sales_point.name}.")
+                else:
+                    messages.warning(request, "No cities selected.")
+
+            # ── action: bulk textarea entry ─────────────────────────────────
+            elif action == "textarea":
+                raw = request.POST.get("territory", "")
+                created_cities = created_zips = 0
+                errors = []
+
+                for lineno, line in enumerate(raw.splitlines(), start=1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if ":" not in line:
+                        errors.append(f"Line {lineno}: missing colon — expected 'City, State: zip1 zip2 …'")
+                        continue
+                    city_part, zip_part = line.split(":", 1)
+                    city_part = city_part.strip()
+                    zip_part = zip_part.strip()
+
+                    if "," not in city_part:
+                        errors.append(f"Line {lineno}: missing comma — expected 'City, State'")
+                        continue
+                    city_name, state = [p.strip() for p in city_part.rsplit(",", 1)]
 
                     city, city_created = ServiceCity.objects.get_or_create(
-                        sales_point=sales_point,
-                        slug=row["city_slug"].strip(),
-                        defaults={
-                            "name": row["city_name"].strip(),
-                            "state": row["state"].strip(),
-                            "is_active": True,
-                        },
+                        name=city_name,
+                        state=state,
+                        defaults={"is_active": True, "sales_point": sales_point},
                     )
                     if city_created:
                         created_cities += 1
+                    elif city.sales_point != sales_point:
+                        city.sales_point = sales_point
+                        city.save(update_fields=["sales_point"])
 
-                    _, zip_created = ZipCode.objects.get_or_create(
-                        code=row["zip_code"].strip(),
-                        defaults={"service_city": city},
-                    )
-                    if zip_created:
-                        created_zips += 1
+                    zip_codes = [z.strip() for z in re.split(r"[\s,]+", zip_part) if z.strip()]
+                    for code in zip_codes:
+                        _, zip_created = ZipCode.objects.get_or_create(
+                            code=code, defaults={"service_city": city}
+                        )
+                        if zip_created:
+                            created_zips += 1
 
-                except Exception as e:
-                    errors.append(f"Row {i}: {e}")
-
-            if errors:
                 for err in errors[:10]:
                     messages.warning(request, err)
+                if created_cities or created_zips:
+                    messages.success(
+                        request,
+                        f"Saved — {created_cities} new cities, {created_zips} new zip codes added.",
+                    )
+                elif not errors:
+                    messages.info(request, "No new data — everything already exists.")
 
-            messages.success(
-                request,
-                f"Import complete — SalesPoints: {created_sp}, Cities: {created_cities}, ZIPs: {created_zips}",
+        # ── build context ───────────────────────────────────────────────────
+        q = request.GET.get("q", "").strip()
+
+        assigned_cities = ServiceCity.objects.filter(
+            sales_point=sales_point
+        ).order_by("state", "name")
+
+        available_qs = ServiceCity.objects.exclude(
+            sales_point=sales_point
+        ).order_by("state", "name")
+        if q:
+            available_qs = available_qs.filter(
+                models.Q(name__icontains=q) | models.Q(state__icontains=q)
             )
-            return redirect("..")
+
+        # group available cities by state for easier reading
+        from itertools import groupby
+        available_by_state = [
+            (state, list(group))
+            for state, group in groupby(available_qs, key=lambda c: c.state)
+        ]
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Import ZIP codes from CSV",
+            "title": f"Manage Territory — {sales_point.name}",
             "opts": self.model._meta,
+            "sales_point": sales_point,
+            "assigned_cities": assigned_cities,
+            "available_by_state": available_by_state,
+            "q": q,
         }
-        return render(request, "admin/home/salespoint/import_csv.html", context)
+        return render(request, "admin/home/salespoint/manage_territory.html", context)
 
 
 # ── FranchiseAgreement ────────────────────────────────────────────────────

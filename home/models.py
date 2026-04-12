@@ -251,13 +251,14 @@ def create_default_working_hours(sender, instance, created, **kwargs):
 class ServiceCity(models.Model):
     sales_point = models.ForeignKey(
         SalesPoint,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="cities",
     )
     name = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
-    # ── FIXED: slug is now scoped to sales_point, not globally unique ──
-    slug = models.SlugField(max_length=120, blank=True)
+    slug = models.SlugField(max_length=120, blank=True, unique=True)
 
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
@@ -266,12 +267,8 @@ class ServiceCity(models.Model):
         ordering = ["order", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["sales_point", "name", "state"],
-                name="unique_salespoint_city_state",
-            ),
-            models.UniqueConstraint(
-                fields=["sales_point", "slug"],
-                name="unique_salespoint_city_slug",
+                fields=["name", "state"],
+                name="unique_city_state",
             ),
         ]
 
@@ -280,10 +277,7 @@ class ServiceCity(models.Model):
             base = slugify(f"{self.name}-{self.state}")
             slug = base
             i = 1
-            # Scoped to this sales_point only — no more global collision
-            while ServiceCity.objects.filter(
-                sales_point=self.sales_point, slug=slug
-            ).exclude(pk=self.pk).exists():
+            while ServiceCity.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 i += 1
                 slug = f"{base}-{i}"
             self.slug = slug

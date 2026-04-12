@@ -1,0 +1,206 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Manage Territory — {{ sales_point.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+  <a href="{% url 'admin:home_salespoint_changelist' %}">Sales Points</a> &rsaquo;
+  <a href="{% url 'admin:home_salespoint_change' sales_point.pk %}">{{ sales_point.name }}</a> &rsaquo;
+  Manage Territory
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .territory-grid { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; margin-top: 16px; }
+  .territory-panel { flex: 1; min-width: 300px; }
+  .panel-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+  .city-list { max-height: 460px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+  .city-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+  .city-row:last-child { border-bottom: none; }
+  .city-row:hover { background: #f5f9ff; }
+  .city-row label { cursor: pointer; flex: 1; font-size: 13px; }
+  .city-row .zip-count { font-size: 11px; color: #888; white-space: nowrap; }
+  .state-header { padding: 5px 10px; background: #f0f0f0; font-size: 11px; font-weight: 700;
+                  text-transform: uppercase; letter-spacing: .05em; color: #555; position: sticky; top: 0; }
+  .search-box { width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px;
+                font-size: 13px; margin-bottom: 8px; box-sizing: border-box; }
+  .btn-bar { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
+  .select-all-row { padding: 6px 10px; background: #fafafa; border-bottom: 1px solid #e8e8e8;
+                    font-size: 12px; color: #555; }
+  .assigned-row { display: flex; align-items: center; gap: 8px; padding: 5px 10px;
+                  border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+  .assigned-row:last-child { border-bottom: none; }
+  .assigned-row:hover { background: #fff5f5; }
+  .assigned-row label { flex: 1; cursor: pointer; }
+  .empty-msg { padding: 14px 10px; color: #aaa; font-style: italic; font-size: 13px; }
+  .textarea-section { margin-top: 28px; }
+  .textarea-section p { font-size: 13px; color: #666; margin-bottom: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Manage Territory — <strong>{{ sales_point.name }}</strong></h1>
+
+<div class="territory-grid">
+
+  <!-- ── LEFT: Available cities (checkbox assign) ── -->
+  <div class="territory-panel">
+    <div class="panel-title">Available cities — select &amp; assign</div>
+
+    <!-- Search -->
+    <form method="get" style="margin-bottom:4px;">
+      <input class="search-box" type="text" name="q" value="{{ q }}"
+             placeholder="Filter by city or state…" autocomplete="off">
+    </form>
+
+    <form method="post" id="assign-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="assign">
+
+      <div class="city-list" id="available-list">
+        {% if available_by_state %}
+          <div class="select-all-row">
+            <label style="cursor:pointer;">
+              <input type="checkbox" id="select-all-available">
+              &nbsp;Select / deselect all visible
+            </label>
+          </div>
+          {% for state, cities in available_by_state %}
+            <div class="state-header">{{ state }}</div>
+            {% for city in cities %}
+              <div class="city-row">
+                <input type="checkbox" name="city_ids" value="{{ city.pk }}"
+                       id="city_{{ city.pk }}" class="available-cb">
+                <label for="city_{{ city.pk }}">
+                  {{ city.name }}
+                  {% if city.sales_point %}
+                    <span style="color:#e07b00;font-size:11px;">({{ city.sales_point.name }})</span>
+                  {% endif %}
+                </label>
+                <span class="zip-count">{{ city.zip_codes.count }} zip{{ city.zip_codes.count|pluralize }}</span>
+              </div>
+            {% endfor %}
+          {% endfor %}
+        {% else %}
+          <div class="empty-msg">
+            {% if q %}No cities match "{{ q }}".{% else %}All cities are already assigned to this sales point.{% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="btn-bar">
+        <button type="submit" class="button default" {% if not available_by_state %}disabled{% endif %}>
+          Assign selected →
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── RIGHT: Assigned cities ── -->
+  <div class="territory-panel">
+    <div class="panel-title">
+      Assigned to {{ sales_point.name }}
+      <span style="font-weight:400;color:#888;">({{ assigned_cities.count }} cities)</span>
+    </div>
+
+    <form method="post" id="unassign-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="unassign">
+
+      <div class="city-list" id="assigned-list">
+        {% if assigned_cities %}
+          <div class="select-all-row">
+            <label style="cursor:pointer;">
+              <input type="checkbox" id="select-all-assigned">
+              &nbsp;Select / deselect all
+            </label>
+          </div>
+          {% for city in assigned_cities %}
+            <div class="assigned-row">
+              <input type="checkbox" name="assigned_city_ids" value="{{ city.pk }}"
+                     id="assigned_{{ city.pk }}" class="assigned-cb">
+              <label for="assigned_{{ city.pk }}">
+                <strong>{{ city.name }}</strong>, {{ city.state }}
+              </label>
+              <span class="zip-count">{{ city.zip_codes.count }} zip{{ city.zip_codes.count|pluralize }}</span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-msg">No cities assigned yet.</div>
+        {% endif %}
+      </div>
+
+      <div class="btn-bar">
+        <button type="submit" class="button"
+                style="background:#dc3545;color:#fff;border-color:#dc3545;"
+                {% if not assigned_cities %}disabled{% endif %}
+                onclick="return confirm('Remove selected cities from this sales point?')">
+          ← Remove selected
+        </button>
+      </div>
+    </form>
+
+    <!-- ── Textarea: add new cities with zip codes ── -->
+    <div class="textarea-section">
+      <div class="panel-title">Add new cities with zip codes</div>
+      <p>
+        One city per line: <code>City, State: zip1 zip2 zip3</code><br>
+        Existing cities will be assigned here; new ones will be created.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="textarea">
+        <textarea name="territory" rows="8"
+          style="width:100%;font-family:monospace;font-size:12px;padding:8px;
+                 border:1px solid #ccc;border-radius:4px;resize:vertical;box-sizing:border-box;"
+          placeholder="Alpharetta, Georgia: 30004 30005 30009
+Roswell, Georgia: 30075 30076 30077"></textarea>
+        <div class="btn-bar" style="margin-top:8px;">
+          <input type="submit" value="Save" class="button default">
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Select-all for available
+  document.getElementById('select-all-available').addEventListener('change', function() {
+    document.querySelectorAll('.available-cb').forEach(cb => cb.checked = this.checked);
+  });
+  // Select-all for assigned
+  document.getElementById('select-all-assigned') && document.getElementById('select-all-assigned').addEventListener('change', function() {
+    document.querySelectorAll('.assigned-cb').forEach(cb => cb.checked = this.checked);
+  });
+
+  // Live filter without server round-trip
+  document.querySelector('.search-box').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#available-list .city-row').forEach(row => {
+      const label = row.querySelector('label').textContent.toLowerCase();
+      row.style.display = label.includes(q) ? '' : 'none';
+    });
+    document.querySelectorAll('#available-list .state-header').forEach(header => {
+      const next = header.nextElementSibling;
+      const anyVisible = [...header.parentElement.querySelectorAll('.city-row')].some(r => {
+        return r.previousElementSibling === header || (r.style.display !== 'none' &&
+          getStateHeader(r) === header);
+      });
+    });
+  });
+
+  function getStateHeader(cityRow) {
+    let el = cityRow.previousElementSibling;
+    while (el) {
+      if (el.classList.contains('state-header')) return el;
+      el = el.previousElementSibling;
+    }
+    return null;
+  }
+</script>
+{% endblock %}
