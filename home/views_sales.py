@@ -51,8 +51,11 @@ def _lead_queryset(user):
         return qs
 
     if sp.role == Salesperson.LOCATION_MANAGER:
+        managed = list(sp.extra_sales_points.values_list('pk', flat=True))
         if sp.sales_point:
-            return qs.filter(sales_point=sp.sales_point)
+            managed.append(sp.sales_point_id)
+        if managed:
+            return qs.filter(sales_point_id__in=managed)
         return qs.none()
 
     # Default: salesperson sees only their own leads
@@ -360,4 +363,84 @@ def sales_lead_create(request):
     return render(request, 'sales/lead_create.html', {
         'form': form,
         'salesperson': sp,
+    })
+
+# ---------------------------------------------------------------------------
+# Estimate: create / edit
+# ---------------------------------------------------------------------------
+
+import json
+from decimal import Decimal, InvalidOperation
+
+from .models import Estimate, EstimateLineItem
+
+
+@login_required
+def estimate_edit(request, lead_pk, pk=None):
+    """
+    pk=None  → create a new estimate for the lead
+    pk=<int> → edit an existing estimate
+    """
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+
+    if pk:
+        estimate = get_object_or_404(Estimate, pk=pk, lead=lead)
+    else:
+        estimate = None
+
+    if request.method == 'POST':
+        # --- parse scalars ---
+        status   = request.POST.get('status', 'draft')
+        notes    = request.POST.get('notes', '').strip()
+        try:
+            tax_rate = Decimal(request.POST.get('tax_rate', '0') or '0')
+        except InvalidOperation:
+            tax_rate = Decimal('0')
+
+        if estimate is None:
+            estimate = Estimate.objects.create(
+                lead=lead,
+                created_by=request.user,
+                status=status,
+                notes=notes,
+                tax_rate=tax_rate,
+            )
+        else:
+            estimate.status   = status
+            estimate.notes    = notes
+            estimate.tax_rate = tax_rate
+            estimate.save()
+
+        # --- parse line items sent as parallel lists ---
+        descs  = request.POST.getlist('item_desc')
+        qtys   = request.POST.getlist('item_qty')
+        prices = request.POST.getlist('item_price')
+
+        estimate.line_items.all().delete()
+        for i, desc in enumerate(descs):
+            desc = desc.strip()
+            if not desc:
+                continue
+            try:
+                qty   = Decimal(qtys[i]   or '1')
+            except (InvalidOperation, IndexError):
+                qty = Decimal('1')
+            try:
+                price = Decimal(prices[i] or '0')
+            except (InvalidOperation, IndexError):
+                price = Decimal('0')
+            EstimateLineItem.objects.create(
+                estimate=estimate,
+                description=desc,
+                quantity=qty,
+                unit_price=price,
+                order=i,
+            )
+
+        return redirect('estimate_edit', lead_pk=lead_pk, pk=estimate.pk)
+
+    return render(request, 'sales/estimate_edit.html', {
+        'lead': lead,
+        'estimate': estimate,
+        'status_choices': Estimate.STATUS_CHOICES,
     })

@@ -30,6 +30,8 @@
 .status-contacted  { background:#534AB7; }
 .status-appt      { background:#BA7517; }
 .status-quoted    { background:#888780; }
+.status-waiting   { background:#A05F00; }
+.status-followup  { background:#5B3FCC; }
 .status-won       { background:#1D9E75; }
 .status-lost      { background:#E24B4A; }
 .action-btn {
@@ -45,7 +47,7 @@
 </style>
 
 <section class="sales-section" style="margin-top:120px; padding:40px 0 80px; background:#f9f8f6; min-height:70vh;">
-<div class="container">
+<div class="container-fluid" style="max-width:1600px; padding-left:32px; padding-right:32px;">
 
   {# ── Header ── #}
   <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:32px;">
@@ -68,6 +70,8 @@
         {% elif lead.status == 'contacted' %}background:#EEEDFE; color:#3C3489;
         {% elif lead.status == 'appointment_set' %}background:#FAEEDA; color:#854F0B;
         {% elif lead.status == 'quoted' %}background:#F1EFE8; color:#5F5E5A;
+        {% elif lead.status == 'waiting_for_estimate' %}background:#FFF4E5; color:#A05F00;
+        {% elif lead.status == 'follow_up' %}background:#F0EEFF; color:#5B3FCC;
         {% elif lead.status == 'closed_won' %}background:#E1F5EE; color:#0F6E56;
         {% elif lead.status == 'closed_lost' %}background:#FCEBEB; color:#A32D2D;
         {% endif %}">
@@ -94,6 +98,12 @@
           <i class="fa fa-phone"></i>
           <a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>
         </div>
+        {% if lead.address %}
+        <div class="info-row">
+          <i class="fa fa-home"></i>
+          <span>{{ lead.address }}</span>
+        </div>
+        {% endif %}
         <div class="info-row">
           <i class="fa fa-map-marker"></i>
           <span>ZIP {{ lead.zip_code }}{% if lead.service_city %} &mdash; {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}</span>
@@ -171,6 +181,8 @@
           {% elif lead.status == 'contacted' %}status-contacted
           {% elif lead.status == 'appointment_set' %}status-appt
           {% elif lead.status == 'quoted' %}status-quoted
+          {% elif lead.status == 'waiting_for_estimate' %}status-waiting
+          {% elif lead.status == 'follow_up' %}status-followup
           {% elif lead.status == 'closed_won' %}status-won
           {% elif lead.status == 'closed_lost' %}status-lost{% endif %}">
         </div>
@@ -224,6 +236,39 @@
       </div>
 
     </div>
+  </div>
+
+  {# ── Prepare Estimate ── #}
+  <div style="margin-top:8px; margin-bottom:24px;">
+    {% if lead.estimates.all %}
+    <div class="info-card" style="margin-bottom:12px;">
+      <h4>Estimates</h4>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        {% for est in lead.estimates.all %}
+        <a href="{% url 'estimate_edit' lead_pk=lead.pk pk=est.pk %}" class="action-btn">
+          <span>
+            <i class="fa fa-file-text-o" style="color:#1D9E75; margin-right:8px;"></i>
+            Estimate #{{ est.pk }}
+            <span style="margin-left:10px; font-size:12px; color:#aaa;">{{ est.created_at|date:"M j, Y" }}</span>
+            &nbsp;
+            <span style="font-size:11px; padding:2px 8px; border-radius:10px;
+              {% if est.status == 'draft' %}background:#f0ede8;color:#888;
+              {% elif est.status == 'sent' %}background:#E6F1FB;color:#185FA5;
+              {% elif est.status == 'accepted' %}background:#E1F5EE;color:#0F6E56;
+              {% elif est.status == 'declined' %}background:#FCEBEB;color:#A32D2D;
+              {% endif %}">{{ est.get_status_display }}</span>
+          </span>
+          <span style="font-weight:600; color:#2c2c2a;">${{ est.total }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <a href="{% url 'estimate_new' lead_pk=lead.pk %}"
+       class="button"
+       style="background:#1D9E75; border-color:#1D9E75; width:100%; justify-content:center; padding:14px;">
+      <span>Prepare Estimate</span><i class="fa fa-calculator"></i>
+    </a>
   </div>
 
   {# ── Activity Log ── #}

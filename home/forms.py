@@ -155,7 +155,7 @@ class ManualLeadForm(forms.ModelForm):
     class Meta:
         model = LeadModel
         fields = [
-            'first_name', 'last_name', 'email', 'phone', 'zip_code',
+            'first_name', 'last_name', 'email', 'phone', 'address', 'zip_code',
             'consultation_types', 'message',
             'sales_point', 'service_city', 'assigned_user',
             'status', 'internal_notes', 'source_page',
@@ -165,6 +165,7 @@ class ManualLeadForm(forms.ModelForm):
             'last_name':          forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
             'email':              forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@example.com'}),
             'phone':              forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
+            'address':            forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Street address'}),
             'zip_code':           forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ZIP code'}),
             'consultation_types': forms.CheckboxSelectMultiple(),
             'message':            forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notes about the lead…'}),

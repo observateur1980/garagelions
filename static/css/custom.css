@@ -395,18 +395,22 @@ input.button:focus {
 /* White/outline button */
 .sales-section .button.button-white,
 .sales-section a.button.button-white {
-  background: #f5f4f1 !important;
-  border: 1px solid #ddd !important;
-  color: #444 !important;
+  background: #4a4a48 !important;
+  border: 1px solid #3a3a38 !important;
+  color: #fff !important;
 }
 .sales-section .button.button-white span,
 .sales-section a.button.button-white span {
-  color: #444 !important;
+  color: #fff !important;
 }
 .sales-section .button.button-white i,
 .sales-section a.button.button-white i {
-  color: #666 !important;
-  background: rgba(0,0,0,0.05) !important;
+  color: #fff !important;
+  background: rgba(0,0,0,0.15) !important;
+}
+.sales-section .button.button-white:hover,
+.sales-section a.button.button-white:hover {
+  background: #333331 !important;
 }
 
 /* Green "Add Lead" button */

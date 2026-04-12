@@ -1,12 +1,73 @@
 {% extends 'base.html' %}
-{% block content %}
-<section class="page-section-ptb" style="margin-top: 110px">
-    <div class="container">
-        <h2>Thank You for Choosing Parviz Construction</h2>
-        <br>
-        <h4>A member of our customer service team will contact you soon.</h4>
+{% load static %}
 
-        <a href="{% url 'home' %}" class="btn btn-secondary">Home</a>
+{% block seo_title %}Request Received — Garage Lions{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<section style="min-height:80vh;display:flex;align-items:center;justify-content:center;background:#f8f8f8;padding:120px 20px 60px;">
+  <div style="max-width:600px;width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
+
+    <div style="padding:48px 40px 40px;">
+
+      <!-- Checkmark icon -->
+      <div style="width:72px;height:72px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+             stroke="#2e7d32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h1 style="font-size:26px;font-weight:700;color:#1a1a2e;margin:0 0 12px;">
+        We've Received Your Request!
+      </h1>
+      <p style="font-size:16px;color:#555;line-height:1.7;margin:0 0 8px;">
+        Thank you for reaching out to <strong>Garage Lions</strong>.
+        One of our specialists will contact you shortly to discuss your project
+        and provide your <strong>FREE estimate</strong>.
+      </p>
+      <p style="font-size:14px;color:#888;margin:0 0 36px;">
+        Please check your email for a confirmation from us.
+      </p>
+
+      <!-- What happens next -->
+      <div style="background:#f5f5f5;border-radius:8px;padding:24px 28px;text-align:left;margin-bottom:36px;">
+        <p style="font-size:13px;font-weight:700;color:#1a1a2e;letter-spacing:.5px;text-transform:uppercase;margin:0 0 16px;">
+          What happens next
+        </p>
+        <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;">
+          <div style="min-width:28px;height:28px;background:#1a1a2e;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">1</div>
+          <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">Our team reviews your consultation request.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;">
+          <div style="min-width:28px;height:28px;background:#1a1a2e;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">2</div>
+          <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">A specialist calls or emails you to schedule a free in-home estimate.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div style="min-width:28px;height:28px;background:#e63946;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">3</div>
+          <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">We transform your garage — on time and on budget.</p>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'home' %}"
+           style="display:inline-block;background:#1a1a2e;color:#fff;padding:13px 28px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+          Back to Home
+        </a>
+        <a href="{% url 'create_lead' %}"
+           style="display:inline-block;background:#fff;color:#1a1a2e;padding:13px 28px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;border:2px solid #1a1a2e;">
+          Submit Another Request
+        </a>
+      </div>
+
     </div>
+
+    <!-- Footer strip -->
+    <div style="background:#f5f5f5;padding:14px 40px;font-size:12px;color:#999;">
+      Questions? Call us or email <a href="mailto:leads@garagelions.com" style="color:#1a1a2e;">leads@garagelions.com</a>
+    </div>
+
+  </div>
 </section>
 {% endblock %}

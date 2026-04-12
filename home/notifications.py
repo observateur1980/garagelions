@@ -307,6 +307,92 @@ def notify_new_lead_to_salesperson(lead):
         )
         _send_sms(salesperson_phone, sms_body)
 
+    # ── Notify location managers at this sales point who weren't already emailed ──
+    if lead.sales_point:
+        try:
+            from account.models import Salesperson as SalespersonModel
+            already_emailed = {salesperson_email} if (send_email and salesperson_email) else set()
+
+            managers = (
+                SalespersonModel.objects
+                .filter(
+                    sales_point=lead.sales_point,
+                    role=SalespersonModel.LOCATION_MANAGER,
+                    status=SalespersonModel.ACTIVE,
+                )
+                .select_related('user__profile')
+                .exclude(user=assigned)
+            )
+            # Also include managers who have this as an extra sales point
+            extra_managers = (
+                SalespersonModel.objects
+                .filter(
+                    extra_sales_points=lead.sales_point,
+                    role=SalespersonModel.LOCATION_MANAGER,
+                    status=SalespersonModel.ACTIVE,
+                )
+                .select_related('user__profile')
+                .exclude(user=assigned)
+            )
+            from itertools import chain
+            for mgr in chain(managers, extra_managers):
+                try:
+                    mgr_profile = mgr.user.profile
+                except Exception:
+                    mgr_profile = None
+
+                if not getattr(mgr_profile, 'notify_new_lead_email', True):
+                    continue
+
+                mgr_email = (
+                    getattr(mgr_profile, 'display_email', None) if mgr_profile else None
+                ) or mgr.user.email
+
+                if not mgr_email or mgr_email in already_emailed:
+                    continue
+                already_emailed.add(mgr_email)
+
+                mgr_subject = (
+                    f"New Lead at {lead.sales_point}: "
+                    f"{lead.first_name} {lead.last_name}"
+                )
+                mgr_body = (
+                    f"Hi {mgr.user.get_short_name()},\n\n"
+                    f"A new lead has come in for your location ({lead.sales_point}).\n\n"
+                    f"Name:     {lead.first_name} {lead.last_name}\n"
+                    f"Email:    {lead.email}\n"
+                    f"Phone:    {lead.phone}\n"
+                    f"ZIP:      {lead.zip_code}\n"
+                    f"Services: {services_display}\n\n"
+                    f"Assigned to: {assigned.get_full_name() if assigned else 'Unassigned'}\n\n"
+                    f"View in CRM: {crm_url}\n\n"
+                    f"— Garage Lions CRM\n"
+                )
+                try:
+                    EmailMessage(
+                        subject=mgr_subject,
+                        body=mgr_body,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[mgr_email],
+                        reply_to=[lead.email] if lead.email else [],
+                    ).send(fail_silently=False)
+
+                    mgr_phone = getattr(mgr_profile, 'display_phone', None) if mgr_profile else None
+                    if getattr(mgr_profile, 'notify_new_lead_sms', False) and mgr_phone:
+                        _send_sms(
+                            mgr_phone,
+                            f"GL NEW LEAD at {lead.sales_point}: "
+                            f"{lead.first_name} {lead.last_name} | "
+                            f"{lead.phone} | CRM: {crm_url}"
+                        )
+                except Exception as exc:
+                    logger.error(
+                        "Location manager notification failed for lead #%s to %s: %s",
+                        lead.pk, mgr_email, exc,
+                    )
+        except Exception as exc:
+            logger.error("Manager notification block failed for lead #%s: %s", lead.pk, exc)
+
 
 # ---------------------------------------------------------------------------
 # Location/admin backup email
@@ -317,6 +403,8 @@ def notify_new_lead_to_location(lead, attachment_names=None):
     Send the lead details to the location's notification inbox.
     This is a plain-text admin/backup copy that always fires regardless of
     the assigned salesperson's notification preferences.
+    Skipped if the recipient is the same address that already received the
+    salesperson notification (avoids duplicate inbox entries).
     """
     recipient = "leads@garagelions.com"
     from_email = settings.DEFAULT_FROM_EMAIL
@@ -329,6 +417,17 @@ def notify_new_lead_to_location(lead, attachment_names=None):
             from_email = lead.sales_point.from_email
         if lead.sales_point.reply_to_email:
             reply_to = [lead.sales_point.reply_to_email]
+
+    # Skip if the assigned salesperson already received a notification at this
+    # same address — no need to send a second plain-text duplicate.
+    if lead.assigned_user:
+        try:
+            sp_profile = lead.assigned_user.profile
+            sp_email = sp_profile.display_email or lead.assigned_user.email
+        except Exception:
+            sp_email = lead.assigned_user.email
+        if sp_email and sp_email.lower() == recipient.lower():
+            return
 
     services_display = ", ".join(lead.consultation_types) if lead.consultation_types else ""
     assigned_text = (

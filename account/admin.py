@@ -178,6 +178,7 @@ class SalespersonAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('user',)
+    filter_horizontal = ('extra_sales_points',)
 
     fieldsets = (
         ('User', {'fields': ('user',)}),
@@ -185,6 +186,7 @@ class SalespersonAdmin(admin.ModelAdmin):
             'fields': (
                 ('role', 'status', 'employment_type'),
                 ('sales_point', 'manager'),
+                'extra_sales_points',
             )
         }),
         ('Compensation', {

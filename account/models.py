@@ -280,6 +280,12 @@ class Salesperson(models.Model):
         related_name='salespeople',
         help_text='Primary location this person is assigned to.',
     )
+    extra_sales_points = models.ManyToManyField(
+        'home.SalesPoint',
+        blank=True,
+        related_name='extra_salespeople',
+        help_text='Additional locations this person manages.',
+    )
 
     # Hierarchy — manager is another Salesperson record (self-referential)
     manager = models.ForeignKey(
@@ -377,14 +383,17 @@ class Salesperson(models.Model):
         """
         Returns the QuerySet of SalesPoints this person can see leads for.
         - Salesperson: only their assigned sales_point
-        - Location Manager: only their assigned sales_point
+        - Location Manager: their primary + any extra sales_points
         - Territory Manager: all active sales_points
         """
         from home.models import SalesPoint
         if self.role == self.TERRITORY_MANAGER:
             return SalesPoint.objects.filter(is_active=True)
-        if self.sales_point:
-            return SalesPoint.objects.filter(pk=self.sales_point_id)
+        pks = list(self.extra_sales_points.values_list('pk', flat=True))
+        if self.sales_point_id:
+            pks.append(self.sales_point_id)
+        if pks:
+            return SalesPoint.objects.filter(pk__in=pks)
         return SalesPoint.objects.none()
 
 

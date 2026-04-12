@@ -56,8 +56,8 @@
 .check-item input[type=checkbox]:checked + span { color:#0F6E56; font-weight:500; }
 </style>
 
-<section style="margin-top:120px; padding:40px 0 80px; background:#f9f8f6; min-height:70vh;">
-<div class="container">
+<section class="sales-section" style="margin-top:120px; padding:40px 0 80px; background:#f9f8f6; min-height:70vh;">
+<div class="container-fluid" style="max-width:1600px; padding-left:32px; padding-right:32px;">
 
   {# ── Header ── #}
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:32px;">
@@ -121,6 +121,15 @@
                 <label class="form-label">Phone <span class="req">*</span></label>
                 {{ form.phone }}
                 {% if form.phone.errors %}<p style="color:#E24B4A; font-size:12px; margin:4px 0 0;">{{ form.phone.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:14px;">
+            <div class="col-sm-12">
+              <div class="form-group">
+                <label class="form-label">Street address</label>
+                {{ form.address }}
+                {% if form.address.errors %}<p style="color:#E24B4A; font-size:12px; margin:4px 0 0;">{{ form.address.errors.0 }}</p>{% endif %}
               </div>
             </div>
           </div>

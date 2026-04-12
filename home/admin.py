@@ -202,7 +202,8 @@ class ZipCodeAdmin(admin.ModelAdmin):
     search_fields = ("code", "service_city__name", "service_city__sales_point__name")
 
     def sales_point_name(self, obj):
-        return obj.service_city.sales_point.name
+        sp = obj.service_city.sales_point if obj.service_city else None
+        return sp.name if sp else "-"
     sales_point_name.short_description = "Sales Point"
 
 

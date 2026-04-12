@@ -6,7 +6,7 @@
 
 {% block content %}
 <section class="sales-section" style="margin-top:120px; padding:50px 0 80px;">
-<div class="container">
+<div class="container-fluid" style="max-width:1600px; padding-left:32px; padding-right:32px;">
 
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
     <h1 style="margin:0;">Leads</h1>
@@ -61,8 +61,6 @@
           <th>#</th>
           <th>Date</th>
           <th>Name</th>
-          <th>Phone</th>
-          <th>Email</th>
           <th>ZIP</th>
           <th>City</th>
           {% if can_filter_location %}<th>Location</th>{% endif %}
@@ -78,8 +76,6 @@
           <td style="color:#ccc; font-size:12px;">{{ lead.pk }}</td>
           <td style="white-space:nowrap; color:#aaa; font-size:12px;">{{ lead.created_at|date:"M d, Y" }}</td>
           <td style="font-weight:500; white-space:nowrap;">{{ lead.first_name }} {{ lead.last_name }}</td>
-          <td><a href="tel:{{ lead.phone }}" style="color:#555;">{{ lead.phone }}</a></td>
-          <td style="font-size:12px;"><a href="mailto:{{ lead.email }}" style="color:#555;">{{ lead.email }}</a></td>
           <td>{{ lead.zip_code }}</td>
           <td style="white-space:nowrap; font-size:13px;">
             {% if lead.service_city %}{{ lead.service_city.name }}, {{ lead.service_city.state }}{% else %}—{% endif %}
@@ -112,7 +108,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="{% if can_filter_location %}12{% else %}11{% endif %}"
+          <td colspan="{% if can_filter_location %}10{% else %}9{% endif %}"
               style="text-align:center; padding:36px; color:#aaa;">
             No leads found.
           </td>

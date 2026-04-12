@@ -51,6 +51,14 @@ urlpatterns = [
 
     path('sales/leads/add/', views_sales.sales_lead_create, name='sales_lead_create'),
 
+    # Estimates
+    path('sales/leads/<int:lead_pk>/estimate/new/',
+         views_sales.estimate_edit,
+         name='estimate_new'),
+    path('sales/leads/<int:lead_pk>/estimate/<int:pk>/',
+         views_sales.estimate_edit,
+         name='estimate_edit'),
+
     # SEO sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap'),

@@ -465,6 +465,8 @@ class LeadModel(models.Model):
         ("contacted", "Contacted"),
         ("appointment_set", "Appointment Set"),
         ("quoted", "Quoted"),
+        ("waiting_for_estimate", "Waiting For Estimate"),
+        ("follow_up", "Follow Up"),
         ("closed_won", "Closed Won"),
         ("closed_lost", "Closed Lost"),
     ]
@@ -473,6 +475,7 @@ class LeadModel(models.Model):
     last_name = models.CharField(max_length=120)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
+    address = models.CharField(max_length=255, blank=True)
     zip_code = models.CharField(max_length=10)
 
     sales_point = models.ForeignKey(
@@ -653,3 +656,75 @@ class FranchiseAgreement(models.Model):
     @property
     def is_active(self):
         return self.status == "active"
+
+# ---------------------------------------------------------------------------
+# Estimate
+# ---------------------------------------------------------------------------
+
+from decimal import Decimal
+
+
+class Estimate(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
+
+    lead = models.ForeignKey(
+        LeadModel,
+        on_delete=models.CASCADE,
+        related_name='estimates',
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_estimates',
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    notes = models.TextField(blank=True, help_text='Notes or terms visible on the estimate')
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0'),
+                                   help_text='Tax rate as a percentage, e.g. 8.25')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Estimate'
+        verbose_name_plural = 'Estimates'
+
+    def __str__(self):
+        return f'Estimate #{self.pk} — {self.lead}'
+
+    @property
+    def subtotal(self):
+        return sum(item.line_total for item in self.line_items.all())
+
+    @property
+    def tax_amount(self):
+        return (self.subtotal * self.tax_rate / Decimal('100')).quantize(Decimal('0.01'))
+
+    @property
+    def total(self):
+        return self.subtotal + self.tax_amount
+
+
+class EstimateLineItem(models.Model):
+    estimate = models.ForeignKey(
+        Estimate,
+        on_delete=models.CASCADE,
+        related_name='line_items',
+    )
+    description = models.CharField(max_length=500)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1'))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'))
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    @property
+    def line_total(self):
+        return (self.quantity * self.unit_price).quantize(Decimal('0.01'))
