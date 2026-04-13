@@ -89,8 +89,16 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
     if not file_field:
         return False
     try:
-        watermark_path = os.path.join(settings.BASE_DIR, "static", "images", "watermark.png")
-        if not os.path.exists(watermark_path):
+        watermark_path = None
+        for base in filter(None, [
+            getattr(settings, "STATIC_ROOT", None),
+            os.path.join(settings.BASE_DIR, "static"),
+        ]):
+            candidate = os.path.join(base, "images", "watermark.png")
+            if os.path.exists(candidate):
+                watermark_path = candidate
+                break
+        if not watermark_path:
             return False
         file_field.open("rb")
         base = Image.open(file_field)
