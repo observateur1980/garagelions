@@ -122,7 +122,7 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
         base.alpha_composite(wm, (x, y))
         base = base.convert("RGB")
         buffer = BytesIO()
-        buffer_name = file_field.name
+        buffer_name = os.path.basename(file_field.name)
         if not buffer_name.lower().endswith((".jpg", ".jpeg")):
             buffer_name = buffer_name.rsplit(".", 1)[0] + ".jpg"
         base.save(buffer, format="JPEG", quality=quality, optimize=True)
