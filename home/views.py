@@ -2,12 +2,10 @@
 
 import logging
 import math
-import os
 
-from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
@@ -75,41 +73,6 @@ def gallery_detail(request, slug):
     )
     items = list(gallery.items.all())
     return render(request, "home/gallery_detail.html", {"gallery": gallery, "items": items})
-
-
-def gallery_cover_thumb(request, pk):
-    from PIL import Image, ImageOps
-    gallery = get_object_or_404(Gallery, pk=pk, is_active=True)
-    cover = gallery.cover_image
-    if not cover:
-        raise Http404
-
-    thumb_dir = os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
-    os.makedirs(thumb_dir, exist_ok=True)
-    thumb_path = os.path.join(thumb_dir, f"{pk}.jpg")
-
-    try:
-        source_mtime = os.path.getmtime(cover.path)
-        thumb_stale = (
-            not os.path.exists(thumb_path)
-            or os.path.getmtime(thumb_path) < source_mtime
-        )
-        if thumb_stale:
-            img = Image.open(cover.path)
-            img = ImageOps.exif_transpose(img)
-            if img.mode != "RGB":
-                img = img.convert("RGB")
-            img.thumbnail((480, 480), Image.LANCZOS)
-            img.save(thumb_path, "JPEG", quality=55, optimize=True)
-
-        with open(thumb_path, "rb") as f:
-            data = f.read()
-    except Exception:
-        raise Http404
-
-    response = HttpResponse(data, content_type="image/jpeg")
-    response["Cache-Control"] = "public, max-age=604800"
-    return response
 
 
 def locations_list(request):

@@ -329,6 +329,50 @@ class ZipCode(models.Model):
         return f"{self.code} -> {self.service_city.name}, {self.service_city.state}"
 
 
+def _resize_image_inplace(file_field, max_size=480, quality=55):
+    """Resize an ImageField file to max_size px on its longest side, in-place."""
+    import os as _os
+    try:
+        file_field.open("rb")
+        img = Image.open(file_field)
+        img = ImageOps.exif_transpose(img)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.thumbnail((max_size, max_size), Image.LANCZOS)
+        file_field.close()
+        buf = BytesIO()
+        fname = _os.path.basename(file_field.name)
+        if not fname.lower().endswith((".jpg", ".jpeg")):
+            fname = fname.rsplit(".", 1)[0] + ".jpg"
+        img.save(buf, format="JPEG", quality=quality, optimize=True)
+        buf.seek(0)
+        file_field.save(fname, ContentFile(buf.read()), save=False)
+    except Exception:
+        pass
+
+
+def _write_cover_thumb(gallery):
+    """Write media/gallery_thumbs/<pk>.jpg — small cover for the listing page."""
+    import os as _os
+    cover = gallery.cover_image
+    if not cover:
+        return
+    try:
+        thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
+        _os.makedirs(thumb_dir, exist_ok=True)
+        thumb_path = _os.path.join(thumb_dir, f"{gallery.pk}.jpg")
+        cover.open("rb")
+        img = Image.open(cover)
+        img = ImageOps.exif_transpose(img)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.thumbnail((480, 480), Image.LANCZOS)
+        cover.close()
+        img.save(thumb_path, "JPEG", quality=55, optimize=True)
+    except Exception:
+        pass
+
+
 class Gallery(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
@@ -362,7 +406,22 @@ class Gallery(models.Model):
                 i += 1
                 slug = f"{base}-{i}"
             self.slug = slug
+
+        # Detect thumbnail change before saving
+        old_thumb = None
+        if self.pk:
+            old_thumb = Gallery.objects.filter(pk=self.pk).values("thumbnail").first()
+            old_thumb = old_thumb.get("thumbnail") if old_thumb else None
+
         super().save(*args, **kwargs)
+
+        # Resize new thumbnail in-place (no watermark, small size)
+        thumb_changed = self.thumbnail and self.thumbnail.name != old_thumb
+        if thumb_changed:
+            _resize_image_inplace(self.thumbnail, max_size=480, quality=55)
+
+        # Regenerate the small cover thumb file used on the gallery listing page
+        _write_cover_thumb(self)
 
     def __str__(self):
         return self.name
@@ -373,6 +432,17 @@ class Gallery(models.Model):
             return self.thumbnail
         first_item = self.items.order_by("sort_order", "id").first()
         return first_item.effective_thumbnail if first_item else None
+
+    @property
+    def cover_thumb_url(self):
+        """Small (480px) thumbnail for the gallery listing page, no watermark."""
+        import os as _os
+        thumb_rel = f"gallery_thumbs/{self.pk}.jpg"
+        thumb_path = _os.path.join(settings.MEDIA_ROOT, thumb_rel)
+        if _os.path.exists(thumb_path):
+            return settings.MEDIA_URL + thumb_rel
+        cover = self.cover_image
+        return cover.url if cover else None
 
 
 class GalleryItem(models.Model):
@@ -470,6 +540,10 @@ class GalleryItem(models.Model):
 
         if fields_to_update:
             super().save(update_fields=fields_to_update)
+
+        # Refresh the small cover thumb for the gallery listing page
+        if not self.gallery.thumbnail:
+            _write_cover_thumb(self.gallery)
 
     def clean(self):
         super().clean()
