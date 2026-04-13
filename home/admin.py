@@ -56,6 +56,7 @@ class FranchiseAgreementInline(admin.StackedInline):
 class GalleryItemInline(admin.StackedInline):
     model = GalleryItem
     extra = 1
+    ordering = ("sort_order", "id")
     fields = (
         "sort_order", "media_type", "file", "thumbnail",
         "title", "section_heading", "text_before", "text_after",

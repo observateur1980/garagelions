@@ -439,6 +439,13 @@ class GalleryItem(models.Model):
             old_values = GalleryItem.objects.filter(pk=self.pk).values("file").first()
             if old_values:
                 old_file_name = old_values.get("file")
+        else:
+            # Auto-assign sort_order so new items go to the end
+            from django.db.models import Max
+            max_order = GalleryItem.objects.filter(gallery=self.gallery).aggregate(
+                Max("sort_order")
+            )["sort_order__max"]
+            self.sort_order = (max_order or 0) + 1
 
         super().save(*args, **kwargs)
 
