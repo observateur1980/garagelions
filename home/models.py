@@ -97,14 +97,14 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
             os.path.join(settings.BASE_DIR, "static"),
         ]):
             candidate = os.path.join(base, "images", "watermark.png")
-            _log.debug("Watermark candidate: %s exists=%s", candidate, os.path.exists(candidate))
             if os.path.exists(candidate):
                 watermark_path = candidate
                 break
         if not watermark_path:
-            _log.warning("Watermark file not found. STATIC_ROOT=%s BASE_DIR=%s",
-                         getattr(settings, "STATIC_ROOT", None), settings.BASE_DIR)
+            _log.error("Watermark file not found. STATIC_ROOT=%s BASE_DIR=%s",
+                       getattr(settings, "STATIC_ROOT", None), settings.BASE_DIR)
             return False
+        _log.warning("Watermark found at: %s", watermark_path)
         file_field.open("rb")
         base = Image.open(file_field)
         base = ImageOps.exif_transpose(base).convert("RGBA")
