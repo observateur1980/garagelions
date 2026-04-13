@@ -86,6 +86,8 @@ def gallery_thumb_upload_to(instance, filename):
 
 
 def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, quality=98):
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
     if not file_field:
         return False
     try:
@@ -95,10 +97,13 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
             os.path.join(settings.BASE_DIR, "static"),
         ]):
             candidate = os.path.join(base, "images", "watermark.png")
+            _log.debug("Watermark candidate: %s exists=%s", candidate, os.path.exists(candidate))
             if os.path.exists(candidate):
                 watermark_path = candidate
                 break
         if not watermark_path:
+            _log.warning("Watermark file not found. STATIC_ROOT=%s BASE_DIR=%s",
+                         getattr(settings, "STATIC_ROOT", None), settings.BASE_DIR)
             return False
         file_field.open("rb")
         base = Image.open(file_field)
@@ -124,7 +129,9 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
         buffer.seek(0)
         file_field.save(buffer_name, ContentFile(buffer.read()), save=False)
         return True
-    except Exception:
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger(__name__).exception("Watermark failed for %s: %s", getattr(file_field, 'name', '?'), e)
         return False
 
 
