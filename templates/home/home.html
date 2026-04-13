@@ -230,16 +230,6 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
 
 
-{% if location_auto_detected and selected_city %}
-<div style="background:#ff6811;color:#fff;text-align:center;padding:10px 16px;font-size:14px;position:relative;z-index:999;">
-  <i class="fa fa-map-marker" style="margin-right:6px;"></i>
-  We detected you're near <strong>{{ selected_city.name }}</strong> — showing your local Garage Lions team.
-  &nbsp;
-  <a href="{% url 'locations_list' %}" style="color:#fff;text-decoration:underline;font-weight:600;">Change location</a>
-  &nbsp;&nbsp;
-  <a href="{% url 'set_location' selected_city.slug %}?next=/" style="color:#fff;opacity:.7;font-size:12px;">Dismiss</a>
-</div>
-{% endif %}
 
  <section>
     <div class="img_sld" id="img2">
@@ -279,7 +269,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                 {% if selected_city.local_phone %}
                 <a class="button gl-hero-btn-alt mt-15" href="tel:{{ selected_city.local_phone }}">
-                     <span>Call {{ selected_city.local_phone }}</span>
+                     <span>Call {{ selected_city.formatted_phone }}</span>
                  </a>
                 {% else %}
                     <a href="tel:6506605101" class="button gl-hero-btn-alt mt-15">
@@ -331,7 +321,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                 {% if selected_city.local_phone %}
                 <a class="button gl-hero-btn-alt mt-15" href="tel:{{ selected_city.local_phone }}">
-                    <span>Call {{ selected_city.local_phone }}</span>
+                    <span>Call {{ selected_city.formatted_phone }}</span>
                 </a>
                 {% else %}
                 <a href="{% url 'galleries' %}" class="button gl-hero-btn-alt mt-15">
@@ -365,7 +355,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                 <div class="col-lg-4 col-md-4 col-sm-4">
                     <div class="features-14">
                         <span aria-hidden="true" class="icon-user"></span>
-                        <h4 class="mb-15 text-white">Workers Comp Insurance</h4>
+                        <h4 class="mb-15 text-white">WORKERS COMP INSURANCE</h4>
                         <p class="text-white">Safety doesn't happen by accident</p>
                     </div>
                 </div>
@@ -383,7 +373,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         <div class="container" style="padding-bottom: 120px; padding-top: 100px">
             <div class="row">
                 <div class="section-title-2 text-center">
-                    <h1 class="text-blue">Your One-Stop Solution for a Complete Garage Transformation</h1>
+                    <h2 class="text-blue">Your One-Stop Solution for a Complete Garage Transformation</h2>
                     <div class="title-line"></div>
 
                 </div>
@@ -564,9 +554,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                     <!-- ================================================ -->
                     <div class="blog-entry post-2">
                         <div class="blog-entry-html-video audio-video">
-                            <video preload="metadata" playsinline style="width:100%;height:100%;" id="player1"
-                                   poster="{% static 'video/garagelionsvideo.jpg' %}" controls="controls"
-                                   preload="none">
+                            <video preload="none" playsinline style="width:100%;height:100%;" id="player1"
+                                   poster="{% static 'video/garagelionsvideo.jpg' %}" controls="controls">
                                 <source type="video/mp4" src="{% static 'video/garagelions.mp4' %}"/>
 
                             </video>
@@ -575,8 +564,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                     <div class="text-center mt-30">
                         <a href="{% url 'galleries' %}" class="button">
-                            <span style="background: dimgrey">See what we've done</span>
-                            <i style="background: dimgrey" class="fa fa-hand-o-right"></i>
+                            <span style="background:#c64d1e">See what we've done</span>
+                            <i style="background:#c64d1e" class="fa fa-hand-o-right"></i>
                         </a>
                     </div>
 
@@ -648,7 +637,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 col-md-12 text-center">
-                    <h2 class="mb-30" style="color: grey">See why homeowners trust us.</h2>
+                    <h2 class="mb-30" style="color:#0b2545">See why homeowners trust us.</h2>
 
                     <a class="button button-black"
                        href="{% url 'videoreviews' %}"><span> Explore stories from our happy clients. </span></a>
