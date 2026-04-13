@@ -9,6 +9,7 @@ urlpatterns = [
 
     path('galleries/', views.galleries, name='galleries'),
     path('galleries/<slug:slug>/', views.gallery_detail, name='gallery_detail'),
+    path('galleries/<int:pk>/thumb.jpg', views.gallery_cover_thumb, name='gallery_cover_thumb'),
 
     path('video/', views.Video.as_view(), name='video'),
     path('about/', views.About.as_view(), name='about'),

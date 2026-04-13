@@ -295,7 +295,7 @@
                     <a href="{% url 'gallery_detail' gallery.slug %}" class="gallery-card">
                         <div class="gallery-card-media">
                             {% if gallery.cover_image %}
-                                <img src="{{ gallery.cover_image.url }}" alt="{{ gallery.name }}" loading="lazy">
+                                <img src="{% url 'gallery_cover_thumb' gallery.pk %}" alt="{{ gallery.name }}" loading="lazy">
                             {% else %}
                                 <img src="{% static 'images/image.png' %}" alt="{{ gallery.name }}" loading="lazy">
                             {% endif %}
