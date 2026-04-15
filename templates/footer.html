@@ -70,7 +70,13 @@
 
           <div class="pc-footer-meta">
             <div><i class="fa fa-map-marker"></i> 2074 Walsh Ave, Ste B · Santa Clara, CA 95050</div>
-            <div><i class="fa fa-phone"></i> <a href="tel:{{ company_toll_free }}">{{ company_toll_free_display }}</a></div>
+            <div><i class="fa fa-phone"></i>
+              {% if selected_city.local_phone %}
+                <a href="tel:{{ selected_city.local_phone }}">{{ selected_city.formatted_phone }}</a>
+              {% else %}
+                <a href="tel:{{ company_toll_free }}">{{ company_toll_free_display }}</a>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
