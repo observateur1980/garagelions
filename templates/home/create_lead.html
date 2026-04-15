@@ -154,6 +154,18 @@
     color: #1d3557;
   }
 
+  .errorlist {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .errorlist li {
+    color: #c0392b;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
   @media (max-width: 767px) {
     .section-field {
       margin-bottom: 22px;
@@ -409,11 +421,21 @@
             return;
           }
         } catch (err) {
+          // Server returned HTML (form validation errors) — replace the page
+          document.open();
+          document.write(xhr.responseText);
+          document.close();
+          return;
         }
         window.location.reload();
       } else {
+        wrap.style.display = "none";
         detailEl.textContent = "Upload failed. Please try again.";
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = "";
+          submitBtn.style.cursor = "";
+        }
       }
     };
 
