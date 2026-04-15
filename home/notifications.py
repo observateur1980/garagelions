@@ -126,14 +126,14 @@ def notify_new_lead_to_customer(lead):
 
 
 # ---------------------------------------------------------------------------
-# Salesperson notification (email + SMS)
+# Project manager notification (email + SMS)
 # ---------------------------------------------------------------------------
 
-def notify_new_lead_to_salesperson(lead):
+def notify_new_lead_to_project_manager(lead):
     """
-    Notify the assigned salesperson about a new lead.
+    Notify the assigned project manager about a new lead.
     Respects their notify_new_lead_email / notify_new_lead_sms preferences.
-    Also CC's the location manager when the assigned user is a salesperson.
+    Also CC's the location manager when the assigned user is a project manager.
     """
     assigned = lead.assigned_user
     if not assigned:
@@ -146,8 +146,8 @@ def notify_new_lead_to_salesperson(lead):
 
     send_email = getattr(profile, "notify_new_lead_email", True)
     send_sms = getattr(profile, "notify_new_lead_sms", False)
-    salesperson_email = (getattr(profile, "display_email", None) if profile else None) or assigned.email
-    salesperson_phone = getattr(profile, "display_phone", None) if profile else None
+    pm_email = (getattr(profile, "display_email", None) if profile else None) or assigned.email
+    pm_phone = getattr(profile, "display_phone", None) if profile else None
 
     services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
     location_text = str(lead.sales_point) if lead.sales_point else "Not matched"
@@ -155,7 +155,7 @@ def notify_new_lead_to_salesperson(lead):
     crm_url = f"https://garagelions.com/sales/leads/{lead.pk}/"
 
     # ── Email ──
-    if send_email and salesperson_email:
+    if send_email and pm_email:
         subject = f"New Lead Assigned: {lead.first_name} {lead.last_name} — {location_text}"
 
         text_body = (
@@ -268,14 +268,14 @@ def notify_new_lead_to_salesperson(lead):
 </body>
 </html>"""
 
-        # CC the location manager if assigned user is a regular salesperson
+        # CC the location manager if assigned user is a regular project manager
         cc_list = []
         try:
-            sp_record = assigned.salesperson
-            if sp_record.role == "salesperson" and sp_record.manager:
+            sp_record = assigned.project_manager
+            if sp_record.role == "project_manager" and sp_record.manager:
                 mgr_profile = sp_record.manager.user.profile
                 mgr_email = mgr_profile.display_email
-                if mgr_email and mgr_email != salesperson_email:
+                if mgr_email and mgr_email != pm_email:
                     cc_list.append(mgr_email)
         except Exception:
             pass
@@ -285,7 +285,7 @@ def notify_new_lead_to_salesperson(lead):
                 subject=subject,
                 body=text_body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[salesperson_email],
+                to=[pm_email],
                 cc=cc_list,
                 reply_to=[lead.email] if lead.email else [],
             )
@@ -296,40 +296,40 @@ def notify_new_lead_to_salesperson(lead):
             }
             msg.send(fail_silently=False)
         except Exception as exc:
-            logger.error("Salesperson email failed for lead #%s: %s", lead.pk, exc)
+            logger.error("Project manager email failed for lead #%s: %s", lead.pk, exc)
 
     # ── SMS ──
-    if send_sms and salesperson_phone:
+    if send_sms and pm_phone:
         sms_body = (
             f"GL NEW LEAD: {lead.first_name} {lead.last_name} | "
             f"Ph: {lead.phone} | ZIP: {lead.zip_code} | "
             f"{services_display} | CRM: {crm_url}"
         )
-        _send_sms(salesperson_phone, sms_body)
+        _send_sms(pm_phone, sms_body)
 
     # ── Notify location managers at this sales point who weren't already emailed ──
     if lead.sales_point:
         try:
-            from account.models import Salesperson as SalespersonModel
-            already_emailed = {salesperson_email} if (send_email and salesperson_email) else set()
+            from account.models import ProjectManager as ProjectManagerModel
+            already_emailed = {pm_email} if (send_email and pm_email) else set()
 
             managers = (
-                SalespersonModel.objects
+                ProjectManagerModel.objects
                 .filter(
                     sales_point=lead.sales_point,
-                    role=SalespersonModel.LOCATION_MANAGER,
-                    status=SalespersonModel.ACTIVE,
+                    role=ProjectManagerModel.LOCATION_MANAGER,
+                    status=ProjectManagerModel.ACTIVE,
                 )
                 .select_related('user__profile')
                 .exclude(user=assigned)
             )
             # Also include managers who have this as an extra sales point
             extra_managers = (
-                SalespersonModel.objects
+                ProjectManagerModel.objects
                 .filter(
                     extra_sales_points=lead.sales_point,
-                    role=SalespersonModel.LOCATION_MANAGER,
-                    status=SalespersonModel.ACTIVE,
+                    role=ProjectManagerModel.LOCATION_MANAGER,
+                    status=ProjectManagerModel.ACTIVE,
                 )
                 .select_related('user__profile')
                 .exclude(user=assigned)
@@ -402,9 +402,9 @@ def notify_new_lead_to_location(lead, attachment_names=None):
     """
     Send the lead details to the location's notification inbox.
     This is a plain-text admin/backup copy that always fires regardless of
-    the assigned salesperson's notification preferences.
+    the assigned project manager's notification preferences.
     Skipped if the recipient is the same address that already received the
-    salesperson notification (avoids duplicate inbox entries).
+    project manager notification (avoids duplicate inbox entries).
     """
     recipient = "leads@garagelions.com"
     from_email = settings.DEFAULT_FROM_EMAIL
@@ -418,7 +418,7 @@ def notify_new_lead_to_location(lead, attachment_names=None):
         if lead.sales_point.reply_to_email:
             reply_to = [lead.sales_point.reply_to_email]
 
-    # Skip if the assigned salesperson already received a notification at this
+    # Skip if the assigned project manager already received a notification at this
     # same address — no need to send a second plain-text duplicate.
     if lead.assigned_user:
         try:
@@ -472,7 +472,7 @@ def notify_new_lead_to_location(lead, attachment_names=None):
 
 def notify_lead_reassigned(lead, new_user):
     """
-    Notify a salesperson when a lead is reassigned to them.
+    Notify a project manager when a lead is reassigned to them.
     Respects their notification preferences.
     """
     if not new_user:
@@ -485,13 +485,13 @@ def notify_lead_reassigned(lead, new_user):
 
     send_email = getattr(profile, "notify_new_lead_email", True)
     send_sms = getattr(profile, "notify_new_lead_sms", False)
-    salesperson_email = (getattr(profile, "display_email", None) if profile else None) or new_user.email
-    salesperson_phone = getattr(profile, "display_phone", None) if profile else None
+    pm_email = (getattr(profile, "display_email", None) if profile else None) or new_user.email
+    pm_phone = getattr(profile, "display_phone", None) if profile else None
 
     services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
     crm_url = f"https://garagelions.com/sales/leads/{lead.pk}/"
 
-    if send_email and salesperson_email:
+    if send_email and pm_email:
         subject = f"Lead Reassigned to You: {lead.first_name} {lead.last_name}"
         body = (
             f"Hi {new_user.get_short_name()},\n\n"
@@ -510,15 +510,15 @@ def notify_lead_reassigned(lead, new_user):
                 subject=subject,
                 body=body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[salesperson_email],
+                to=[pm_email],
                 reply_to=[lead.email] if lead.email else [],
             ).send(fail_silently=False)
         except Exception as exc:
             logger.error("Reassignment email failed for lead #%s: %s", lead.pk, exc)
 
-    if send_sms and salesperson_phone:
+    if send_sms and pm_phone:
         sms_body = (
             f"GL LEAD REASSIGNED to you: {lead.first_name} {lead.last_name} | "
             f"{lead.phone} | {lead.zip_code} | CRM: {crm_url}"
         )
-        _send_sms(salesperson_phone, sms_body)
+        _send_sms(pm_phone, sms_body)

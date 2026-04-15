@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
-from .models import Profile, Salesperson
+from .models import Profile, ProjectManager
 
 User = get_user_model()
 
@@ -108,14 +108,14 @@ class ProfileForm(forms.ModelForm):
         }
 
 
-class SalespersonAdminForm(forms.ModelForm):
+class ProjectManagerAdminForm(forms.ModelForm):
     """
-    Used by admins only to manage the Salesperson record.
-    Salespeople cannot edit their own compensation or role.
+    Used by admins only to manage the ProjectManager record.
+    Project managers cannot edit their own compensation or role.
     """
 
     class Meta:
-        model = Salesperson
+        model = ProjectManager
         fields = [
             'user', 'sales_point', 'manager',
             'role', 'status', 'employment_type',
@@ -135,3 +135,24 @@ class SalespersonAdminForm(forms.ModelForm):
             'territory_notes':  forms.Textarea(attrs={'class': _FC, 'rows': 3}),
             'internal_notes':   forms.Textarea(attrs={'class': _FC, 'rows': 3}),
         }
+
+
+class AdminSetPasswordForm(forms.Form):
+    """Staff-only form to set a new password for any user (no old password required)."""
+
+    new_password1 = forms.CharField(
+        label='New password',
+        widget=forms.PasswordInput(attrs={'class': _FC, 'autocomplete': 'new-password'}),
+    )
+    new_password2 = forms.CharField(
+        label='Confirm new password',
+        widget=forms.PasswordInput(attrs={'class': _FC, 'autocomplete': 'new-password'}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('new_password1')
+        p2 = cleaned.get('new_password2')
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError('The two passwords do not match.')
+        return cleaned

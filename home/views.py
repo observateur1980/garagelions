@@ -25,7 +25,7 @@ from .models import (
 )
 from .notifications import (
     notify_new_lead_to_customer,
-    notify_new_lead_to_salesperson,
+    notify_new_lead_to_project_manager,
     notify_new_lead_to_location,
 )
 from .geo import auto_set_location
@@ -313,7 +313,7 @@ def create_lead(request):
 
             # ── Notifications (all failures are caught internally) ──
             notify_new_lead_to_customer(lead)
-            notify_new_lead_to_salesperson(lead)
+            notify_new_lead_to_project_manager(lead)
             notify_new_lead_to_location(lead, attachment_names=attachment_names)
 
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":

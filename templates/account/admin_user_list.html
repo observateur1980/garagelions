@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block seo_title %}Admin · Manage Passwords | Garage Lions{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<section class="sales-section" style="margin-top:120px; padding:50px 0 80px;">
+<div class="container">
+
+  {# ── Header ── #}
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:36px;">
+    <div>
+      <h1 style="margin:0;">Manage Passwords</h1>
+      <p style="margin:4px 0 0; color:#888; font-size:13px;">Change password for any user or project manager</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{% url 'account:profile_edit' %}" class="button button-white"><span>My Account</span><i class="fa fa-user"></i></a>
+      <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
+    </div>
+  </div>
+
+  {# ── Messages ── #}
+  {% for message in messages %}
+  <div style="padding:12px 20px; margin-bottom:20px; border-radius:6px;
+    background:{% if message.tags == 'success' %}#E1F5EE{% else %}#FCEBEB{% endif %};
+    color:{% if message.tags == 'success' %}#0F6E56{% else %}#A32D2D{% endif %};
+    border:1px solid {% if message.tags == 'success' %}#9FE1CB{% else %}#F7C1C1{% endif %};">
+    {{ message }}
+  </div>
+  {% endfor %}
+
+  <div class="row">
+
+    {# ── All Users ── #}
+    <div class="col-md-6" style="margin-bottom:32px;">
+      <div class="gl-info-card">
+        <h3 style="margin:0 0 18px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">
+          <i class="fa fa-users" style="color:#aaa; margin-right:6px;"></i>All Users
+          <span style="font-size:12px; color:#aaa; font-weight:400; margin-left:8px;">({{ all_users.count }})</span>
+        </h3>
+
+        {% for u in all_users %}
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:10px 0; border-bottom:1px solid #f5f5f5;">
+          <div>
+            <p style="margin:0; font-size:14px; font-weight:500;">
+              {{ u.get_full_name|default:u.username }}
+              {% if u.is_staff %}
+                <span style="background:#FAEEDA; color:#854F0B; font-size:10px; padding:1px 6px; border-radius:8px; margin-left:4px;">Staff</span>
+              {% endif %}
+            </p>
+            <p style="margin:2px 0 0; font-size:12px; color:#aaa;">{{ u.email }}</p>
+          </div>
+          <a href="{% url 'account:admin_change_user_password' u.pk %}"
+             class="button button-white"
+             style="font-size:12px; padding:6px 14px;">
+            <span>Change password</span><i class="fa fa-lock"></i>
+          </a>
+        </div>
+        {% empty %}
+        <p style="color:#aaa; font-size:13px; margin:0;">No users found.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── Project Managers ── #}
+    <div class="col-md-6" style="margin-bottom:32px;">
+      <div class="gl-info-card">
+        <h3 style="margin:0 0 18px; border-bottom:1px solid #eee; padding-bottom:12px; font-size:16px;">
+          <i class="fa fa-id-badge" style="color:#aaa; margin-right:6px;"></i>Project Managers
+          <span style="font-size:12px; color:#aaa; font-weight:400; margin-left:8px;">({{ project_managers.count }})</span>
+        </h3>
+
+        {% for sp in project_managers %}
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:10px 0; border-bottom:1px solid #f5f5f5;">
+          <div>
+            <p style="margin:0; font-size:14px; font-weight:500;">
+              {{ sp.user.get_full_name|default:sp.user.username }}
+            </p>
+            <p style="margin:2px 0 0; font-size:12px; color:#888;">{{ sp.get_role_display }}</p>
+            {% if sp.sales_point %}
+            <p style="margin:1px 0 0; font-size:11px; color:#aaa;">{{ sp.sales_point.name }}</p>
+            {% endif %}
+          </div>
+          <a href="{% url 'account:admin_change_user_password' sp.user.pk %}"
+             class="button button-white"
+             style="font-size:12px; padding:6px 14px;">
+            <span>Change password</span><i class="fa fa-lock"></i>
+          </a>
+        </div>
+        {% empty %}
+        <p style="color:#aaa; font-size:13px; margin:0;">No project managers found.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+{% endblock %}

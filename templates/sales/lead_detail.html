@@ -220,8 +220,8 @@
             <span><i class="fa fa-envelope" style="color:#378ADD; margin-right:8px;"></i>{{ lead.email }}</span>
             <i class="fa fa-chevron-right"></i>
           </a>
-          {% if salesperson and salesperson.user.profile.calendly_url %}
-          <a href="{{ salesperson.user.profile.calendly_url }}" target="_blank" class="action-btn">
+          {% if project_manager and project_manager.user.profile.calendly_url %}
+          <a href="{{ project_manager.user.profile.calendly_url }}" target="_blank" class="action-btn">
             <span><i class="fa fa-calendar" style="color:#534AB7; margin-right:8px;"></i>Send booking link</span>
             <i class="fa fa-chevron-right"></i>
           </a>

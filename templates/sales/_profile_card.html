@@ -15,12 +15,12 @@
 
   <h3 style="margin:0 0 4px; font-size:16px;">{{ request.user.get_full_name }}</h3>
 
-  {% if salesperson %}
-    <p style="margin:0 0 2px; font-size:12px; color:#888;">{{ salesperson.get_role_display }}</p>
-    <p style="margin:0 0 2px; font-size:12px; color:#aaa;">{{ salesperson.get_employment_type_display }}</p>
-    {% if salesperson.status == 'on_leave' %}
+  {% if project_manager %}
+    <p style="margin:0 0 2px; font-size:12px; color:#888;">{{ project_manager.get_role_display }}</p>
+    <p style="margin:0 0 2px; font-size:12px; color:#aaa;">{{ project_manager.get_employment_type_display }}</p>
+    {% if project_manager.status == 'on_leave' %}
       <span style="background:#FAEEDA; color:#854F0B; font-size:11px; padding:2px 8px; border-radius:10px;">On Leave</span>
-    {% elif salesperson.status == 'terminated' %}
+    {% elif project_manager.status == 'terminated' %}
       <span style="background:#FCEBEB; color:#A32D2D; font-size:11px; padding:2px 8px; border-radius:10px;">Terminated</span>
     {% endif %}
   {% endif %}
@@ -76,26 +76,26 @@
   </div>
 </div>
 
-{% if salesperson and salesperson.sales_point %}
+{% if project_manager and project_manager.sales_point %}
 <div class="gl-info-card" style="margin-top:16px;">
   <h4 style="margin:0 0 10px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">My location</h4>
-  <p style="margin:0 0 4px; font-size:13px; font-weight:500;">{{ salesperson.sales_point.name }}</p>
-  {% if salesperson.sales_point.local_phone %}
+  <p style="margin:0 0 4px; font-size:13px; font-weight:500;">{{ project_manager.sales_point.name }}</p>
+  {% if project_manager.sales_point.local_phone %}
     <p style="margin:0 0 4px; font-size:12px; color:#888;">
       <i class="fa fa-phone" style="width:14px;"></i>
-      <a href="tel:{{ salesperson.sales_point.local_phone }}">{{ salesperson.sales_point.local_phone }}</a>
+      <a href="tel:{{ project_manager.sales_point.local_phone }}">{{ project_manager.sales_point.local_phone }}</a>
     </p>
   {% endif %}
-  {% if salesperson.sales_point.address_line_1 %}
-    <p style="margin:0; font-size:12px; color:#aaa;">{{ salesperson.sales_point.address_line_1 }}</p>
+  {% if project_manager.sales_point.address_line_1 %}
+    <p style="margin:0; font-size:12px; color:#aaa;">{{ project_manager.sales_point.address_line_1 }}</p>
   {% endif %}
 </div>
 {% endif %}
 
-{% if salesperson and salesperson.manager %}
+{% if project_manager and project_manager.manager %}
 <div class="gl-info-card" style="margin-top:16px;">
   <h4 style="margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">My manager</h4>
-  <p style="margin:0; font-size:13px; font-weight:500;">{{ salesperson.manager.user.get_full_name }}</p>
-  <p style="margin:2px 0 0; font-size:12px; color:#888;">{{ salesperson.manager.get_role_display }}</p>
+  <p style="margin:0; font-size:13px; font-weight:500;">{{ project_manager.manager.user.get_full_name }}</p>
+  <p style="margin:2px 0 0; font-size:12px; color:#888;">{{ project_manager.manager.get_role_display }}</p>
 </div>
 {% endif %}

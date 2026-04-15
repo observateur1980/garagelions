@@ -2,7 +2,7 @@
 Management command: send_stale_lead_reminders
 
 Finds leads that are still "new" after a configurable number of hours and
-sends a reminder email (and optionally SMS) to the assigned salesperson.
+sends a reminder email (and optionally SMS) to the assigned project manager.
 
 Usage:
     python manage.py send_stale_lead_reminders           # default: 24 hours
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Email/SMS salesperson when their leads stay 'new' past a threshold."
+    help = "Email/SMS project manager when their leads stay 'new' past a threshold."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from home.models import LeadModel, LeadActivity
-        from home.notifications import notify_new_lead_to_salesperson, _send_sms
+        from home.notifications import notify_new_lead_to_project_manager, _send_sms
 
         hours = options["hours"]
         dry_run = options["dry_run"]
@@ -75,15 +75,15 @@ class Command(BaseCommand):
             except Exception:
                 profile = None
 
-            salesperson_phone = getattr(profile, "display_phone", None) if profile else None
-            salesperson_email = (
+            pm_phone = getattr(profile, "display_phone", None) if profile else None
+            pm_email = (
                 getattr(profile, "display_email", None) if profile else None
             ) or assigned.email
 
             self.stdout.write(
                 f"  Lead #{lead.pk} — {lead.first_name} {lead.last_name} "
                 f"({lead.zip_code}) — assigned to {assigned.get_full_name()} "
-                f"<{salesperson_email}>"
+                f"<{pm_email}>"
             )
 
             if dry_run:
@@ -120,21 +120,21 @@ class Command(BaseCommand):
                     subject=subject,
                     body=body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[salesperson_email],
+                    to=[pm_email],
                     reply_to=[lead.email] if lead.email else [],
                 ).send(fail_silently=False)
-                self.stdout.write(f"    Email reminder sent to {salesperson_email}.")
+                self.stdout.write(f"    Email reminder sent to {pm_email}.")
             except Exception as exc:
                 self.stderr.write(f"    Email failed: {exc}")
 
             # SMS reminder
             send_sms = getattr(profile, "notify_new_lead_sms", False)
-            if send_sms and salesperson_phone:
+            if send_sms and pm_phone:
                 sms_body = (
                     f"GL REMINDER: Lead #{lead.pk} {lead.first_name} {lead.last_name} "
                     f"still uncontacted ({hours_old}h) | {lead.phone} | {crm_url}"
                 )
-                if _send_sms(salesperson_phone, sms_body):
+                if _send_sms(pm_phone, sms_body):
                     self.stdout.write(f"    SMS reminder sent.")
 
             # Record in activity log

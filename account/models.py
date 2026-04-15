@@ -1,15 +1,15 @@
 # account/models.py
 #
 # Architecture:
-#   MyUser      — authentication only (credentials, login, permissions)
-#   Profile     — personal identity (name, photo, contact info)
-#   Salesperson — business role (employment, compensation, territory, hierarchy)
+#   MyUser         — authentication only (credentials, login, permissions)
+#   Profile        — personal identity (name, photo, contact info)
+#   ProjectManager — business role (employment, compensation, territory, hierarchy)
 #
 # Separation of concerns:
 #   Profile is about WHO the person is.
-#   Salesperson is about WHAT ROLE they play in the business.
-#   A user can have a Profile without being a Salesperson (e.g. a customer-facing
-#   staff account). A Salesperson always has both a MyUser and a Profile.
+#   ProjectManager is about WHAT ROLE they play in the business.
+#   A user can have a Profile without being a ProjectManager (e.g. a customer-facing
+#   staff account). A ProjectManager always has both a MyUser and a Profile.
 
 from django.conf import settings
 from django.db import models
@@ -92,15 +92,15 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def role(self):
-        """Convenience — returns the Salesperson role or None."""
+        """Convenience — returns the ProjectManager role or None."""
         try:
-            return self.salesperson.role
-        except Salesperson.DoesNotExist:
+            return self.project_manager.role
+        except ProjectManager.DoesNotExist:
             return None
 
     @property
-    def is_salesperson(self):
-        return hasattr(self, 'salesperson') and self.salesperson is not None
+    def is_project_manager(self):
+        return hasattr(self, 'project_manager') and self.project_manager is not None
 
     @property
     def can_see_all_leads(self):
@@ -108,11 +108,11 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         if self.is_superuser or self.is_staff:
             return True
         try:
-            return self.salesperson.role in (
-                Salesperson.TERRITORY_MANAGER,
-                Salesperson.LOCATION_MANAGER,
+            return self.project_manager.role in (
+                ProjectManager.TERRITORY_MANAGER,
+                ProjectManager.LOCATION_MANAGER,
             )
-        except Salesperson.DoesNotExist:
+        except ProjectManager.DoesNotExist:
             return False
 
 
@@ -219,27 +219,27 @@ class Profile(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# Salesperson — business role layer
+# ProjectManager — business role layer
 # ---------------------------------------------------------------------------
 
-class Salesperson(models.Model):
+class ProjectManager(models.Model):
     """
     Represents a person's role within the Garage Lions business.
     Separate from Profile (who they are) and MyUser (how they log in).
 
     Role hierarchy:
-        SALESPERSON       – works individual leads at one location
+        PROJECT_MANAGER   – works individual leads at one location
         LOCATION_MANAGER  – runs a SalesPoint, sees their whole team
         TERRITORY_MANAGER – oversees multiple locations, corporate view
     """
 
     # Role choices
-    SALESPERSON = 'salesperson'
+    PROJECT_MANAGER = 'project_manager'
     LOCATION_MANAGER = 'location_manager'
     TERRITORY_MANAGER = 'territory_manager'
 
     ROLE_CHOICES = [
-        (SALESPERSON, 'Salesperson'),
+        (PROJECT_MANAGER, 'Project Manager'),
         (LOCATION_MANAGER, 'Location Manager'),
         (TERRITORY_MANAGER, 'Territory Manager'),
     ]
@@ -270,20 +270,20 @@ class Salesperson(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='salesperson',
+        related_name='project_manager',
     )
     sales_point = models.ForeignKey(
         'home.SalesPoint',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='salespeople',
+        related_name='project_managers',
         help_text='Primary location this person is assigned to.',
     )
     extra_sales_points = models.ManyToManyField(
         'home.SalesPoint',
         blank=True,
-        related_name='extra_salespeople',
+        related_name='extra_project_managers',
         help_text='Additional locations this person manages.',
     )
 
@@ -301,7 +301,7 @@ class Salesperson(models.Model):
     role = models.CharField(
         max_length=30,
         choices=ROLE_CHOICES,
-        default=SALESPERSON,
+        default=PROJECT_MANAGER,
     )
     status = models.CharField(
         max_length=20,
@@ -360,8 +360,8 @@ class Salesperson(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Salesperson'
-        verbose_name_plural = 'Salespeople'
+        verbose_name = 'Project Manager'
+        verbose_name_plural = 'Project Managers'
         ordering = ['user__profile__last_name', 'user__profile__first_name']
 
     def __str__(self):
@@ -382,7 +382,7 @@ class Salesperson(models.Model):
     def get_visible_sales_points(self):
         """
         Returns the QuerySet of SalesPoints this person can see leads for.
-        - Salesperson: only their assigned sales_point
+        - Project Manager: only their assigned sales_point
         - Location Manager: their primary + any extra sales_points
         - Territory Manager: all active sales_points
         """

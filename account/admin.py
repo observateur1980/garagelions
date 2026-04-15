@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
-from .models import MyUser, Profile, Salesperson
+from .models import MyUser, Profile, ProjectManager
 
 
 # ── Auth forms ────────────────────────────────────────────────────────────
@@ -64,8 +64,8 @@ class ProfileInline(admin.StackedInline):
     )
 
 
-class SalespersonInline(admin.StackedInline):
-    model = Salesperson
+class ProjectManagerInline(admin.StackedInline):
+    model = ProjectManager
     can_delete = False
     verbose_name = 'Business Role'
     verbose_name_plural = 'Business Role'
@@ -86,7 +86,7 @@ class SalespersonInline(admin.StackedInline):
 class MyUserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
-    inlines = [ProfileInline, SalespersonInline]
+    inlines = [ProfileInline, ProjectManagerInline]
 
     list_display = (
         'username', 'email',
@@ -95,8 +95,8 @@ class MyUserAdmin(BaseUserAdmin):
     )
     list_filter = (
         'is_staff', 'is_active',
-        'salesperson__role', 'salesperson__status',
-        'salesperson__sales_point',
+        'project_manager__role', 'project_manager__status',
+        'project_manager__sales_point',
     )
     search_fields = (
         'username', 'email',
@@ -140,31 +140,31 @@ class MyUserAdmin(BaseUserAdmin):
 
     def get_role(self, obj):
         try:
-            return obj.salesperson.get_role_display()
-        except Salesperson.DoesNotExist:
+            return obj.project_manager.get_role_display()
+        except ProjectManager.DoesNotExist:
             return '—'
     get_role.short_description = 'Role'
 
     def get_location(self, obj):
         try:
-            sp = obj.salesperson.sales_point
+            sp = obj.project_manager.sales_point
             return sp.name if sp else '—'
-        except Salesperson.DoesNotExist:
+        except ProjectManager.DoesNotExist:
             return '—'
     get_location.short_description = 'Location'
 
     def get_status(self, obj):
         try:
-            return obj.salesperson.get_status_display()
-        except Salesperson.DoesNotExist:
+            return obj.project_manager.get_status_display()
+        except ProjectManager.DoesNotExist:
             return '—'
     get_status.short_description = 'Status'
 
 
-# ── Standalone Salesperson admin ──────────────────────────────────────────
+# ── Standalone ProjectManager admin ──────────────────────────────────────────
 
-@admin.register(Salesperson)
-class SalespersonAdmin(admin.ModelAdmin):
+@admin.register(ProjectManager)
+class ProjectManagerAdmin(admin.ModelAdmin):
     list_display = (
         'get_full_name', 'get_email',
         'role', 'status', 'employment_type',

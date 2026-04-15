@@ -4,12 +4,12 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
 
-from .forms import UserLoginForm, ProfileForm
-from .models import Salesperson
+from .forms import UserLoginForm, ProfileForm, AdminSetPasswordForm
+from .models import ProjectManager
 
 User = get_user_model()
 
@@ -17,12 +17,12 @@ User = get_user_model()
 def _dashboard_url(user):
     """Return the correct dashboard URL based on the user's role."""
     try:
-        role = user.salesperson.role
-        if role == Salesperson.TERRITORY_MANAGER:
+        role = user.project_manager.role
+        if role == ProjectManager.TERRITORY_MANAGER:
             return reverse('sales_dashboard_territory')
-        if role == Salesperson.LOCATION_MANAGER:
+        if role == ProjectManager.LOCATION_MANAGER:
             return reverse('sales_dashboard_manager')
-    except Salesperson.DoesNotExist:
+    except ProjectManager.DoesNotExist:
         pass
     return reverse('sales_dashboard')
 
@@ -60,17 +60,17 @@ def profile_edit(request):
     else:
         form = ProfileForm(instance=profile)
 
-    # Try to attach salesperson record if it exists
-    salesperson = None
+    # Try to attach project manager record if it exists
+    project_manager = None
     try:
-        salesperson = request.user.salesperson
-    except Salesperson.DoesNotExist:
+        project_manager = request.user.project_manager
+    except ProjectManager.DoesNotExist:
         pass
 
     return render(request, 'account/profile_edit.html', {
         'form': form,
         'profile': profile,
-        'salesperson': salesperson,
+        'project_manager': project_manager,
     })
 
 
@@ -85,3 +85,43 @@ class SalesPasswordChangeDoneView(PasswordChangeDoneView):
 
 password_change_view = login_required(SalesPasswordChangeView.as_view())
 password_change_done_view = login_required(SalesPasswordChangeDoneView.as_view())
+
+
+@login_required
+def admin_user_list(request):
+    """Staff-only: list all users and project managers for password management."""
+    if not request.user.is_staff:
+        raise Http404
+
+    all_users = User.objects.select_related('profile').order_by('profile__last_name', 'profile__first_name', 'username')
+    project_managers = ProjectManager.objects.select_related('user', 'user__profile', 'sales_point').order_by(
+        'user__profile__last_name', 'user__profile__first_name'
+    )
+
+    return render(request, 'account/admin_user_list.html', {
+        'all_users': all_users,
+        'project_managers': project_managers,
+    })
+
+
+@login_required
+def admin_change_user_password(request, user_id):
+    """Staff-only: set a new password for any user."""
+    if not request.user.is_staff:
+        raise Http404
+
+    target = User.objects.select_related('profile').filter(pk=user_id).first()
+    if not target:
+        raise Http404
+
+    form = AdminSetPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        target.set_password(form.cleaned_data['new_password1'])
+        target.save()
+        messages.success(request, f'Password updated for {target.get_full_name() or target.username}.')
+        return redirect('account:admin_user_list')
+
+    return render(request, 'account/admin_change_password.html', {
+        'form': form,
+        'target': target,
+    })

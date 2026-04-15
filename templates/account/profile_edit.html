@@ -67,25 +67,35 @@
           </div>
         </div>
 
+        {# Admin tools (staff only) #}
+        {% if request.user.is_staff %}
+        <div class="gl-info-card" style="margin-top:16px;">
+          <h4 style="margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">Admin</h4>
+          <a href="{% url 'account:admin_user_list' %}" style="font-size:13px; color:#888; display:flex; align-items:center; gap:6px;">
+            <i class="fa fa-lock"></i> Manage user passwords
+          </a>
+        </div>
+        {% endif %}
+
         {# Business role (read-only — admin manages this) #}
-        {% if salesperson %}
+        {% if project_manager %}
         <div class="gl-info-card" style="margin-top:16px;">
           <h4 style="margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#aaa;">Business Role</h4>
-          <p style="margin:0 0 6px; font-size:13px; font-weight:500;">{{ salesperson.get_role_display }}</p>
-          <p style="margin:0 0 6px; font-size:12px; color:#888;">{{ salesperson.get_employment_type_display }}</p>
-          {% if salesperson.sales_point %}
+          <p style="margin:0 0 6px; font-size:13px; font-weight:500;">{{ project_manager.get_role_display }}</p>
+          <p style="margin:0 0 6px; font-size:12px; color:#888;">{{ project_manager.get_employment_type_display }}</p>
+          {% if project_manager.sales_point %}
           <p style="margin:0 0 6px; font-size:12px; color:#888;">
-            <i class="fa fa-map-marker" style="width:14px;"></i> {{ salesperson.sales_point.name }}
+            <i class="fa fa-map-marker" style="width:14px;"></i> {{ project_manager.sales_point.name }}
           </p>
           {% endif %}
-          {% if salesperson.manager %}
+          {% if project_manager.manager %}
           <p style="margin:0; font-size:12px; color:#aaa;">
-            Reports to: {{ salesperson.manager.user.get_full_name }}
+            Reports to: {{ project_manager.manager.user.get_full_name }}
           </p>
           {% endif %}
-          {% if salesperson.start_date %}
+          {% if project_manager.start_date %}
           <p style="margin:6px 0 0; font-size:11px; color:#bbb;">
-            Since {{ salesperson.start_date|date:"M Y" }}
+            Since {{ project_manager.start_date|date:"M Y" }}
           </p>
           {% endif %}
           <p style="margin:10px 0 0; font-size:11px; color:#bbb;">Role managed by admin</p>

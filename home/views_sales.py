@@ -1,7 +1,7 @@
 # home/views_sales.py
 #
 # Three separate dashboards, one lead list, one lead detail.
-# Access is gated by the Salesperson.role field.
+# Access is gated by the ProjectManager.role field.
 # Superusers and is_staff users always see everything.
 
 from django.contrib.auth.decorators import login_required
@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from account.models import Salesperson
+from account.models import ProjectManager
 from .forms import LeadUpdateForm
 from .models import LeadActivity, LeadModel, SalesPoint
 
@@ -18,11 +18,11 @@ from .models import LeadActivity, LeadModel, SalesPoint
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_salesperson(user):
-    """Return the Salesperson record or None."""
+def _get_project_manager(user):
+    """Return the ProjectManager record or None."""
     try:
-        return user.salesperson
-    except Salesperson.DoesNotExist:
+        return user.project_manager
+    except ProjectManager.DoesNotExist:
         return None
 
 
@@ -33,8 +33,8 @@ def _lead_queryset(user):
     - Superuser / is_staff         → all leads
     - Territory Manager            → all leads (across all locations)
     - Location Manager             → all leads for their SalesPoint
-    - Salesperson                  → only leads assigned to them
-    - No Salesperson record        → only leads assigned to them (fallback)
+    - Project Manager              → only leads assigned to them
+    - No ProjectManager record     → only leads assigned to them (fallback)
     """
     qs = LeadModel.objects.select_related(
         'sales_point', 'service_city', 'assigned_user', 'assigned_user__profile'
@@ -43,14 +43,14 @@ def _lead_queryset(user):
     if user.is_superuser or user.is_staff:
         return qs
 
-    sp = _get_salesperson(user)
+    sp = _get_project_manager(user)
     if sp is None:
         return qs.filter(assigned_user=user)
 
-    if sp.role == Salesperson.TERRITORY_MANAGER:
+    if sp.role == ProjectManager.TERRITORY_MANAGER:
         return qs
 
-    if sp.role == Salesperson.LOCATION_MANAGER:
+    if sp.role == ProjectManager.LOCATION_MANAGER:
         managed = list(sp.extra_sales_points.values_list('pk', flat=True))
         if sp.sales_point:
             managed.append(sp.sales_point_id)
@@ -79,13 +79,13 @@ def _counts(qs):
 # Role guard decorators
 # ---------------------------------------------------------------------------
 
-def salesperson_required(view_func):
-    """User must be logged in AND have a Salesperson record (or be staff)."""
+def project_manager_required(view_func):
+    """User must be logged in AND have a ProjectManager record (or be staff)."""
     @login_required
     def wrapper(request, *args, **kwargs):
         if request.user.is_staff or request.user.is_superuser:
             return view_func(request, *args, **kwargs)
-        sp = _get_salesperson(request.user)
+        sp = _get_project_manager(request.user)
         if sp is None:
             return redirect('account:login')
         return view_func(request, *args, **kwargs)
@@ -98,8 +98,8 @@ def manager_required(view_func):
     def wrapper(request, *args, **kwargs):
         if request.user.is_staff or request.user.is_superuser:
             return view_func(request, *args, **kwargs)
-        sp = _get_salesperson(request.user)
-        if sp and sp.role in (Salesperson.LOCATION_MANAGER, Salesperson.TERRITORY_MANAGER):
+        sp = _get_project_manager(request.user)
+        if sp and sp.role in (ProjectManager.LOCATION_MANAGER, ProjectManager.TERRITORY_MANAGER):
             return view_func(request, *args, **kwargs)
         return redirect('sales_dashboard')
     return wrapper
@@ -111,27 +111,27 @@ def territory_required(view_func):
     def wrapper(request, *args, **kwargs):
         if request.user.is_staff or request.user.is_superuser:
             return view_func(request, *args, **kwargs)
-        sp = _get_salesperson(request.user)
-        if sp and sp.role == Salesperson.TERRITORY_MANAGER:
+        sp = _get_project_manager(request.user)
+        if sp and sp.role == ProjectManager.TERRITORY_MANAGER:
             return view_func(request, *args, **kwargs)
         return redirect('sales_dashboard')
     return wrapper
 
 
 # ---------------------------------------------------------------------------
-# Dashboard: Salesperson (default)
+# Dashboard: Project Manager (default)
 # ---------------------------------------------------------------------------
 
 @login_required
 def sales_dashboard(request):
     qs = _lead_queryset(request.user)
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     return render(request, 'sales/dashboard.html', {
         'counts': _counts(qs),
         'recent_leads': qs.order_by('-created_at')[:10],
-        'salesperson': sp,
-        'dashboard_type': 'salesperson',
+        'project_manager': sp,
+        'dashboard_type': 'project_manager',
     })
 
 
@@ -142,13 +142,13 @@ def sales_dashboard(request):
 @manager_required
 def sales_dashboard_manager(request):
     qs = _lead_queryset(request.user)
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     # Team members at this location
     team = []
     if sp and sp.sales_point:
         team = list(
-            Salesperson.objects.filter(sales_point=sp.sales_point)
+            ProjectManager.objects.filter(sales_point=sp.sales_point)
             .select_related('user', 'user__profile')
             .exclude(pk=sp.pk)
         )
@@ -158,14 +158,14 @@ def sales_dashboard_manager(request):
     for member in team:
         member_qs = LeadModel.objects.filter(assigned_user=member.user)
         team_stats.append({
-            'salesperson': member,
+            'project_manager': member,
             'counts': _counts(member_qs),
         })
 
     return render(request, 'sales/dashboard_manager.html', {
         'counts': _counts(qs),
         'recent_leads': qs.order_by('-created_at')[:10],
-        'salesperson': sp,
+        'project_manager': sp,
         'team_stats': team_stats,
         'dashboard_type': 'manager',
     })
@@ -178,7 +178,7 @@ def sales_dashboard_manager(request):
 @territory_required
 def sales_dashboard_territory(request):
     qs = _lead_queryset(request.user)
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     # Per-location stats
     location_stats = []
@@ -187,15 +187,15 @@ def sales_dashboard_territory(request):
         location_stats.append({
             'sales_point': sales_point,
             'counts': _counts(sp_qs),
-            'team_size': Salesperson.objects.filter(
-                sales_point=sales_point, status=Salesperson.ACTIVE
+            'team_size': ProjectManager.objects.filter(
+                sales_point=sales_point, status=ProjectManager.ACTIVE
             ).count(),
         })
 
     return render(request, 'sales/dashboard_territory.html', {
         'counts': _counts(qs),
         'recent_leads': qs.order_by('-created_at')[:15],
-        'salesperson': sp,
+        'project_manager': sp,
         'location_stats': location_stats,
         'dashboard_type': 'territory',
     })
@@ -208,7 +208,7 @@ def sales_dashboard_territory(request):
 @login_required
 def sales_lead_list(request):
     qs = _lead_queryset(request.user)
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     # Filters
     q = request.GET.get('q', '').strip()
@@ -229,7 +229,7 @@ def sales_lead_list(request):
     # Location filter only available to managers/territory/staff
     can_filter_location = (
         request.user.is_staff or request.user.is_superuser
-        or (sp and sp.role in (Salesperson.LOCATION_MANAGER, Salesperson.TERRITORY_MANAGER))
+        or (sp and sp.role in (ProjectManager.LOCATION_MANAGER, ProjectManager.TERRITORY_MANAGER))
     )
     if sales_point_id and can_filter_location:
         qs = qs.filter(sales_point_id=sales_point_id)
@@ -250,7 +250,7 @@ def sales_lead_list(request):
         'sales_point_id': sales_point_id,
         'sales_points': sales_points,
         'status_choices': LeadModel.STATUS_CHOICES,
-        'salesperson': sp,
+        'project_manager': sp,
         'can_filter_location': can_filter_location,
     })
 
@@ -262,7 +262,7 @@ def sales_lead_list(request):
 @login_required
 def sales_lead_detail(request, pk):
     lead = get_object_or_404(_lead_queryset(request.user), pk=pk)
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     if request.method == 'POST':
         form = LeadUpdateForm(request.POST, instance=lead)
@@ -301,7 +301,7 @@ def sales_lead_detail(request, pk):
     return render(request, 'sales/lead_detail.html', {
         'lead': lead,
         'form': form,
-        'salesperson': sp,
+        'project_manager': sp,
         'activities': activities,
     })
 
@@ -325,7 +325,7 @@ def sales_lead_create(request):
     """Manually create a lead from inside the CRM."""
     from .forms import ManualLeadForm
 
-    sp = _get_salesperson(request.user)
+    sp = _get_project_manager(request.user)
 
     if request.method == 'POST':
         form = ManualLeadForm(request.POST, user=request.user)
@@ -352,7 +352,7 @@ def sales_lead_create(request):
         else:
             django_messages.error(request, 'Please correct the errors below.')
     else:
-        # Pre-fill sales_point and assigned_user for salespeople
+        # Pre-fill sales_point and assigned_user for project managers
         initial = {}
         if sp and sp.sales_point:
             initial['sales_point'] = sp.sales_point
@@ -362,7 +362,7 @@ def sales_lead_create(request):
 
     return render(request, 'sales/lead_create.html', {
         'form': form,
-        'salesperson': sp,
+        'project_manager': sp,
     })
 
 # ---------------------------------------------------------------------------

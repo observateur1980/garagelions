@@ -200,7 +200,7 @@ class ManualLeadForm(forms.ModelForm):
         # If a regular salesperson (not staff), lock sales_point to their own location
         if user and not user.is_staff and not user.is_superuser:
             try:
-                sp = user.salesperson.sales_point
+                sp = user.project_manager.sales_point
                 if sp:
                     self.fields['sales_point'].initial = sp
                     self.fields['sales_point'].queryset = \
@@ -210,7 +210,7 @@ class ManualLeadForm(forms.ModelForm):
                         self.fields['service_city'].queryset.filter(sales_point=sp)
                     self.fields['assigned_user'].queryset = \
                         self.fields['assigned_user'].queryset.filter(
-                            salesperson__sales_point=sp
+                            project_manager__sales_point=sp
                         )
             except Exception:
                 pass
