@@ -352,15 +352,27 @@ def _resize_image_inplace(file_field, max_size=480, quality=55):
 
 
 def _write_cover_thumb(gallery):
-    """Write media/gallery_thumbs/<pk>.jpg — small cover for the listing page."""
+    """Write media/gallery_thumbs/<pk>_<timestamp>.jpg — versioned so every
+    cache layer (browser, Cloudflare, Nginx) treats a new thumbnail as a new
+    resource without needing any cache-purge step."""
     import os as _os
+    import glob as _glob
+    import time as _time
     cover = gallery.cover_image
     if not cover:
         return
     try:
         thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
         _os.makedirs(thumb_dir, exist_ok=True)
-        thumb_path = _os.path.join(thumb_dir, f"{gallery.pk}.jpg")
+
+        # Remove all previous versioned thumbs for this gallery
+        for old in _glob.glob(_os.path.join(thumb_dir, f"{gallery.pk}_*.jpg")):
+            try:
+                _os.remove(old)
+            except OSError:
+                pass
+
+        thumb_path = _os.path.join(thumb_dir, f"{gallery.pk}_{int(_time.time())}.jpg")
         cover.open("rb")
         img = Image.open(cover)
         img = ImageOps.exif_transpose(img)
@@ -435,12 +447,15 @@ class Gallery(models.Model):
 
     @property
     def cover_thumb_url(self):
-        """Small (480px) thumbnail for the gallery listing page, no watermark."""
+        """Return the URL of the versioned cover thumbnail, or fall back to the
+        raw cover image URL if no pre-generated thumb exists yet."""
         import os as _os
-        thumb_rel = f"gallery_thumbs/{self.pk}.jpg"
-        thumb_path = _os.path.join(settings.MEDIA_ROOT, thumb_rel)
-        if _os.path.exists(thumb_path):
-            return settings.MEDIA_URL + thumb_rel
+        import glob as _glob
+        thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
+        matches = _glob.glob(_os.path.join(thumb_dir, f"{self.pk}_*.jpg"))
+        if matches:
+            filename = _os.path.basename(max(matches, key=_os.path.getmtime))
+            return f"{settings.MEDIA_URL}gallery_thumbs/{filename}"
         cover = self.cover_image
         return cover.url if cover else None
 
