@@ -269,11 +269,11 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
                 {% if selected_city.local_phone %}
                 <a class="button gl-hero-btn-alt mt-15" href="tel:{{ selected_city.local_phone }}">
-                     <span>Call {{ selected_city.formatted_phone }}</span>
-                 </a>
+                    <span>Call {{ selected_city.formatted_phone }}</span>
+                </a>
                 {% else %}
-                    <a href="tel:6506605101" class="button gl-hero-btn-alt mt-15">
-                    <span>Call 650 660 5101</span>
+                <a class="button gl-hero-btn-alt mt-15" href="tel:{{ company_toll_free }}">
+                    <span>Call {{ company_toll_free_display }}</span>
                 </a>
                 {% endif %}
 
@@ -324,8 +324,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
                     <span>Call {{ selected_city.formatted_phone }}</span>
                 </a>
                 {% else %}
-                <a href="{% url 'galleries' %}" class="button gl-hero-btn-alt mt-15">
-                    <span>View Gallery</span>
+                <a class="button gl-hero-btn-alt mt-15" href="tel:{{ company_toll_free }}">
+                    <span>Call {{ company_toll_free_display }}</span>
                 </a>
                 {% endif %}
             </div>
@@ -646,37 +646,5 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
         </div>
     </section>
 
-
-{% if not selected_city %}
-<script>
-(function () {
-  if (!navigator.geolocation) return;
-
-  // Don't ask again if user already dismissed or set manually
-  if (sessionStorage.getItem("gl_geo_asked")) return;
-  sessionStorage.setItem("gl_geo_asked", "1");
-
-  navigator.geolocation.getCurrentPosition(
-    function (pos) {
-      var data = new FormData();
-      data.append("lat", pos.coords.latitude);
-      data.append("lng", pos.coords.longitude);
-      data.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-
-      fetch("{% url 'set_location_by_coords' %}", { method: "POST", body: data })
-        .then(function (r) { return r.json(); })
-        .then(function (json) {
-          if (json.ok && json.slug) {
-            window.location.reload();
-          }
-        })
-        .catch(function () {});
-    },
-    function () {},  // user denied — do nothing
-    { timeout: 8000, maximumAge: 300000 }
-  );
-})();
-</script>
-{% endif %}
 
 {% endblock %}

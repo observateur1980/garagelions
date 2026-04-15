@@ -104,6 +104,9 @@ TWILIO_FROM_NUMBER = ""           # e.g. "+18005551234"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+COMPANY_TOLL_FREE = "+18554645119"
+COMPANY_TOLL_FREE_DISPLAY = "1-855-464-5119"
+
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]

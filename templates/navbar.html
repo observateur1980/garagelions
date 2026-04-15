@@ -481,7 +481,11 @@
 
         {% if selected_city.local_phone %}
         <a href="tel:{{ selected_city.local_phone }}">
-            <i class="fa fa-phone"></i>&nbsp; {{ selected_city.local_phone }}
+            <i class="fa fa-phone"></i>&nbsp; {{ selected_city.formatted_phone }}
+        </a>
+        {% else %}
+        <a href="tel:{{ company_toll_free }}">
+            <i class="fa fa-phone"></i>&nbsp; {{ company_toll_free_display }}
         </a>
         {% endif %}
 
@@ -508,7 +512,7 @@
 
                             <div class="mobile-nav-actions">
                                 <a class="mobile-call-link"
-                                   href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}+16506605101{% endif %}"
+                                   href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}{{ company_toll_free }}{% endif %}"
                                    aria-label="Call Garage Lions">
                                     <span>Call</span>
                                     <i class="fa fa-phone"></i>

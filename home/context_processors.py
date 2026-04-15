@@ -1,3 +1,4 @@
+from django.conf import settings
 from .models import SalesPoint, VideoReview
 
 
@@ -16,9 +17,8 @@ def selected_city(request):
     if slug:
         sales_point = SalesPoint.objects.filter(slug=slug, is_active=True).first()
 
-    all_cities = SalesPoint.objects.filter(is_active=True).order_by("order", "name")
-
     return {
-        "selected_city": sales_point,   # keep old template variable name so navbar keeps working
-        "all_cities": all_cities,       # keep old template variable name too
+        "selected_city": sales_point,
+        "company_toll_free": getattr(settings, "COMPANY_TOLL_FREE", "+18554645119"),
+        "company_toll_free_display": getattr(settings, "COMPANY_TOLL_FREE_DISPLAY", "1-855-464-5119"),
     }

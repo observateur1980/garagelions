@@ -31,15 +31,13 @@
             {% if selected_city.local_phone %}
                  <a class="pc-footer-cta-btn" href="tel:{{ selected_city.local_phone }}">
                   <i class="fa fa-phone"></i>
-                  <span>{{ selected_city.local_phone }}</span>
+                  <span>{{ selected_city.formatted_phone }}</span>
                 </a>
-
             {% else %}
-                 <a class="pc-footer-cta-btn" href="tel:6506605101">
+                 <a class="pc-footer-cta-btn" href="tel:{{ company_toll_free }}">
                   <i class="fa fa-phone"></i>
-                  <span>+1 650 660 5101</span>
+                  <span>{{ company_toll_free_display }}</span>
                 </a>
-
             {% endif %}
 
 
@@ -72,7 +70,7 @@
 
           <div class="pc-footer-meta">
             <div><i class="fa fa-map-marker"></i> 2074 Walsh Ave, Ste B · Santa Clara, CA 95050</div>
-            <div><i class="fa fa-phone"></i> <a href="tel:8554645119">+1 855 464 5119</a></div>
+            <div><i class="fa fa-phone"></i> <a href="tel:{{ company_toll_free }}">{{ company_toll_free_display }}</a></div>
           </div>
         </div>
       </div>
