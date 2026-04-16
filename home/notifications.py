@@ -119,6 +119,7 @@ def notify_new_lead_to_customer(lead):
             "List-Unsubscribe": f"<mailto:leads@garagelions.com?subject=unsubscribe>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             "X-Mailer": "Garage Lions CRM",
+            "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
         }
         msg.send(fail_silently=False)
     except Exception as exc:
@@ -293,6 +294,7 @@ def notify_new_lead_to_project_manager(lead):
             msg.extra_headers = {
                 "X-Mailer": "Garage Lions CRM",
                 "Precedence": "transactional",
+                "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
             }
             msg.send(fail_silently=False)
         except Exception as exc:
@@ -369,13 +371,17 @@ def notify_new_lead_to_project_manager(lead):
                     f"— Garage Lions CRM\n"
                 )
                 try:
-                    EmailMessage(
+                    mgr_msg = EmailMessage(
                         subject=mgr_subject,
                         body=mgr_body,
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         to=[mgr_email],
                         reply_to=[lead.email] if lead.email else [],
-                    ).send(fail_silently=False)
+                    )
+                    mgr_msg.extra_headers = {
+                        "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
+                    }
+                    mgr_msg.send(fail_silently=False)
 
                     mgr_phone = getattr(mgr_profile, 'display_phone', None) if mgr_profile else None
                     if getattr(mgr_profile, 'notify_new_lead_sms', False) and mgr_phone:
@@ -461,6 +467,9 @@ def notify_new_lead_to_location(lead, attachment_names=None):
             to=[recipient],
             reply_to=reply_to,
         )
+        msg.extra_headers = {
+            "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
+        }
         msg.send(fail_silently=False)
     except Exception as exc:
         logger.error("Location notification email failed for lead #%s: %s", lead.pk, exc)
@@ -506,13 +515,17 @@ def notify_lead_reassigned(lead, new_user):
             f"— Garage Lions CRM\n"
         )
         try:
-            EmailMessage(
+            reassign_msg = EmailMessage(
                 subject=subject,
                 body=body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[pm_email],
                 reply_to=[lead.email] if lead.email else [],
-            ).send(fail_silently=False)
+            )
+            reassign_msg.extra_headers = {
+                "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
+            }
+            reassign_msg.send(fail_silently=False)
         except Exception as exc:
             logger.error("Reassignment email failed for lead #%s: %s", lead.pk, exc)
 
