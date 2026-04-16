@@ -152,7 +152,7 @@ def notify_new_lead_to_project_manager(lead):
     services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
     location_text = str(lead.sales_point) if lead.sales_point else "Not matched"
     city_text = str(lead.service_city) if lead.service_city else "Not matched"
-    crm_url = f"https://garagelions.com/sales/leads/{lead.pk}/"
+    crm_url = f"{settings.SITE_URL}/sales/leads/{lead.pk}/"
 
     # ── Email ──
     if send_email and pm_email:
@@ -489,7 +489,7 @@ def notify_lead_reassigned(lead, new_user):
     pm_phone = getattr(profile, "display_phone", None) if profile else None
 
     services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
-    crm_url = f"https://garagelions.com/sales/leads/{lead.pk}/"
+    crm_url = f"{settings.SITE_URL}/sales/leads/{lead.pk}/"
 
     if send_email and pm_email:
         subject = f"Lead Reassigned to You: {lead.first_name} {lead.last_name}"

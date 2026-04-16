@@ -20,8 +20,9 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [
     "garagelions.com",
     "www.garagelions.com",
-
 ]
+
+SITE_URL = "https://garagelions.com"
 
 # ----------------------------------------------------------------------
 # Database:
