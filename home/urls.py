@@ -14,6 +14,7 @@ urlpatterns = [
     path('about/', views.About.as_view(), name='about'),
     path('videoreviews/', views.videoreviews, name='videoreviews'),
 
+    path('design-center/', views.cabinet_designer, name='cabinet_designer'),
     path('consultation/', views.create_lead, name='create_lead'),
     path('consultation/success/', views.create_lead_success, name='create_lead_success'),
 

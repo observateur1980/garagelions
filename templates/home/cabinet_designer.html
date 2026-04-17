@@ -1,0 +1,1152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block seo_title %}Design Center | Garage Cabinet Designer | Garage Lions{% endblock %}
+{% block seo_description %}Design your garage cabinet system visually. Place cabinets on all three walls and get a free custom estimate from Garage Lions.{% endblock %}
+
+{% block extra_head %}
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/",
+    "vue":           "https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.esm-browser.prod.js"
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Light mode base ── */
+.dc-page{margin-top:90px;background:#eef0f4;min-height:calc(100vh - 90px);display:flex;flex-direction:column;font-family:Arial,sans-serif;color:#1a1a2a}
+
+/* ── Topbar ── */
+.dc-topbar{background:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e0e4ea;flex-shrink:0;flex-wrap:wrap;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.dc-topbar-left h2{color:#1a1a2a;font-size:14px;font-weight:700;margin-bottom:1px}
+.dc-topbar-left p{color:#888;font-size:10px}
+.dc-topbar-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.view-btns{display:flex;gap:4px}
+.view-btn{background:#f0f2f5;border:1px solid #dde1e7;color:#555;font-size:11px;padding:5px 10px;border-radius:5px;cursor:pointer;transition:all .15s}
+.view-btn:hover,.view-btn.active{background:#c64d1e;border-color:#c64d1e;color:#fff}
+.dc-colors{display:flex;gap:5px;align-items:center}
+.dc-colors label{color:#888;font-size:10px;margin-right:2px}
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.color-swatch:hover{transform:scale(1.2)}
+.color-swatch.active{border-color:#1a1a2a;transform:scale(1.2)}
+
+/* ── Layout ── */
+.dc-main{flex:1;display:flex;overflow:hidden;min-height:0}
+.dc-panel{width:215px;flex-shrink:0;background:#fff;border-right:1px solid #e0e4ea;display:flex;flex-direction:column;overflow-y:auto;box-shadow:2px 0 6px rgba(0,0,0,.04)}
+.dc-panel-section{padding:10px;border-bottom:1px solid #f0f2f5}
+.dc-panel-section h4{color:#aaa;font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+
+/* ── Size inputs ── */
+.size-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.size-grid-full{grid-column:1/-1}
+.size-field label{display:block;font-size:9px;color:#888;margin-bottom:3px}
+.size-field input{width:100%;background:#f5f6f8;border:1px solid #dde1e7;color:#1a1a2a;font-size:12px;font-weight:600;padding:5px 7px;border-radius:5px;outline:none;-moz-appearance:textfield}
+.size-field input::-webkit-inner-spin-button,.size-field input::-webkit-outer-spin-button{-webkit-appearance:none}
+.size-field input:focus{border-color:#c64d1e}
+.size-field .unit{font-size:9px;color:#bbb;display:block;text-align:right;margin-top:2px}
+.size-dims{font-size:10px;color:#aaa;text-align:center;margin-bottom:7px}
+.size-dims span{color:#555;font-weight:600}
+.apply-btn{width:100%;background:#c64d1e;border:none;color:#fff;font-size:11px;font-weight:700;padding:7px;border-radius:5px;cursor:pointer;transition:background .15s}
+.apply-btn:hover{background:#e05a28}
+.size-warn{font-size:9px;color:#e05a28;margin-top:5px;text-align:center}
+
+/* ── Wall visibility ── */
+.wall-vis-row{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.vis-btn{background:#f0f2f5;border:1px solid #dde1e7;color:#555;font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:3px;transition:all .15s}
+.vis-btn:hover{background:#e6e9ee;border-color:#c0c7d0}
+.vis-btn.dim{background:#fff8e6;border-color:#f0d080;color:#b08000}
+
+/* ── Paint ── */
+.paint-surfaces{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px}
+.psb{background:#f5f6f8;border:1px solid #dde1e7;color:#666;font-size:9px;padding:5px 3px;border-radius:5px;cursor:pointer;text-align:center;transition:all .15s;line-height:1.3}
+.psb:hover{background:#ebedf0;color:#333}
+.psb.active{border-color:#c64d1e;color:#c64d1e;background:#fff3ef}
+.psb .dot{display:block;width:14px;height:14px;border-radius:50%;margin:0 auto 3px;border:1px solid #ccc;box-shadow:inset 0 1px 2px rgba(0,0,0,.1)}
+.paint-swatches{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.paint-swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:2px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .12s,border-color .12s}
+.paint-swatch:hover{transform:scale(1.2)}
+.paint-swatch.active{border-color:#1a1a2a;transform:scale(1.2)}
+.paint-custom{display:flex;align-items:center;gap:6px;margin-top:4px}
+.paint-custom label{font-size:9px;color:#999;white-space:nowrap}
+.paint-custom input[type=color]{width:28px;height:24px;border:1px solid #dde1e7;border-radius:4px;background:none;cursor:pointer;padding:1px}
+.paint-custom span{font-size:9px;color:#aaa}
+
+/* ── Cabinet cards ── */
+.cab-card{background:#f5f6f8;border:1px solid #e0e4ea;border-radius:7px;padding:8px;margin-bottom:6px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
+.cab-card:hover{background:#ebedf0;border-color:#c8cdd6}
+.cab-card.active{background:#fff3ef;border-color:#c64d1e}
+.cab-icon{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cab-icon svg{width:100%;height:100%}
+.cab-info strong{color:#1a1a2a;font-size:11px;display:block}
+.cab-info span{color:#999;font-size:9px}
+.cab-section-divider{font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:1px;margin:6px 0 4px;padding-left:2px}
+
+/* ── Door color ── */
+.door-color-ctrl{background:#f5f6f8;border:1px solid #e0e4ea;border-radius:6px;padding:8px;margin-top:2px}
+.door-color-ctrl label{display:block;font-size:9px;color:#888;margin-bottom:6px}
+.door-swatches{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.door-swatch{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .12s,border-color .12s}
+.door-swatch:hover{transform:scale(1.2)}
+.door-swatch.active{border-color:#1a1a2a;transform:scale(1.2)}
+.door-custom-row{display:flex;align-items:center;gap:5px}
+.door-custom-row label{font-size:9px;color:#aaa}
+.door-custom-row input[type=color]{width:24px;height:22px;border:1px solid #dde1e7;border-radius:3px;padding:1px;cursor:pointer}
+
+/* ── Wall cabinet height ── */
+.mount-height-ctrl{background:#f5f6f8;border:1px solid #e0e4ea;border-radius:6px;padding:8px;margin-top:2px}
+.mount-height-ctrl label{display:block;font-size:9px;color:#888;margin-bottom:4px}
+.mount-height-ctrl input[type=range]{width:100%;accent-color:#c64d1e;margin-bottom:3px}
+.mount-height-ctrl .mh-val{font-size:10px;color:#c64d1e;font-weight:700;text-align:center}
+
+/* ── Countertop material ── */
+.countertop-ctrl{background:#f5f6f8;border:1px solid #e0e4ea;border-radius:6px;padding:8px;margin-top:4px}
+.mat-btns{display:flex;gap:4px;margin-bottom:7px}
+.mat-btn{flex:1;background:#ebedf0;border:1px solid #dde1e7;color:#555;font-size:10px;font-weight:600;padding:4px 6px;border-radius:4px;cursor:pointer;transition:all .15s;text-align:center}
+.mat-btn:hover{background:#e0e4ea}
+.mat-btn.active{background:#c64d1e;border-color:#c64d1e;color:#fff}
+
+/* ── Hint ── */
+.dc-hint{padding:10px;color:#aaa;font-size:10px;line-height:1.5}
+.dc-hint b{color:#777}
+
+/* ── Viewport ── */
+.dc-viewport{flex:1;position:relative;overflow:hidden;background:#cfd4db}
+#threeCanvas{display:block;width:100%!important;height:100%!important;cursor:grab}
+#threeCanvas:active{cursor:grabbing}
+.cab-tooltip{position:absolute;background:rgba(30,30,40,.85);color:#fff;font-size:11px;padding:4px 10px;border-radius:4px;pointer-events:none;z-index:10;white-space:nowrap}
+
+/* ── Bottom bar ── */
+.dc-bottombar{background:#fff;border-top:1px solid #e0e4ea;padding:8px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex-shrink:0;box-shadow:0 -1px 4px rgba(0,0,0,.04)}
+.dc-summary{display:flex;gap:12px;flex-wrap:wrap;flex:1}
+.dc-wall-stat{font-size:10px;color:#888}
+.dc-wall-stat strong{color:#333;font-size:11px}
+.dc-total{font-size:12px;color:#c64d1e;font-weight:700}
+.dc-clear-btn{background:#f0f2f5;border:1px solid #dde1e7;color:#666;font-size:11px;padding:5px 12px;border-radius:5px;cursor:pointer;transition:all .15s}
+.dc-clear-btn:hover{background:#fde8e4;border-color:#f0a090;color:#c64d1e}
+.dc-estimate-btn{background:#c64d1e;border:none;color:#fff;font-size:12px;font-weight:700;padding:8px 18px;border-radius:6px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.dc-estimate-btn:hover{background:#e05a28}
+
+/* ── Modal ── */
+.dc-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center}
+.dc-modal-overlay.open{display:flex}
+.dc-modal{background:#fff;border:1px solid #e0e4ea;border-radius:12px;padding:28px;width:90%;max-width:480px;position:relative;color:#1a1a2a;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.dc-modal h3{margin:0 0 6px;font-size:18px;color:#1a1a2a}
+.dc-modal>p{color:#888;font-size:12px;margin:0 0 16px}
+.dc-modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#bbb;font-size:18px;cursor:pointer}
+.dc-modal-close:hover{color:#555}
+.design-summary-box{background:#f5f6f8;border:1px solid #e0e4ea;border-radius:6px;padding:10px 12px;font-size:11px;color:#555;margin-bottom:14px;line-height:1.6;max-height:120px;overflow-y:auto;white-space:pre-wrap}
+.dc-form-row{margin-bottom:10px}
+.dc-form-row label{display:block;font-size:11px;color:#777;margin-bottom:4px}
+.dc-form-row input{width:100%;background:#f5f6f8;border:1px solid #dde1e7;color:#1a1a2a;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;transition:border-color .15s}
+.dc-form-row input:focus{border-color:#c64d1e;background:#fff}
+.dc-form-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dc-submit-btn{width:100%;background:#c64d1e;border:none;color:#fff;font-size:14px;font-weight:700;padding:11px;border-radius:7px;cursor:pointer;transition:background .15s;margin-top:4px}
+.dc-submit-btn:hover{background:#e05a28}
+.form-msg{font-size:12px;text-align:center;margin-top:8px;min-height:16px}
+.form-msg.err{color:#dc2626}
+.form-msg.ok{color:#16a34a}
+
+/* ── Blueprint overlay ── */
+.bp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:1100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.bp-overlay.open{display:flex}
+.bp-wrap{background:#fff;border-radius:10px;padding:16px;max-width:95vw;max-height:90vh;overflow:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.bp-wrap canvas{display:block;max-width:100%;height:auto}
+.bp-bar{display:flex;gap:8px;margin-top:10px;justify-content:center}
+.bp-bar button{padding:8px 18px;border-radius:6px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
+.bp-download{background:#c64d1e;color:#fff}.bp-download:hover{background:#e05a28}
+.bp-close{background:#f0f2f5;color:#555;border:1px solid #dde1e7!important}.bp-close:hover{background:#e6e9ee}
+
+@media(max-width:768px){.dc-panel{width:175px}}
+@media(max-width:540px){
+  .dc-main{flex-direction:column}
+  .dc-panel{width:100%;flex-direction:row;overflow-x:auto;max-height:120px;border-right:none;border-bottom:1px solid #e0e4ea}
+  .dc-panel-section{display:flex;flex-direction:row;gap:6px;border-bottom:none;padding:6px;min-width:max-content}
+  .dc-panel-section:first-child{display:block;min-width:200px}
+  .dc-panel-section h4,.dc-hint{display:none}
+  .cab-card{flex-direction:column;width:70px;flex-shrink:0;text-align:center;padding:6px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="dc-app" class="dc-page">
+
+  <!-- ── Topbar ── -->
+  <div class="dc-topbar">
+    <div class="dc-topbar-left">
+      <h2>Garage Design Center</h2>
+      <p>Set size · paint walls · place cabinets, doors &amp; lights · drag to orbit</p>
+    </div>
+    <div class="dc-topbar-actions">
+      <div class="view-btns">
+        <button v-for="v in VIEW_PRESETS" :key="v.id"
+                class="view-btn" :class="{active:activeView===v.id}"
+                @click="setView(v.id)">[[ v.label ]]</button>
+      </div>
+      <div class="dc-colors">
+        <label>Cabinet:</label>
+        <span v-for="hex in CAB_COLORS" :key="hex"
+              class="color-swatch" :class="{active:cabinetColor===hex}"
+              :style="{background:hex}" :title="hex"
+              @click="setCabColor(hex)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="dc-main">
+
+    <!-- Left panel -->
+    <div class="dc-panel">
+
+      <!-- Garage Size & Visibility -->
+      <div class="dc-panel-section">
+        <h4>Garage Size</h4>
+        <div class="size-grid">
+          <div class="size-field">
+            <label>Width (ft)</label>
+            <input type="number" v-model.number="ri.w" min="8" max="60" step="1">
+            <span class="unit">left ↔ right</span>
+          </div>
+          <div class="size-field">
+            <label>Depth (ft)</label>
+            <input type="number" v-model.number="ri.d" min="8" max="60" step="1">
+            <span class="unit">front ↔ back</span>
+          </div>
+          <div class="size-field size-grid-full">
+            <label>Wall Height (ft)</label>
+            <input type="number" v-model.number="ri.h" min="7" max="20" step="0.5">
+            <span class="unit">floor to ceiling</span>
+          </div>
+        </div>
+        <div class="size-dims"><span>[[ ri.w ]] × [[ ri.d ]] × [[ ri.h ]] ft</span></div>
+        <button class="apply-btn" @click="applySize">Apply Size</button>
+        <div class="size-warn" v-if="sizeError">[[ sizeError ]]</div>
+        <!-- Wall / ceiling visibility -->
+        <div class="wall-vis-row">
+          <button v-for="id in TOGGLE_IDS" :key="id"
+                  class="vis-btn" :class="{dim:!wallVis[id]}"
+                  @click="toggleWall(id)">
+            [[ wallVis[id] ? '👁' : '🚫' ]] [[ id ]]
+          </button>
+        </div>
+      </div>
+
+      <!-- Room Paint -->
+      <div class="dc-panel-section">
+        <h4>Room Paint</h4>
+        <div class="paint-surfaces">
+          <button v-for="s in SURFACES" :key="s.id"
+                  class="psb" :class="{active:paintSurface===s.id}"
+                  @click="paintSurface=s.id">
+            <span class="dot" :style="{background:sc[s.id]}"></span>[[ s.label ]]
+          </button>
+        </div>
+        <div class="paint-swatches">
+          <span v-for="hex in PAINT_PRESETS" :key="hex"
+                class="paint-swatch" :class="{active:sc[paintSurface]===hex}"
+                :style="{background:hex}" :title="hex"
+                @click="setPaint(hex)"></span>
+        </div>
+        <div class="paint-custom">
+          <label>Custom:</label>
+          <input type="color" :value="sc[paintSurface]" @input="setPaint($event.target.value)">
+          <span>[[ sc[paintSurface] ]]</span>
+        </div>
+      </div>
+
+      <!-- Cabinets & Items -->
+      <div class="dc-panel-section">
+        <h4>Cabinets &amp; Items</h4>
+
+        <div class="cab-section-divider">Cabinets</div>
+        <div v-for="cab in CAB_TYPES.filter(c=>c.cat==='cabinet')" :key="cab.id"
+             class="cab-card" :class="{active:selectedType===cab.id}"
+             @click="selectedType=cab.id">
+          <div class="cab-icon" v-html="cab.icon"></div>
+          <div class="cab-info"><strong>[[ cab.label ]]</strong><span>[[ cab.dims ]]</span></div>
+        </div>
+
+        <!-- Wall cabinet mount height -->
+        <div class="mount-height-ctrl" v-if="selectedType==='wall'">
+          <label>Mount height from floor</label>
+          <input type="range" v-model.number="wallCabH" min="1" max="7.5" step="0.25">
+          <div class="mh-val">[[ wallCabH ]] ft ([[ (wallCabH*12).toFixed(0) ]]")</div>
+        </div>
+
+        <!-- Countertop material (base / bench / drawer) -->
+        <div class="countertop-ctrl" v-if="selectedType==='base'||selectedType==='bench'||selectedType==='drawer'">
+          <h4 style="color:#aaa;font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Countertop</h4>
+          <div class="mat-btns">
+            <button v-for="m in CT_MATERIALS" :key="m.id"
+                    class="mat-btn" :class="{active:ctMaterial===m.id}"
+                    @click="setCtMaterial(m.id)">[[ m.label ]]</button>
+          </div>
+          <div style="font-size:9px;color:#aaa;text-align:center">[[ CT_MATERIALS.find(m=>m.id===ctMaterial)?.desc ]]</div>
+        </div>
+
+        <div class="cab-section-divider" style="margin-top:8px">Doors</div>
+        <div v-for="cab in CAB_TYPES.filter(c=>c.cat==='door')" :key="cab.id"
+             class="cab-card" :class="{active:selectedType===cab.id}"
+             @click="selectedType=cab.id">
+          <div class="cab-icon" v-html="cab.icon"></div>
+          <div class="cab-info"><strong>[[ cab.label ]]</strong><span>[[ cab.dims ]]</span></div>
+        </div>
+
+        <!-- Door color picker -->
+        <div class="door-color-ctrl" v-if="selectedType==='door'">
+          <label>Door color</label>
+          <div class="door-swatches">
+            <span v-for="hex in DOOR_COLORS" :key="hex"
+                  class="door-swatch" :class="{active:doorColor===hex}"
+                  :style="{background:hex}" :title="hex"
+                  @click="setDoorColor(hex)"></span>
+          </div>
+          <div class="door-custom-row">
+            <label>Custom:</label>
+            <input type="color" :value="doorColor" @input="setDoorColor($event.target.value)">
+            <span style="font-size:9px;color:#aaa">[[ doorColor ]]</span>
+          </div>
+        </div>
+
+        <div class="cab-section-divider" style="margin-top:8px">Ceiling Lights</div>
+        <div v-for="cab in CAB_TYPES.filter(c=>c.cat==='light')" :key="cab.id"
+             class="cab-card" :class="{active:selectedType===cab.id}"
+             @click="selectedType=cab.id">
+          <div class="cab-icon" v-html="cab.icon"></div>
+          <div class="cab-info"><strong>[[ cab.label ]]</strong><span>[[ cab.dims ]]</span></div>
+        </div>
+        <div style="font-size:9px;color:#bbb;margin-top:4px;padding:0 2px" v-if="selectedType==='light_recessed'||selectedType==='light_strip'">
+          💡 Switch to <b>Top</b> view then click the ceiling to place.
+        </div>
+      </div>
+
+      <div class="dc-hint">
+        <b>How to use:</b><br>
+        1. Set garage size &amp; Apply<br>
+        2. Toggle visibility (👁 buttons)<br>
+        3. Paint surfaces<br>
+        4. Pick a cabinet, door or light<br>
+        5. Hover a wall → ghost preview<br>
+        6. Click to place · click to remove<br>
+        7. Cabinets snap to a 6″ grid<br><br>
+        <b>Navigate:</b><br>
+        • Left drag = orbit<br>
+        • Right drag = pan<br>
+        • Scroll = zoom<br>
+        • Top view for ceiling lights<br>
+        • Ctrl+Z = undo last placement
+      </div>
+    </div>
+
+    <!-- 3D Viewport -->
+    <div class="dc-viewport">
+      <canvas ref="canvas3d" id="threeCanvas"></canvas>
+      <div v-if="tooltipText" class="cab-tooltip" :style="tooltipStyle">[[ tooltipText ]]</div>
+    </div>
+
+  </div>
+
+  <!-- ── Bottom bar ── -->
+  <div class="dc-bottombar">
+    <div class="dc-summary">
+      <template v-if="summary.walls.length">
+        <span v-for="ws in summary.walls" :key="ws.id" class="dc-wall-stat">
+          <strong>[[ ws.label ]]</strong>: [[ ws.detail ]] ([[ ws.lf.toFixed(1) ]] lf)
+        </span>
+        <span class="dc-total">Total: [[ summary.totalLf.toFixed(1) ]] linear ft</span>
+      </template>
+      <span v-else class="dc-wall-stat">No cabinets placed yet.</span>
+    </div>
+    <button class="dc-clear-btn" @click="undo" title="Ctrl+Z">Undo</button>
+    <button class="dc-clear-btn" @click="clearAll">Clear All</button>
+    <button class="dc-clear-btn" @click="openBlueprint" style="background:#1a3a5c;color:#fff;border-color:#1a3a5c">Blueprint</button>
+    <button class="dc-estimate-btn" @click="showModal=true">Get Free Estimate →</button>
+  </div>
+
+  <!-- ── Modal ── -->
+  <div class="dc-modal-overlay" :class="{open:showModal}" @click.self="showModal=false">
+    <div class="dc-modal">
+      <button class="dc-modal-close" @click="showModal=false">✕</button>
+      <h3>Get Your Free Estimate</h3>
+      <p>We'll review your design and send you a detailed quote.</p>
+      <div class="design-summary-box">[[ summaryText ]]</div>
+      <form @submit.prevent="submitEstimate">
+        {% csrf_token %}
+        <div class="dc-form-2col">
+          <div class="dc-form-row"><label>First Name *</label><input type="text" v-model="fm.first" placeholder="John" required></div>
+          <div class="dc-form-row"><label>Last Name *</label><input type="text" v-model="fm.last" placeholder="Smith" required></div>
+        </div>
+        <div class="dc-form-row"><label>Email *</label><input type="email" v-model="fm.email" placeholder="john@example.com" required></div>
+        <div class="dc-form-2col">
+          <div class="dc-form-row"><label>Phone</label><input type="tel" v-model="fm.phone" placeholder="(555) 000-0000"></div>
+          <div class="dc-form-row"><label>ZIP Code</label><input type="text" v-model="fm.zip" placeholder="95050" maxlength="10"></div>
+        </div>
+        <button type="submit" class="dc-submit-btn">Send My Design &amp; Request Estimate</button>
+        <div class="form-msg" :class="fmsg.type">[[ fmsg.text ]]</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Blueprint overlay ── -->
+  <div class="bp-overlay" :class="{open:showBP}" @click.self="showBP=false">
+    <div class="bp-wrap">
+      <canvas ref="bpCanvas" id="bpCanvas"></canvas>
+      <div class="bp-bar">
+        <button class="bp-download" @click="downloadBP">Download PNG</button>
+        <button class="bp-close" @click="showBP=false">Close</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #dc-app -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="module">
+import { createApp, ref, reactive, computed, onMounted, watch } from 'vue';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const CAB_TYPES = [
+  // Cabinets
+  { id:'base',   cat:'cabinet', label:'Base Cabinet', dims:'36"W×34.5"H×24"D', w:3,     h:2.875, d:2,    lf:3,   mountable:false, ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="3" y="10" width="30" height="23" rx="1" fill="#c64d1e" opacity=".85"/><rect x="3" y="10" width="30" height="4" rx="1" fill="#e05a28"/><line x1="18" y1="14" x2="18" y2="33" stroke="rgba(0,0,0,.2)" stroke-width="1"/><rect x="14" y="20" width="4" height="2" rx="1" fill="rgba(0,0,0,.3)"/><rect x="18" y="20" width="4" height="2" rx="1" fill="rgba(0,0,0,.3)"/></svg>` },
+  { id:'wall',   cat:'cabinet', label:'Wall Cabinet',  dims:'30"W×30"H×12"D',   w:2.5,   h:2.5,   d:1,    lf:2.5, mountable:true,  ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="3" y="3" width="30" height="18" rx="1" fill="#c64d1e" opacity=".85"/><rect x="3" y="3" width="30" height="3" rx="1" fill="#e05a28"/><line x1="18" y1="6" x2="18" y2="21" stroke="rgba(0,0,0,.2)" stroke-width="1"/><rect x="14" y="11" width="4" height="2" rx="1" fill="rgba(0,0,0,.3)"/><rect x="18" y="11" width="4" height="2" rx="1" fill="rgba(0,0,0,.3)"/></svg>` },
+  { id:'tall',   cat:'cabinet', label:'Tall Cabinet',  dims:'24"W×84"H×24"D',   w:2,     h:7,     d:2,    lf:2,   mountable:false, ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="9" y="2" width="18" height="32" rx="1" fill="#c64d1e" opacity=".85"/><rect x="9" y="2" width="18" height="3" rx="1" fill="#e05a28"/><rect x="15" y="17" width="6" height="2" rx="1" fill="rgba(0,0,0,.3)"/></svg>` },
+  { id:'bench',  cat:'cabinet', label:'Workbench',     dims:'48"W×36"H×30"D',   w:4,     h:3,     d:2.5,  lf:4,   mountable:false, ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="2" y="8" width="32" height="22" rx="1" fill="#c64d1e" opacity=".85"/><rect x="2" y="8" width="32" height="5" rx="1" fill="#e05a28"/><rect x="2" y="13" width="32" height="2" fill="rgba(0,0,0,.15)"/></svg>` },
+  { id:'drawer', cat:'cabinet', label:'Drawer Unit',   dims:'24"W×34.5"H×24"D', w:2,     h:2.875, d:2,    lf:2,   mountable:false, ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="3" y="5" width="30" height="26" rx="1" fill="#c64d1e" opacity=".85"/><rect x="3" y="5" width="30" height="3" rx="1" fill="#e05a28"/><rect x="3" y="11" width="30" height="1" fill="rgba(0,0,0,.2)"/><rect x="3" y="17" width="30" height="1" fill="rgba(0,0,0,.2)"/><rect x="3" y="23" width="30" height="1" fill="rgba(0,0,0,.2)"/><rect x="14" y="8" width="8" height="1.5" rx=".75" fill="rgba(0,0,0,.3)"/><rect x="14" y="14" width="8" height="1.5" rx=".75" fill="rgba(0,0,0,.3)"/><rect x="14" y="20" width="8" height="1.5" rx=".75" fill="rgba(0,0,0,.3)"/></svg>` },
+  // Door
+  { id:'door',   cat:'door',    label:'Side Door',     dims:'32"W×80"H',        w:2.667, h:6.667, d:0.18, lf:0,   mountable:false, ceiling:false,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="8" y="2" width="20" height="32" rx="1" fill="#bbb" opacity=".9"/><rect x="8" y="2" width="20" height="2.5" rx="1" fill="#999"/><rect x="8" y="31.5" width="20" height="2.5" rx="1" fill="#999"/><rect x="24" y="16" width="3" height="2.5" rx="1" fill="#888"/></svg>` },
+  // Lights
+  { id:'light_recessed', cat:'light', label:'Recessed Light', dims:'6" downlight', w:0.5,  h:0.08, d:0.5,  lf:0,   mountable:false, ceiling:true,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="12" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/><circle cx="18" cy="18" r="7" fill="#e8e8ff"/><circle cx="18" cy="18" r="3" fill="#ffffff"/></svg>` },
+  { id:'light_strip',    cat:'light', label:'LED Strip',      dims:'Full width',   w:0,    h:0.06, d:0.08, lf:0,   mountable:false, ceiling:true,
+    icon:`<svg viewBox="0 0 36 36" fill="none"><rect x="2" y="14" width="32" height="8" rx="3" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/><rect x="4" y="16" width="28" height="4" rx="2" fill="#ffffaa"/><circle cx="9" cy="18" r="2" fill="#ffffff"/><circle cx="18" cy="18" r="2" fill="#ffffff"/><circle cx="27" cy="18" r="2" fill="#ffffff"/></svg>` },
+];
+
+const SURFACES    = [{id:'back',label:'Back'},{id:'left',label:'Left'},{id:'right',label:'Right'},{id:'ceil',label:'Ceiling'},{id:'floor',label:'Floor'}];
+const TOGGLE_IDS  = ['back','left','right','ceil'];
+const PAINT_PRESETS=['#ffffff','#f5f0e8','#e8e0d0','#d6cfc4','#c8c8c8','#9a9a9a','#6e7a8a','#4a5568','#2d3748','#c8b89a','#a0856a','#5a3e28','#3a3a4a','#1a1a2a'];
+const CAB_COLORS  = ['#e8e0d0','#c8b89a','#7a7a7a','#3a3a4a','#5a3e28','#c64d1e'];
+const DOOR_COLORS = ['#ffffff','#f0ece4','#d6d0c4','#a09080','#7a6050','#5a4030','#3a2a1a','#2c3e50','#c64d1e','#2d6a4f'];
+const VIEW_PRESETS= [{id:'persp',label:'3D'},{id:'top',label:'Top'},{id:'back',label:'Back'},{id:'left',label:'Left'},{id:'right',label:'Right'}];
+const CT_MATERIALS = [
+  {id:'wood',   label:'Wood',    desc:'Butcher-block hardwood top',     color:'#b5895a',specular:0.15},
+  {id:'granite',label:'Granite', desc:'Polished granite surface',       color:'#4a4a52',specular:0.6},
+  {id:'steel',  label:'Steel',   desc:'Brushed stainless steel top',    color:'#b8bcc0',specular:0.8},
+  {id:'none',   label:'None',    desc:'No countertop',                  color:null,     specular:0},
+];
+const SNAP = 0.5; // 6-inch grid snap
+
+// ── GarageScene ────────────────────────────────────────────────────────────
+class GarageScene {
+  constructor(canvas, onChanged, onTooltip) {
+    this.canvas    = canvas;
+    this.onChanged = onChanged;
+    this.onTooltip = onTooltip;
+    this.dims      = {w:20,d:20,h:8};
+    this.surfMesh  = {};
+    this.hitMeshes = [];
+    this.placed    = [];
+    this.nextId    = 1;
+    this.activeType= 'base';
+    this.activeCol = '#e8e0d0';
+    this.doorColor = '#ffffff';
+    this.wallCabH  = 4.5;
+    this.ctMaterial= 'wood';
+    this._lerp     = null;
+    this._mdown    = null;
+    this._roomGrp  = null;
+
+    this._initRenderer();
+    this._initLights();
+    this._buildRoom({w:20,d:20,h:8},{back:'#ffffff',left:'#ffffff',right:'#ffffff',ceil:'#ffffff',floor:'#d0cec8'});
+    this.ghostGrp = new THREE.Group();
+    this.scene.add(this.ghostGrp);
+    this._initEvents();
+    this._loop();
+    window.addEventListener('resize',()=>this._resize());
+    this._resize();
+  }
+
+  _initRenderer(){
+    this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true});
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    this.renderer.shadowMap.enabled=true;
+    this.renderer.setClearColor(0xcfd4db);
+    this.scene=new THREE.Scene();
+    this.scene.fog=new THREE.Fog(0xcfd4db,40,80);
+    this.camera=new THREE.PerspectiveCamera(50,1,0.1,200);
+    this.camera.position.set(22,-1,28);
+    this.ctrl=new OrbitControls(this.camera,this.canvas);
+    this.ctrl.enableDamping=true; this.ctrl.dampingFactor=0.08;
+    this.ctrl.minDistance=3; this.ctrl.maxDistance=60;
+    this.ctrl.maxPolarAngle=Math.PI/1.8;
+    this.ctrl.target.set(0,3.5,0); this.ctrl.update();
+  }
+
+  _initLights(){
+    this.scene.add(new THREE.AmbientLight(0xffffff,0.45));
+    const sun=new THREE.DirectionalLight(0xfff8f0,0.6);
+    sun.position.set(12,22,14); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+    this.scene.add(sun);
+    const fill=new THREE.DirectionalLight(0xd0e8ff,0.25);
+    fill.position.set(-8,8,-8); this.scene.add(fill);
+  }
+
+  _disp(o){if(o.geometry)o.geometry.dispose();if(o.material)[o.material].flat().forEach(m=>m.dispose());}
+
+  _clearRoom(){
+    if(this._roomGrp){this._roomGrp.traverse(o=>{if(o!==this._roomGrp)this._disp(o);});this.scene.remove(this._roomGrp);this._roomGrp=null;}
+    this.hitMeshes.forEach(m=>{this.scene.remove(m);this._disp(m);}); this.hitMeshes=[]; this.surfMesh={};
+  }
+
+  _buildRoom(dims,sc){
+    this.dims={...dims};
+    this._roomGrp=new THREE.Group(); this.scene.add(this._roomGrp);
+    const{w,d,h}=dims,hw=w/2,hd=d/2,DS=THREE.DoubleSide;
+    const mat=c=>new THREE.MeshLambertMaterial({color:new THREE.Color(c),side:DS});
+
+    // Floor
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(sc.floor));
+    floor.rotation.x=-Math.PI/2; floor.receiveShadow=true;
+    this._roomGrp.add(floor); this.surfMesh.floor=floor;
+
+    // Grid
+    const grid=new THREE.GridHelper(Math.max(w,d)*1.1,20,0x00000025,0x00000012);
+    grid.position.y=0.02; this._roomGrp.add(grid);
+
+    // Ceiling
+    const ceil=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(sc.ceil));
+    ceil.rotation.x=Math.PI/2; ceil.position.y=h; ceil.receiveShadow=true;
+    this._roomGrp.add(ceil); this.surfMesh.ceil=ceil;
+
+    // Walls
+    const back=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat(sc.back));
+    back.position.set(0,h/2,-hd); back.receiveShadow=true; this._roomGrp.add(back); this.surfMesh.back=back;
+
+    const left=new THREE.Mesh(new THREE.PlaneGeometry(d,h),mat(sc.left));
+    left.position.set(-hw,h/2,0); left.rotation.y=-Math.PI/2; left.receiveShadow=true;
+    this._roomGrp.add(left); this.surfMesh.left=left;
+
+    const right=new THREE.Mesh(new THREE.PlaneGeometry(d,h),mat(sc.right));
+    right.position.set(hw,h/2,0); right.rotation.y=Math.PI/2; right.receiveShadow=true;
+    this._roomGrp.add(right); this.surfMesh.right=right;
+
+    // Edge lines
+    const lm=new THREE.LineBasicMaterial({color:0x8899aa});
+    const addLine=pts=>{const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(...p)));this._roomGrp.add(new THREE.Line(g,lm));};
+    addLine([[-hw,0,-hd],[hw,0,-hd],[hw,0,hd],[-hw,0,hd],[-hw,0,-hd]]);
+    addLine([[-hw,h,-hd],[hw,h,-hd],[hw,h,hd],[-hw,h,hd],[-hw,h,-hd]]);
+    [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].forEach(([x,z])=>addLine([[x,0,z],[x,h,z]]));
+
+    // Hit planes
+    const hi=()=>new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide});
+    const hb=new THREE.Mesh(new THREE.PlaneGeometry(w,h),hi()); hb.position.set(0,h/2,-hd+.01); hb.userData.wallId='back'; this.scene.add(hb); this.hitMeshes.push(hb);
+    const hl=new THREE.Mesh(new THREE.PlaneGeometry(d,h),hi()); hl.position.set(-hw+.01,h/2,0); hl.rotation.y=-Math.PI/2; hl.userData.wallId='left'; this.scene.add(hl); this.hitMeshes.push(hl);
+    const hr=new THREE.Mesh(new THREE.PlaneGeometry(d,h),hi()); hr.position.set(hw-.01,h/2,0); hr.rotation.y=Math.PI/2; hr.userData.wallId='right'; this.scene.add(hr); this.hitMeshes.push(hr);
+    // Ceiling hit plane
+    const hc=new THREE.Mesh(new THREE.PlaneGeometry(w,d),hi()); hc.position.set(0,h-.01,0); hc.rotation.x=-Math.PI/2; hc.userData.wallId='ceil'; this.scene.add(hc); this.hitMeshes.push(hc);
+
+    this.ctrl.target.set(0,h/2-1,0); this.ctrl.update();
+  }
+
+  // ── Public API ──────────────────────────────────────────────────────────
+  setRoom(dims,sc){
+    this.placed.forEach(c=>{this.scene.remove(c.group);c.group.traverse(o=>this._disp(o));});
+    this.placed=[]; this.onChanged([]); this._hideGhost(); this._clearRoom(); this._buildRoom(dims,sc);
+    const dist=Math.max(dims.w,dims.d)*1.5;
+    this.camera.position.set(dist*.75,dims.h*1.2,dist); this.camera.lookAt(0,dims.h/2,0);
+    this.ctrl.maxDistance=dist*4; this.ctrl.update(); this._resize();
+  }
+
+  paint(id,hex){const m=this.surfMesh[id];if(m)m.material.color.set(hex);}
+
+  toggleWall(id,visible){
+    const m=this.surfMesh[id]; if(!m) return;
+    m.visible=visible;
+  }
+
+  recolorAll(hex){
+    this.activeCol=hex;
+    this.placed.forEach(c=>{
+      if(c.type==='door'||c.type.startsWith('light')) return;
+      c.group.traverse(o=>{if(o.isMesh&&o.material&&!o.material.map)o.material.color.set(hex);});
+    });
+  }
+
+  setView(id){
+    const{w,d,h}=this.dims; const tgt=new THREE.Vector3(0,h/2-1,0); let pos;
+    if     (id==='persp'){pos=new THREE.Vector3(w*.8,h*1.2,d*1.3);this.ctrl.maxPolarAngle=Math.PI/1.8;}
+    else if(id==='top')  {pos=new THREE.Vector3(0,Math.max(w,d)*1.5,.001);this.ctrl.maxPolarAngle=Math.PI;}
+    else if(id==='back') {pos=new THREE.Vector3(0,h/2,d*1.5);this.ctrl.maxPolarAngle=Math.PI/1.8;}
+    else if(id==='left') {pos=new THREE.Vector3(w*1.5,h/2,0);this.ctrl.maxPolarAngle=Math.PI/1.8;}
+    else if(id==='right'){pos=new THREE.Vector3(-w*1.5,h/2,0);this.ctrl.maxPolarAngle=Math.PI/1.8;}
+    this._lerp={from:this.camera.position.clone(),to:pos,tf:this.ctrl.target.clone(),tt:tgt,t:0};
+  }
+
+  clearAll(){
+    this.placed.forEach(c=>{this.scene.remove(c.group);c.group.traverse(o=>this._disp(o));});
+    this.placed=[]; this.onChanged([]);
+  }
+
+  undo(){
+    if(!this.placed.length) return;
+    const last=this.placed[this.placed.length-1];
+    this._remove(last.group);
+  }
+
+  // ── Cabinet / door / light geometry ────────────────────────────────────
+  _buildCab(type, hex, alpha=1){
+    const def=CAB_TYPES.find(c=>c.id===type);
+    const grp=new THREE.Group();
+
+    if(type==='door'){
+      const frameM=new THREE.MeshLambertMaterial({color:new THREE.Color(hex).multiplyScalar(.75),transparent:alpha<1,opacity:alpha});
+      const panelM=new THREE.MeshLambertMaterial({color:new THREE.Color(hex),transparent:alpha<1,opacity:alpha});
+      const frame=new THREE.Mesh(new THREE.BoxGeometry(def.w+.1,def.h+.05,def.d),frameM);
+      frame.position.y=def.h/2; frame.castShadow=true; grp.add(frame);
+      const panel=new THREE.Mesh(new THREE.BoxGeometry(def.w-.06,def.h-.05,def.d*.55),panelM);
+      panel.position.set(0,def.h/2,def.d*.23); grp.add(panel);
+      const hM=new THREE.MeshLambertMaterial({color:0xbbbbbb,transparent:alpha<1,opacity:alpha});
+      const handle=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.28,8),hM);
+      handle.rotation.z=Math.PI/2; handle.position.set(def.w/2-.18,def.h*.48,def.d*.5+.04); grp.add(handle);
+      return grp;
+    }
+
+    if(type==='light_recessed'){
+      const{w,d,h}=this.dims;
+      // Housing ring
+      const ringM=new THREE.MeshLambertMaterial({color:0xdddddd,transparent:alpha<1,opacity:alpha});
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.22,.04,8,24),ringM);
+      ring.rotation.x=Math.PI/2; grp.add(ring);
+      // Emissive lens
+      const lensM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:alpha<1,opacity:alpha,side:THREE.DoubleSide});
+      const lens=new THREE.Mesh(new THREE.CircleGeometry(.18,24),lensM);
+      lens.rotation.x=Math.PI/2; grp.add(lens);
+      // SpotLight
+      if(alpha>=1){
+        const spot=new THREE.SpotLight(0xffffff,20,h*2.2,Math.PI/4,.45,1.2);
+        spot.position.set(0,.05,0);
+        spot.castShadow=true;
+        spot.shadow.mapSize.set(512,512);
+        spot.shadow.camera.near=0.1;
+        spot.shadow.camera.far=h*2.5;
+        const tgt=new THREE.Object3D(); tgt.position.set(0,-(h+1),0);
+        grp.add(spot); grp.add(tgt); spot.target=tgt;
+      }
+      return grp;
+    }
+
+    if(type==='light_strip'){
+      const{w,d,h}=this.dims;
+      // Housing
+      const houM=new THREE.MeshLambertMaterial({color:0xe8e8e8,transparent:alpha<1,opacity:alpha});
+      const housing=new THREE.Mesh(new THREE.BoxGeometry(w-.1,.05,.1),houM);
+      grp.add(housing);
+      // Emissive strip
+      const strM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:alpha<1,opacity:alpha});
+      const strip=new THREE.Mesh(new THREE.BoxGeometry(w-.15,.02,.07),strM);
+      strip.position.y=-.03; grp.add(strip);
+      // PointLights
+      if(alpha>=1){
+        const count=Math.max(3,Math.round(w/2.5));
+        for(let i=0;i<count;i++){
+          const x=(-w/2+.5)+(w-1)*i/(count-1);
+          const pl=new THREE.PointLight(0xffffff,4,h*2,.8);
+          pl.position.set(x,-.05,0); grp.add(pl);
+        }
+      }
+      return grp;
+    }
+
+    // Standard cabinet
+    const col=new THREE.Color(hex);
+    const bm=new THREE.MeshLambertMaterial({color:col,transparent:alpha<1,opacity:alpha});
+    const body=new THREE.Mesh(new THREE.BoxGeometry(def.w,def.h,def.d),bm);
+    body.position.y=def.h/2; body.castShadow=body.receiveShadow=true; grp.add(body);
+    const lm=new THREE.LineBasicMaterial({color:col.clone().multiplyScalar(.6),transparent:alpha<1,opacity:alpha*.9});
+    const hm=new THREE.LineBasicMaterial({color:0x888888,transparent:alpha<1,opacity:alpha});
+    const fz=def.d/2+.005;
+    const ln=(pts,m)=>{const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(...p)));grp.add(new THREE.Line(g,m||lm));};
+    if(type==='drawer'){[.25,.5,.75].forEach(f=>ln([[-def.w/2+.05,def.h*f,fz],[def.w/2-.05,def.h*f,fz]]));[.125,.375,.625,.875].forEach(f=>{const hw=def.w*.1;ln([[-hw,def.h*f,fz+.04],[hw,def.h*f,fz+.04]],hm);});}
+    else if(type==='tall'){ln([[0,.1,fz],[0,def.h-.1,fz]]);ln([[-.05,def.h/2,fz+.04],[.05,def.h/2,fz+.04]],hm);}
+    else{ln([[0,.1,fz],[0,def.h-.1,fz]]);[-.15,.15].forEach(hx=>ln([[hx,def.h*.46,fz+.04],[hx,def.h*.54,fz+.04]],hm));}
+
+    // Countertop slab for base, bench, drawer
+    if((type==='base'||type==='bench'||type==='drawer')&&this.ctMaterial!=='none'){
+      const ct=CT_MATERIALS.find(m=>m.id===this.ctMaterial);
+      if(ct&&ct.color){
+        const ctH=0.12;
+        const ctMat=new THREE.MeshPhongMaterial({color:new THREE.Color(ct.color),shininess:ct.specular*100,transparent:alpha<1,opacity:alpha});
+        const slab=new THREE.Mesh(new THREE.BoxGeometry(def.w+.04,ctH,def.d+.04),ctMat);
+        slab.position.y=def.h+ctH/2; slab.castShadow=true; grp.add(slab);
+      }
+    }
+    return grp;
+  }
+
+  _posGrp(grp,wallId,lx,lz=0){
+    const def=CAB_TYPES.find(c=>c.id===grp.userData.cabType);
+    const{w,d,h}=this.dims; const mountY=grp.userData.mountY||0;
+    grp.rotation.set(0,0,0);
+    if(wallId==='ceil'){
+      if(grp.userData.cabType==='light_strip') grp.position.set(0,h,lz);
+      else grp.position.set(lx,h,lz);
+    }else if(wallId==='back'){grp.position.set(lx,mountY,-d/2+def.d/2+.02);grp.rotation.y=Math.PI;}
+    else if(wallId==='left'){grp.position.set(-w/2+def.d/2+.02,mountY,lx);grp.rotation.y=Math.PI/2;}
+    else{grp.position.set(w/2-def.d/2-.02,mountY,lx);grp.rotation.y=-Math.PI/2;}
+  }
+
+  _snap(v){return Math.round(v/SNAP)*SNAP;}
+
+  _clampWall(wallId,pt){
+    const def=CAB_TYPES.find(c=>c.id===this.activeType);
+    const{w,d}=this.dims; const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+    if(wallId==='back') return{lx:this._snap(cl(pt.x,-w/2+def.w/2,w/2-def.w/2)),lz:0};
+    return{lx:this._snap(cl(pt.z,-d/2+def.w/2,d/2-def.w/2)),lz:0};
+  }
+
+  _clampCeil(pt){
+    const{w,d}=this.dims; const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const s=.25;
+    return{lx:this._snap(cl(pt.x,-w/2+s,w/2-s)),lz:this._snap(cl(pt.z,-d/2+s,d/2-s))};
+  }
+
+  _ghostHex(){
+    const t=this.activeType;
+    if(t==='door')  return '#'+new THREE.Color(this.doorColor).lerp(new THREE.Color(0x00ff88),.4).getHexString();
+    if(t.startsWith('light')) return '#ccccff';
+    return '#'+new THREE.Color(this.activeCol).lerp(new THREE.Color(0x00ff88),.35).getHexString();
+  }
+
+  _updateGhost(wallId,lx,lz=0){
+    this._hideGhost();
+    const def=CAB_TYPES.find(c=>c.id===this.activeType);
+    const g=this._buildCab(this.activeType,this._ghostHex(),.45);
+    g.userData.cabType=this.activeType; g.userData.mountY=def?.mountable?this.wallCabH:0;
+    this._posGrp(g,wallId,lx,lz); this.ghostGrp.add(g);
+  }
+
+  _hideGhost(){this.ghostGrp.clear();}
+
+  _cabMeshes(){const a=[];this.placed.forEach(c=>c.group.traverse(o=>{if(o.isMesh)a.push(o);}));return a;}
+
+  _place(wallId,lx,lz=0){
+    const def=CAB_TYPES.find(c=>c.id===this.activeType);
+    const mountY=def?.mountable?this.wallCabH:0;
+    const hex=this.activeType==='door'?this.doorColor:(this.activeType.startsWith('light')?'#ffffff':this.activeCol);
+    const grp=this._buildCab(this.activeType,hex);
+    grp.userData.cabType=this.activeType; grp.userData.cabId=this.nextId++;
+    grp.userData.wallId=wallId; grp.userData.mountY=mountY;
+    this._posGrp(grp,wallId,lx,lz); this.scene.add(grp);
+    this.placed.push({id:grp.userData.cabId,type:this.activeType,wallId,lx,lz,mountY,group:grp});
+    this.onChanged(this.placed.map(c=>({id:c.id,type:c.type,wallId:c.wallId,lx:c.lx,lz:c.lz,mountY:c.mountY})));
+  }
+
+  _remove(grp){
+    this.scene.remove(grp); grp.traverse(o=>this._disp(o));
+    this.placed=this.placed.filter(c=>c.group!==grp);
+    this.onChanged(this.placed.map(c=>({id:c.id,type:c.type,wallId:c.wallId})));
+  }
+
+  _initEvents(){
+    const rc=new THREE.Raycaster(),m2=new THREE.Vector2();
+    const ndc=e=>{const r=this.canvas.getBoundingClientRect();return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);};
+
+    this.canvas.addEventListener('mousemove',e=>{
+      m2.copy(ndc(e)); rc.setFromCamera(m2,this.camera);
+      const ch=rc.intersectObjects(this._cabMeshes(),false);
+      if(ch.length){
+        let g=ch[0].object; while(g.parent&&!g.userData.cabId)g=g.parent;
+        const def=CAB_TYPES.find(c=>c.id===g.userData.cabType);
+        this.onTooltip({text:`${def?.label||''} — click to remove`,x:e.clientX,y:e.clientY});
+        this._hideGhost(); return;
+      }
+      this.onTooltip({text:'',x:0,y:0});
+      const wh=rc.intersectObjects(this.hitMeshes,false);
+      if(wh.length){
+        const{object:{userData:{wallId}},point}=wh[0];
+        const def=CAB_TYPES.find(c=>c.id===this.activeType);
+        if(wallId==='ceil'&&!def?.ceiling){this._hideGhost();return;}
+        if(wallId!=='ceil'&&def?.ceiling){this._hideGhost();return;}
+        if(wallId==='ceil'){const{lx,lz}=this._clampCeil(point);this._updateGhost(wallId,lx,lz);}
+        else{const{lx}=this._clampWall(wallId,point);this._updateGhost(wallId,lx);}
+      }else this._hideGhost();
+    });
+
+    this.canvas.addEventListener('mousedown',e=>{this._mdown={x:e.clientX,y:e.clientY};});
+    this.canvas.addEventListener('mouseup',e=>{
+      if(!this._mdown)return;
+      const dx=e.clientX-this._mdown.x,dy=e.clientY-this._mdown.y; this._mdown=null;
+      if(Math.sqrt(dx*dx+dy*dy)>5)return;
+      m2.copy(ndc(e)); rc.setFromCamera(m2,this.camera);
+      const ch=rc.intersectObjects(this._cabMeshes(),false);
+      if(ch.length){let g=ch[0].object;while(g.parent&&!g.userData.cabId)g=g.parent;if(g.userData.cabId){this._remove(g);return;}}
+      const wh=rc.intersectObjects(this.hitMeshes,false);
+      if(wh.length){
+        const{object:{userData:{wallId}},point}=wh[0];
+        const def=CAB_TYPES.find(c=>c.id===this.activeType);
+        if(wallId==='ceil'&&!def?.ceiling)return;
+        if(wallId!=='ceil'&&def?.ceiling)return;
+        if(wallId==='ceil'){const{lx,lz}=this._clampCeil(point);this._place(wallId,lx,lz);}
+        else{const{lx}=this._clampWall(wallId,point);this._place(wallId,lx);}
+      }
+    });
+    this.canvas.addEventListener('mouseleave',()=>{this._hideGhost();this.onTooltip({text:'',x:0,y:0});});
+  }
+
+  _resize(){const vp=this.canvas.parentElement;if(!vp)return;const w=vp.clientWidth,h=vp.clientHeight;this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);}
+
+  _loop(){
+    requestAnimationFrame(()=>this._loop());
+    if(this._lerp){const L=this._lerp;L.t+=.04;if(L.t>=1){L.t=1;this._lerp=null;}const t=1-Math.pow(1-L.t,3);this.camera.position.lerpVectors(L.from,L.to,t);this.ctrl.target.lerpVectors(L.tf,L.tt,t);}
+    this.ctrl.update(); this.renderer.render(this.scene,this.camera);
+  }
+}
+
+// ── Vue app ────────────────────────────────────────────────────────────────
+createApp({
+  delimiters:['[[',']]'],
+  setup(){
+    const canvas3d=ref(null); let gs=null;
+    const ri=reactive({w:20,d:20,h:8}); const sizeError=ref('');
+    const activeView=ref('persp');
+    const selectedType=ref('base');
+    const cabinetColor=ref('#e8e0d0');
+    const doorColor=ref('#ffffff');
+    const wallCabH=ref(4.5);
+    const ctMaterial=ref('wood');
+    const paintSurface=ref('back');
+    const sc=reactive({back:'#ffffff',left:'#ffffff',right:'#ffffff',ceil:'#ffffff',floor:'#d0cec8'});
+    const wallVis=reactive({back:true,left:true,right:true,ceil:true});
+    const placedList=ref([]);
+    const tooltipText=ref(''); const tooltipStyle=reactive({position:'absolute',left:'0px',top:'0px'});
+    const showModal=ref(false);
+    const showBP=ref(false);
+    const bpCanvas=ref(null);
+    const fm=reactive({first:'',last:'',email:'',phone:'',zip:''});
+    const fmsg=reactive({text:'',type:''});
+
+    const summary=computed(()=>{
+      const WMAP={back:'Back Wall',left:'Left Wall',right:'Right Wall'};
+      let totalLf=0;
+      const walls=Object.entries(WMAP).map(([id,label])=>{
+        const cabs=placedList.value.filter(c=>c.wallId===id);
+        const lf=cabs.reduce((s,c)=>{const d=CAB_TYPES.find(t=>t.id===c.type);return s+(d?.lf||0);},0);
+        totalLf+=lf;
+        const counts={};cabs.forEach(c=>counts[c.type]=(counts[c.type]||0)+1);
+        const detail=Object.entries(counts).map(([t,n])=>`${n}× ${CAB_TYPES.find(x=>x.id===t)?.label||t}`).join(', ');
+        return{id,label,detail,lf,has:cabs.length>0};
+      }).filter(w=>w.has);
+      const lights=placedList.value.filter(c=>c.type.startsWith('light'));
+      if(lights.length){const lc={};lights.forEach(c=>lc[c.type]=(lc[c.type]||0)+1);const ld=Object.entries(lc).map(([t,n])=>`${n}× ${CAB_TYPES.find(x=>x.id===t)?.label}`).join(', ');walls.push({id:'ceil',label:'Ceiling',detail:ld,lf:0,has:true});}
+      return{walls,totalLf};
+    });
+
+    const summaryText=computed(()=>{
+      const paint=`Colors — Back:${sc.back} Left:${sc.left} Right:${sc.right} Ceil:${sc.ceil} Floor:${sc.floor}`;
+      const ctLabel=CT_MATERIALS.find(m=>m.id===ctMaterial.value)?.label||'None';
+      const hdr=`Garage: ${ri.w}ft × ${ri.d}ft × ${ri.h}ft\n${paint}\nCountertop: ${ctLabel}`;
+      if(!summary.value.walls.length)return hdr+'\nNo items placed.';
+      const lines=summary.value.walls.map(w=>`${w.label}: ${w.detail}${w.lf>0?' ('+w.lf.toFixed(1)+' lf)':''}`);
+      lines.push(`Total cabinets: ${summary.value.totalLf.toFixed(1)} linear feet`);
+      return hdr+'\n'+lines.join('\n');
+    });
+
+    function applySize(){
+      if(!ri.w||!ri.d||!ri.h||ri.w<8||ri.d<8||ri.h<7){sizeError.value='Min: 8×8×7 ft';return;}
+      sizeError.value=''; gs?.setRoom({w:ri.w,d:ri.d,h:ri.h},{...sc});
+      TOGGLE_IDS.forEach(id=>gs?.toggleWall(id,wallVis[id]));
+    }
+    function setPaint(hex){sc[paintSurface.value]=hex;gs?.paint(paintSurface.value,hex);}
+    function setCabColor(hex){cabinetColor.value=hex;gs?.recolorAll(hex);}
+    function setDoorColor(hex){doorColor.value=hex;if(gs)gs.doorColor=hex;}
+    function setCtMaterial(id){ctMaterial.value=id;if(gs)gs.ctMaterial=id;}
+    function setView(id){activeView.value=id;gs?.setView(id);}
+    function clearAll(){gs?.clearAll();}
+    function undo(){gs?.undo();}
+    function toggleWall(id){wallVis[id]=!wallVis[id];gs?.toggleWall(id,wallVis[id]);}
+
+    async function submitEstimate(){
+      fmsg.text='Sending…';fmsg.type='';
+      if(!fm.first||!fm.last||!fm.email){fmsg.text='Please fill name and email.';fmsg.type='err';return;}
+      const fd=new FormData();
+      fd.append('csrfmiddlewaretoken',document.querySelector('[name=csrfmiddlewaretoken]').value);
+      fd.append('first_name',fm.first);fd.append('last_name',fm.last);
+      fd.append('email',fm.email);fd.append('phone',fm.phone);fd.append('zip_code',fm.zip);
+      fd.append('message',summaryText.value);fd.append('consultation_types','Garage Cabinets');
+      fd.append('source_page',location.href);
+      try{
+        const r=await fetch("{% url 'create_lead' %}",{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'},body:fd});
+        const data=await r.json();
+        if(data.redirect_url){fmsg.text="Sent! We'll be in touch.";fmsg.type='ok';Object.assign(fm,{first:'',last:'',email:'',phone:'',zip:''});setTimeout(()=>location.href=data.redirect_url,1500);}
+        else{fmsg.text='Something went wrong.';fmsg.type='err';}
+      }catch{fmsg.text='Network error.';fmsg.type='err';}
+    }
+
+    // ── Blueprint rendering ─────────────────────────────────────────────
+    function ftIn(ft){const f=Math.floor(ft);const i=Math.round((ft-f)*12);return i===12?`${f+1}'`:`${f}'${i}"`;}
+
+    function drawDimLine(ctx,x1,y1,x2,y2,label,side='above'){
+      const ext=8,gap=4,tick=5;
+      const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len<2)return;
+      const ux=dx/len,uy=dy/len;
+      // normal perpendicular
+      let nx=-uy,ny=ux;
+      if(side==='below'||side==='right'){nx=-nx;ny=-ny;}
+      ctx.save();
+      ctx.strokeStyle='#1a3a5c';ctx.lineWidth=0.8;ctx.fillStyle='#1a3a5c';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      // extension lines
+      ctx.beginPath();
+      ctx.moveTo(x1+nx*gap,y1+ny*gap);ctx.lineTo(x1+nx*(gap+ext+tick),y1+ny*(gap+ext+tick));
+      ctx.moveTo(x2+nx*gap,y2+ny*gap);ctx.lineTo(x2+nx*(gap+ext+tick),y2+ny*(gap+ext+tick));
+      ctx.stroke();
+      // dimension line
+      const off=gap+ext;
+      const ax=x1+nx*off,ay=y1+ny*off,bx=x2+nx*off,by=y2+ny*off;
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      // ticks
+      ctx.beginPath();
+      ctx.moveTo(ax-nx*tick*.4+ux*0,ay-ny*tick*.4);ctx.lineTo(ax+nx*tick*.4,ay+ny*tick*.4);
+      ctx.moveTo(bx-nx*tick*.4,by-ny*tick*.4);ctx.lineTo(bx+nx*tick*.4,by+ny*tick*.4);
+      ctx.stroke();
+      // label
+      const mx=(ax+bx)/2+nx*8,my=(ay+by)/2+ny*8;
+      ctx.save();
+      const angle=Math.atan2(by-ay,bx-ax);
+      ctx.translate(mx,my);ctx.rotate(angle>Math.PI/2||angle<-Math.PI/2?angle+Math.PI:angle);
+      ctx.fillText(label,0,0);
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function renderBlueprint(){
+      const cv=bpCanvas.value; if(!cv)return;
+      const items=gs?gs.placed:[];
+      const W=ri.w,D=ri.d,H=ri.h;
+      const S=32; // pixels per foot
+      const PAD=60,ELEV_GAP=50;
+
+      // Calculate layout
+      const fpW=W*S,fpH=D*S;
+      const elevW=W*S,elevH=H*S;
+      const sideElevW=D*S,sideElevH=H*S;
+      const totalW=Math.max(fpW,elevW,sideElevW*2+ELEV_GAP)+PAD*2+80;
+      const totalH=fpH+elevH+Math.max(sideElevH,elevH)+PAD*4+ELEV_GAP*2+120;
+
+      cv.width=Math.max(totalW,800);
+      cv.height=Math.max(totalH,700);
+      const ctx=cv.getContext('2d');
+
+      // Background
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cv.width,cv.height);
+
+      // Border
+      ctx.strokeStyle='#1a3a5c';ctx.lineWidth=2;
+      ctx.strokeRect(10,10,cv.width-20,cv.height-20);
+      ctx.strokeRect(12,12,cv.width-24,cv.height-24);
+
+      // Title block
+      ctx.fillStyle='#1a3a5c';ctx.font='bold 18px Arial';ctx.textAlign='center';
+      ctx.fillText('GARAGE DESIGN BLUEPRINT',cv.width/2,42);
+      ctx.font='12px Arial';ctx.fillStyle='#555';
+      const ctLabel=CT_MATERIALS.find(m=>m.id===ctMaterial.value)?.label||'None';
+      ctx.fillText(`${W}' × ${D}' × ${H}' — Countertop: ${ctLabel} — ${new Date().toLocaleDateString()}`,cv.width/2,60);
+      ctx.fillStyle='#c64d1e';ctx.font='bold 10px Arial';
+      ctx.fillText('GARAGE LIONS — garagelions.com',cv.width/2,76);
+
+      let curY=100;
+
+      // ══════════════════════════════════════════════════════════════
+      // FLOOR PLAN
+      // ══════════════════════════════════════════════════════════════
+      ctx.fillStyle='#1a3a5c';ctx.font='bold 13px Arial';ctx.textAlign='left';
+      ctx.fillText('FLOOR PLAN (TOP VIEW)',PAD,curY);
+      curY+=14;
+      const fpX=PAD+40,fpY=curY;
+
+      // Room outline
+      ctx.strokeStyle='#1a3a5c';ctx.lineWidth=2;
+      ctx.strokeRect(fpX,fpY,fpW,fpH);
+
+      // Grid
+      ctx.strokeStyle='#e8eaee';ctx.lineWidth=0.3;
+      for(let i=1;i<W;i++){ctx.beginPath();ctx.moveTo(fpX+i*S,fpY);ctx.lineTo(fpX+i*S,fpY+fpH);ctx.stroke();}
+      for(let i=1;i<D;i++){ctx.beginPath();ctx.moveTo(fpX,fpY+i*S);ctx.lineTo(fpX+fpW,fpY+i*S);ctx.stroke();}
+
+      // Wall labels
+      ctx.fillStyle='#888';ctx.font='9px Arial';ctx.textAlign='center';
+      ctx.fillText('BACK WALL',fpX+fpW/2,fpY-6);
+      ctx.fillText('FRONT (GARAGE DOOR)',fpX+fpW/2,fpY+fpH+14);
+      ctx.save();ctx.translate(fpX-10,fpY+fpH/2);ctx.rotate(-Math.PI/2);ctx.fillText('LEFT WALL',0,0);ctx.restore();
+      ctx.save();ctx.translate(fpX+fpW+14,fpY+fpH/2);ctx.rotate(Math.PI/2);ctx.fillText('RIGHT WALL',0,0);ctx.restore();
+
+      // Dimension lines for floor plan
+      drawDimLine(ctx,fpX,fpY+fpH+22,fpX+fpW,fpY+fpH+22,ftIn(W),'below');
+      drawDimLine(ctx,fpX+fpW+22,fpY,fpX+fpW+22,fpY+fpH,ftIn(D),'right');
+
+      // Place cabinets on floor plan
+      items.forEach(c=>{
+        const def=CAB_TYPES.find(t=>t.id===c.type);if(!def)return;
+        if(c.type.startsWith('light'))return; // skip ceiling lights in floor plan
+        const cw=def.w*S,cd=def.d*S;
+        ctx.fillStyle=c.type==='door'?'rgba(120,120,120,.35)':'rgba(198,77,30,.2)';
+        ctx.strokeStyle=c.type==='door'?'#888':'#c64d1e';ctx.lineWidth=1;
+        if(c.wallId==='back'){
+          const cx=fpX+fpW/2+c.lx*S-cw/2, cy=fpY;
+          ctx.fillRect(cx,cy,cw,cd);ctx.strokeRect(cx,cy,cw,cd);
+          ctx.fillStyle='#333';ctx.font='8px Arial';ctx.textAlign='center';
+          ctx.fillText(def.label,cx+cw/2,cy+cd/2+3);
+        }else if(c.wallId==='left'){
+          const cx=fpX, cy=fpY+fpH/2+c.lx*S-cw/2;
+          ctx.fillRect(cx,cy,cd,cw);ctx.strokeRect(cx,cy,cd,cw);
+          ctx.fillStyle='#333';ctx.font='8px Arial';ctx.textAlign='center';
+          ctx.fillText(def.label,cx+cd/2,cy+cw/2+3);
+        }else if(c.wallId==='right'){
+          const cx=fpX+fpW-cd, cy=fpY+fpH/2+c.lx*S-cw/2;
+          ctx.fillRect(cx,cy,cd,cw);ctx.strokeRect(cx,cy,cd,cw);
+          ctx.fillStyle='#333';ctx.font='8px Arial';ctx.textAlign='center';
+          ctx.fillText(def.label,cx+cd/2,cy+cw/2+3);
+        }
+      });
+
+      curY=fpY+fpH+ELEV_GAP+30;
+
+      // ══════════════════════════════════════════════════════════════
+      // WALL ELEVATIONS
+      // ══════════════════════════════════════════════════════════════
+      function drawElevation(wallId,wallLabel,wallLen,ox,oy){
+        const eW=wallLen*S,eH=H*S;
+        ctx.fillStyle='#1a3a5c';ctx.font='bold 12px Arial';ctx.textAlign='left';
+        ctx.fillText(wallLabel+' ELEVATION',ox,oy-8);
+
+        // Wall rectangle
+        ctx.fillStyle='#f5f6f8';ctx.fillRect(ox,oy,eW,eH);
+        ctx.strokeStyle='#1a3a5c';ctx.lineWidth=1.5;ctx.strokeRect(ox,oy,eW,eH);
+
+        // Grid
+        ctx.strokeStyle='#e8eaee';ctx.lineWidth=0.3;
+        for(let i=1;i<wallLen;i++){ctx.beginPath();ctx.moveTo(ox+i*S,oy);ctx.lineTo(ox+i*S,oy+eH);ctx.stroke();}
+        for(let i=1;i<H;i++){ctx.beginPath();ctx.moveTo(ox,oy+i*S);ctx.lineTo(ox+eW,oy+i*S);ctx.stroke();}
+
+        // Dimension lines
+        drawDimLine(ctx,ox,oy+eH+10,ox+eW,oy+eH+10,ftIn(wallLen),'below');
+        drawDimLine(ctx,ox-10,oy,ox-10,oy+eH,ftIn(H),'left');
+
+        // Floor line label
+        ctx.fillStyle='#aaa';ctx.font='8px Arial';ctx.textAlign='right';
+        ctx.fillText('FLOOR',ox-22,oy+eH+4);
+        ctx.fillText('CEILING',ox-22,oy+6);
+
+        // Draw cabinets
+        const wallItems=items.filter(c=>c.wallId===wallId);
+        wallItems.forEach(c=>{
+          const def=CAB_TYPES.find(t=>t.id===c.type);if(!def)return;
+          const cw=def.w*S,ch=def.h*S;
+          const cx=ox+eW/2+c.lx*S-cw/2;
+          const cy=oy+eH-(c.mountY||0)*S-ch;
+
+          // Cabinet body
+          ctx.fillStyle=c.type==='door'?'rgba(120,120,120,.3)':'rgba(198,77,30,.15)';
+          ctx.fillRect(cx,cy,cw,ch);
+          ctx.strokeStyle=c.type==='door'?'#888':'#c64d1e';ctx.lineWidth=1;
+          ctx.strokeRect(cx,cy,cw,ch);
+
+          // Label
+          ctx.fillStyle='#333';ctx.font='bold 8px Arial';ctx.textAlign='center';
+          ctx.fillText(def.label,cx+cw/2,cy+ch/2-2);
+
+          // Dimensions inside cabinet
+          ctx.font='7px Arial';ctx.fillStyle='#c64d1e';
+          ctx.fillText(`${ftIn(def.w)} × ${ftIn(def.h)}`,cx+cw/2,cy+ch/2+8);
+
+          // Height-from-floor dimension for wall cabs
+          if(c.mountY>0){
+            drawDimLine(ctx,cx+cw+3,oy+eH,cx+cw+3,cy+ch,ftIn(c.mountY),'right');
+          }
+        });
+
+        return eH;
+      }
+
+      // Back wall elevation
+      const backH=drawElevation('back','BACK WALL',W,PAD+40,curY);
+      curY+=backH+ELEV_GAP+30;
+
+      // Left & Right side by side
+      const leftOx=PAD+40;
+      const rightOx=leftOx+D*S+ELEV_GAP+60;
+      const sideY=curY;
+      drawElevation('left','LEFT WALL',D,leftOx,sideY);
+      drawElevation('right','RIGHT WALL',D,rightOx,sideY);
+      curY+=H*S+ELEV_GAP+20;
+
+      // ══════════════════════════════════════════════════════════════
+      // PARTS LIST
+      // ══════════════════════════════════════════════════════════════
+      ctx.fillStyle='#1a3a5c';ctx.font='bold 12px Arial';ctx.textAlign='left';
+      ctx.fillText('PARTS LIST',PAD+40,curY);
+      curY+=16;
+      ctx.font='10px Arial';ctx.fillStyle='#333';
+      const counts={};
+      items.forEach(c=>{const def=CAB_TYPES.find(t=>t.id===c.type);if(def)counts[def.label]=(counts[def.label]||0)+1;});
+      if(Object.keys(counts).length===0){
+        ctx.fillText('No items placed.',PAD+40,curY);curY+=14;
+      }else{
+        Object.entries(counts).forEach(([label,n])=>{
+          const def=CAB_TYPES.find(t=>t.label===label);
+          ctx.fillText(`${n}×  ${label}${def?'  ('+def.dims+')':''}`,PAD+50,curY);
+          curY+=14;
+        });
+      }
+      if(summary.value.totalLf>0){
+        curY+=4;ctx.font='bold 11px Arial';ctx.fillStyle='#c64d1e';
+        ctx.fillText(`Total linear feet: ${summary.value.totalLf.toFixed(1)} lf`,PAD+50,curY);
+      }
+    }
+
+    function openBlueprint(){showBP.value=true;requestAnimationFrame(()=>renderBlueprint());}
+    function downloadBP(){
+      const cv=bpCanvas.value;if(!cv)return;
+      const a=document.createElement('a');a.download='garage-blueprint.png';a.href=cv.toDataURL('image/png');a.click();
+    }
+
+    watch(selectedType,t=>{if(gs)gs.activeType=t;});
+    watch(cabinetColor,h=>{if(gs)gs.activeCol=h;});
+    watch(doorColor,h=>{if(gs)gs.doorColor=h;});
+    watch(wallCabH,h=>{if(gs)gs.wallCabH=h;});
+    watch(ctMaterial,m=>{if(gs)gs.ctMaterial=m;});
+
+    onMounted(()=>{
+      gs=new GarageScene(canvas3d.value,
+        list=>{placedList.value=list;},
+        ({text,x,y})=>{tooltipText.value=text;if(text&&canvas3d.value){const r=canvas3d.value.getBoundingClientRect();tooltipStyle.left=(x-r.left+12)+'px';tooltipStyle.top=(y-r.top-30)+'px';}}
+      );
+      window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}});
+    });
+
+    return{
+      canvas3d,bpCanvas,ri,sizeError,activeView,selectedType,cabinetColor,doorColor,wallCabH,ctMaterial,
+      paintSurface,sc,wallVis,tooltipText,tooltipStyle,showModal,showBP,fm,fmsg,
+      summary,summaryText,
+      applySize,setPaint,setCabColor,setDoorColor,setCtMaterial,setView,clearAll,undo,toggleWall,submitEstimate,
+      openBlueprint,downloadBP,
+      CAB_TYPES,SURFACES,TOGGLE_IDS,PAINT_PRESETS,CAB_COLORS,DOOR_COLORS,VIEW_PRESETS,CT_MATERIALS,
+    };
+  },
+}).mount('#dc-app');
+</script>
+{% endblock %}

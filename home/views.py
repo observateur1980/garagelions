@@ -335,6 +335,10 @@ def create_lead_success(request):
     return render(request, "home/createlead_success.html")
 
 
+def cabinet_designer(request):
+    return render(request, "home/cabinet_designer.html")
+
+
 class CopyrightPage(TemplateView):
     template_name = "home/copyright.html"
 
