@@ -85,7 +85,7 @@ def gallery_thumb_upload_to(instance, filename):
     return f"galleries/{slug}/thumbnails/{filename}"
 
 
-def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, quality=98):
+def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, quality=85, max_dimension=1920):
     import logging as _logging
     _log = _logging.getLogger(__name__)
     if not file_field:
@@ -109,6 +109,11 @@ def apply_watermark_to_field(file_field, opacity=0.90, scale=0.22, margin=24, qu
         base = Image.open(file_field)
         base = ImageOps.exif_transpose(base).convert("RGBA")
         file_field.close()
+
+        # Resize to max_dimension on the longest side (keeps aspect ratio)
+        if max(base.size) > max_dimension:
+            base.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+
         wm = Image.open(watermark_path).convert("RGBA")
         wm_width = max(180, int(base.width * scale))
         ratio = wm_width / wm.width
