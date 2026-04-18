@@ -390,6 +390,44 @@ def _write_cover_thumb(gallery):
         pass
 
 
+def _write_cover_thumb_mobile(gallery):
+    """Write media/gallery_thumbs/<pk>_mobile_<timestamp>.jpg — square mobile
+    thumbnail. Only generated when thumbnail_mobile is set."""
+    import os as _os
+    import glob as _glob
+    import time as _time
+    if not gallery.thumbnail_mobile:
+        # Remove stale mobile thumbs if the field was cleared
+        thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
+        for old in _glob.glob(_os.path.join(thumb_dir, f"{gallery.pk}_mobile_*.jpg")):
+            try:
+                _os.remove(old)
+            except OSError:
+                pass
+        return
+    try:
+        thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
+        _os.makedirs(thumb_dir, exist_ok=True)
+
+        for old in _glob.glob(_os.path.join(thumb_dir, f"{gallery.pk}_mobile_*.jpg")):
+            try:
+                _os.remove(old)
+            except OSError:
+                pass
+
+        thumb_path = _os.path.join(thumb_dir, f"{gallery.pk}_mobile_{int(_time.time())}.jpg")
+        gallery.thumbnail_mobile.open("rb")
+        img = Image.open(gallery.thumbnail_mobile)
+        img = ImageOps.exif_transpose(img)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.thumbnail((480, 480), Image.LANCZOS)
+        gallery.thumbnail_mobile.close()
+        img.save(thumb_path, "JPEG", quality=55, optimize=True)
+    except Exception:
+        pass
+
+
 class Gallery(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
@@ -403,6 +441,12 @@ class Gallery(models.Model):
         blank=True,
         null=True,
         help_text="Optional gallery cover image used on the galleries page."
+    )
+    thumbnail_mobile = models.ImageField(
+        upload_to=gallery_cover_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional square thumbnail for mobile devices. Falls back to the desktop thumbnail if empty."
     )
     page_title = models.CharField(max_length=255, blank=True)
     intro_text = models.TextField(blank=True)
@@ -426,9 +470,12 @@ class Gallery(models.Model):
 
         # Detect thumbnail change before saving
         old_thumb = None
+        old_thumb_mobile = None
         if self.pk:
-            old_thumb = Gallery.objects.filter(pk=self.pk).values("thumbnail").first()
-            old_thumb = old_thumb.get("thumbnail") if old_thumb else None
+            old = Gallery.objects.filter(pk=self.pk).values("thumbnail", "thumbnail_mobile").first()
+            if old:
+                old_thumb = old.get("thumbnail")
+                old_thumb_mobile = old.get("thumbnail_mobile")
 
         super().save(*args, **kwargs)
 
@@ -439,6 +486,7 @@ class Gallery(models.Model):
 
         # Regenerate the small cover thumb file used on the gallery listing page
         _write_cover_thumb(self)
+        _write_cover_thumb_mobile(self)
 
     def __str__(self):
         return self.name
@@ -457,12 +505,28 @@ class Gallery(models.Model):
         import os as _os
         import glob as _glob
         thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
-        matches = _glob.glob(_os.path.join(thumb_dir, f"{self.pk}_*.jpg"))
+        matches = [
+            f for f in _glob.glob(_os.path.join(thumb_dir, f"{self.pk}_*.jpg"))
+            if not _os.path.basename(f).startswith(f"{self.pk}_mobile_")
+        ]
         if matches:
             filename = _os.path.basename(max(matches, key=_os.path.getmtime))
             return f"{settings.MEDIA_URL}gallery_thumbs/{filename}"
         cover = self.cover_image
         return cover.url if cover else None
+
+    @property
+    def cover_thumb_mobile_url(self):
+        """Return the URL of the mobile cover thumbnail. Falls back to the
+        desktop cover_thumb_url when no mobile thumbnail has been uploaded."""
+        import os as _os
+        import glob as _glob
+        thumb_dir = _os.path.join(settings.MEDIA_ROOT, "gallery_thumbs")
+        matches = _glob.glob(_os.path.join(thumb_dir, f"{self.pk}_mobile_*.jpg"))
+        if matches:
+            filename = _os.path.basename(max(matches, key=_os.path.getmtime))
+            return f"{settings.MEDIA_URL}gallery_thumbs/{filename}"
+        return self.cover_thumb_url
 
 
 class GalleryItem(models.Model):

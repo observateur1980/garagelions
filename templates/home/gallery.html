@@ -46,6 +46,14 @@
         display: block;
     }
 
+    .gallery-card-media .gallery-thumb-desktop {
+        display: block;
+    }
+
+    .gallery-card-media .gallery-thumb-mobile {
+        display: none;
+    }
+
     .gallery-video-badge {
         position: absolute;
         top: 50%;
@@ -149,7 +157,16 @@
         }
 
         .gallery-card-media {
-            height: 220px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .gallery-card-media .gallery-thumb-desktop {
+            display: none;
+        }
+
+        .gallery-card-media .gallery-thumb-mobile {
+            display: block;
         }
 
         .gallery-card-body h3 {
@@ -295,7 +312,8 @@
                     <a href="{% url 'gallery_detail' gallery.slug %}" class="gallery-card">
                         <div class="gallery-card-media">
                             {% if gallery.cover_thumb_url %}
-                                <img src="{{ gallery.cover_thumb_url }}" alt="{{ gallery.name }}" loading="lazy">
+                                <img class="gallery-thumb-desktop" src="{{ gallery.cover_thumb_url }}" alt="{{ gallery.name }}" loading="lazy">
+                                <img class="gallery-thumb-mobile" src="{{ gallery.cover_thumb_mobile_url }}" alt="{{ gallery.name }}" loading="lazy">
                             {% else %}
                                 <img src="{% static 'images/image.png' %}" alt="{{ gallery.name }}" loading="lazy">
                             {% endif %}

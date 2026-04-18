@@ -545,7 +545,7 @@ class GalleryAdmin(admin.ModelAdmin):
     ordering = ("order", "name")
     inlines = [GalleryItemInline]
     fields = (
-        "name", "slug", "sales_points", "thumbnail",
+        "name", "slug", "sales_points", "thumbnail", "thumbnail_mobile",
         "page_title", "intro_text", "is_active", "order",
     )
     filter_horizontal = ("sales_points",)
