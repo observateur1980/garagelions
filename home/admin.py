@@ -613,9 +613,8 @@ class LeadModelAdmin(admin.ModelAdmin):
     list_display = (
         "id", "first_name", "last_name", "email", "phone", "zip_code",
         "service_city", "sales_point", "assigned_user",
-        "status", "created_at",
+        "status",
     )
-    list_filter = ("sales_point", "service_city", "status", StaleLeadFilter, "created_at")
     list_editable = ("status",)
     search_fields = (
         "first_name", "last_name", "email", "phone", "zip_code",
@@ -625,6 +624,10 @@ class LeadModelAdmin(admin.ModelAdmin):
     inlines = [LeadAttachmentInline, LeadActivityInline]
     ordering = ("-created_at",)
     save_on_top = True
+
+    class Media:
+        css = {"all": ("css/admin_lead.css",)}
+        js = ("js/admin_lead_status.js",)
 
 
 # ── VideoReview ───────────────────────────────────────────────────────────
