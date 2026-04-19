@@ -227,44 +227,132 @@
     text-decoration: none !important;
 }
 
-/* mobile services accordion */
-.mobile-services-toggle {
+/* ── Mobile Menu Panel (dark overlay style) ── */
+.mobile-menu-cta {
+    padding: 10px 20px;
+}
+
+.mobile-menu-cta a {
+    display: block;
+    text-align: center;
+    padding: 14px 20px;
+    background: #ffffff;
+    color: #626262;
+    font-family: Arial, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: none;
+}
+
+.mobile-menu-contact {
+    border-top: 1px solid rgba(255,255,255,.12);
+    border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.mobile-menu-contact a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.mobile-menu-contact a:last-child {
+    border-bottom: none;
+}
+
+.mobile-menu-contact i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+    color: rgba(255,255,255,.7);
+}
+
+.mobile-menu-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu-nav > li {
+    border-bottom: 1px solid rgba(255,255,255,.1);
+}
+
+.mobile-menu-nav > li > a {
+    display: block;
+    padding: 16px 20px;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.8px;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.mobile-nav-toggle {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 20px;
-    color: #626262;
+    width: 100%;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    color: #ffffff;
     font-family: Arial, sans-serif;
     font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
-    border-bottom: 1px solid #eeeeee;
     cursor: pointer;
-    background: none;
-    border-left: 0;
-    border-right: 0;
-    border-top: 0;
-    width: 100%;
     text-align: left;
-    font-size: inherit;
-    letter-spacing: inherit;
 }
 
-.mobile-services-list {
+.mobile-nav-toggle i {
+    font-size: 16px;
+    color: rgba(255,255,255,.6);
+    transition: transform .25s ease;
+}
+
+.mobile-has-children.is-expanded .mobile-nav-toggle i {
+    transform: rotate(45deg);
+}
+
+.mobile-sub-menu {
     display: none;
-    background: #f9f9f9;
-    border-bottom: 1px solid #eeeeee;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 8px;
+    background: rgba(0,0,0,.15);
 }
 
-.mobile-services-list.is-open {
+.mobile-has-children.is-expanded .mobile-sub-menu {
     display: block;
 }
 
-.mobile-services-list a {
-    padding-left: 34px !important;
-    font-weight: 500 !important;
-    text-transform: none !important;
+.mobile-sub-menu a {
+    display: block;
+    padding: 11px 20px 11px 36px;
+    color: rgba(255,255,255,.85);
+    font-family: Arial, sans-serif;
+    font-weight: 500;
     font-size: 13px;
-    color: #444 !important;
+    text-decoration: none;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.mobile-sub-menu a:hover {
+    color: #ffffff;
+    background: rgba(255,255,255,.05);
 }
 
 @media screen and (max-width: 992px) {
@@ -339,36 +427,9 @@
 }
 
 .mobile-menu-panel {
-    background: #ffffff;
-    border-top: 1px solid #d9d9d9;
-    padding: 10px 0;
-}
-
-.mobile-menu-panel ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.mobile-menu-panel li {
-    margin: 0;
-    padding: 0;
-}
-
-.mobile-menu-panel a {
-    display: block;
-    padding: 12px 20px;
-    color: #626262;
-    font-family: Arial, sans-serif;
-    font-weight: 600;
-    text-transform: uppercase;
-    border-bottom: 1px solid #eeeeee;
-}
-
-.mobile-location-list a {
-    text-transform: none;
-    font-weight: 500;
-    padding-left: 34px;
+    background: #626262;
+    border-top: none;
+    padding: 0 0 20px;
 }
 
 @media screen and (max-width: 1200px) {
@@ -437,9 +498,10 @@
         top: 78px;
         left: 0;
         right: 0;
+        bottom: 0;
         z-index: 9998;
-        max-height: calc(100vh - 78px);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .icon-bar {
@@ -518,7 +580,8 @@
                                     <i class="fa fa-phone"></i>
                                 </a>
 
-                                <button class="mobile-menu-toggle" type="button" aria-label="Open menu" onclick="document.getElementById('mobileMenuPanel').classList.toggle('is-open');">
+                                <button class="mobile-menu-toggle" type="button" aria-label="Open menu"
+                                    onclick="var p=document.getElementById('mobileMenuPanel'),ic=this.querySelector('i'); p.classList.toggle('is-open'); if(p.classList.contains('is-open')){ic.className='fa fa-times';}else{ic.className='fa fa-bars';}">
                                     <span>Menu</span>
                                     <i class="fa fa-bars"></i>
                                 </button>
@@ -573,14 +636,37 @@
                             </div>
 
                             <div id="mobileMenuPanel" class="mobile-menu-panel">
-                                <ul>
+                                <!-- CTA Button -->
+                                <div class="mobile-menu-cta">
+                                    <a href="{% if selected_city %}{% url 'create_lead' %}?sales_point={{ selected_city.slug }}{% else %}{% url 'create_lead' %}{% endif %}">
+                                        REQUEST A CONSULTATION
+                                    </a>
+                                </div>
 
-                                    <li><a href="{% url 'locations_list' %}">Locations</a></li>
-                                    <li>
-                                        <button class="mobile-services-toggle" onclick="this.nextElementSibling.classList.toggle('is-open'); this.querySelector('i').classList.toggle('fa-angle-up'); this.querySelector('i').classList.toggle('fa-angle-down');">
-                                            Services <i class="fa fa-angle-down"></i>
+                                <!-- Contact info -->
+                                <div class="mobile-menu-contact">
+                                    <a href="tel:{% if selected_city and selected_city.local_phone %}{{ selected_city.local_phone }}{% else %}{{ company_toll_free }}{% endif %}">
+                                        <i class="fa fa-phone"></i>
+                                        {% if selected_city and selected_city.formatted_phone %}{{ selected_city.formatted_phone }}{% else %}{{ company_toll_free_display }}{% endif %}
+                                    </a>
+                                    <a href="{% url 'locations_list' %}">
+                                        <i class="fa fa-map-marker"></i>
+                                        Locations
+                                    </a>
+                                    <a href="{% if selected_city %}{% url 'location_detail' selected_city.slug %}{% else %}{% url 'locations_list' %}{% endif %}">
+                                        <i class="fa fa-envelope"></i>
+                                        Contact us
+                                    </a>
+                                </div>
+
+                                <!-- Nav links -->
+                                <ul class="mobile-menu-nav">
+                                    <li class="mobile-has-children">
+                                        <button class="mobile-nav-toggle" onclick="this.parentElement.classList.toggle('is-expanded');">
+                                            <span>SERVICES</span>
+                                            <i class="fa fa-plus"></i>
                                         </button>
-                                        <ul class="mobile-services-list">
+                                        <ul class="mobile-sub-menu">
                                             <li><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></li>
                                             <li><a href="{% url 'garage_cabinet' %}">Garage Cabinets</a></li>
                                             <li><a href="{% url 'garage_flooring' %}">Garage Flooring</a></li>
@@ -591,15 +677,8 @@
                                             <li><a href="{% url 'car_lift' %}">Car Lifts</a></li>
                                         </ul>
                                     </li>
-
-
-                                    <li><a href="{% url 'galleries' %}">Gallery</a></li>
-                                    <li><a href="{% url 'about' %}">About</a></li>
-                                    <li>
-                                        <a href="{% if selected_city %}{% url 'create_lead' %}?sales_point={{ selected_city.slug }}{% else %}{% url 'create_lead' %}{% endif %}">
-                                            Request a Consultation
-                                        </a>
-                                    </li>
+                                    <li><a href="{% url 'galleries' %}">GALLERY</a></li>
+                                    <li><a href="{% url 'about' %}">ABOUT</a></li>
                                 </ul>
                             </div>
 
