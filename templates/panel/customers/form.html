@@ -1,0 +1,56 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if customer %}Edit Customer{% else %}New Customer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{% if customer %}Edit Customer{% else %}New Customer{% endif %}</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:600px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6">
+          <label>First Name</label>
+          <input type="text" name="first_name" value="{{ customer.first_name|default:'' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label>Last Name</label>
+          <input type="text" name="last_name" value="{{ customer.last_name|default:'' }}" required>
+        </div>
+      </div>
+
+      <label>Email</label>
+      <input type="email" name="email" value="{{ customer.email|default:'' }}">
+
+      <label>Phone</label>
+      <input type="text" name="phone" value="{{ customer.phone|default:'' }}">
+
+      <label>Address</label>
+      <input type="text" name="address" value="{{ customer.address|default:'' }}">
+
+      <div class="row">
+        <div class="col-md-5">
+          <label>City</label>
+          <input type="text" name="city" value="{{ customer.city|default:'' }}">
+        </div>
+        <div class="col-md-4">
+          <label>State</label>
+          <input type="text" name="state" value="{{ customer.state|default:'' }}">
+        </div>
+        <div class="col-md-3">
+          <label>Zip</label>
+          <input type="text" name="zip_code" value="{{ customer.zip_code|default:'' }}">
+        </div>
+      </div>
+
+      <label>Notes</label>
+      <textarea name="notes" rows="3">{{ customer.notes|default:'' }}</textarea>
+
+      <button type="submit" class="btn-panel">{% if customer %}Save Changes{% else %}Create Customer{% endif %}</button>
+      <a href="{% url 'panel:customer_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

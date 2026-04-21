@@ -1,0 +1,55 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ customer.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{{ customer.full_name }}</h2>
+  <div>
+    <a href="{% url 'panel:customer_edit' customer.pk %}" class="btn-panel-outline">Edit</a>
+    <a href="{% url 'panel:customer_delete' customer.pk %}" class="btn-panel-outline" style="color:#b91c1c; border-color:#b91c1c; margin-left:8px">Delete</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Email</h6>
+        <p>{{ customer.email|default:"—" }}</p>
+        <h6>Phone</h6>
+        <p>{{ customer.phone|default:"—" }}</p>
+        <h6>Address</h6>
+        <p>{{ customer.address|default:"—" }}{% if customer.city %}, {{ customer.city }}{% endif %}{% if customer.state %}, {{ customer.state }}{% endif %} {{ customer.zip_code }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Notes</h6>
+        <p>{{ customer.notes|default:"—" }}</p>
+        <h6>Created</h6>
+        <p>{{ customer.created_at|date:"M d, Y" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if customer.projects.exists %}
+<h4 class="mt-4 mb-3">Projects</h4>
+<table class="panel-table">
+  <thead>
+    <tr><th>Name</th><th>Status</th><th>Created</th></tr>
+  </thead>
+  <tbody>
+    {% for project in customer.projects.all %}
+    <tr>
+      <td><a href="{% url 'panel:project_detail' project.pk %}">{{ project.name }}</a></td>
+      <td><span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span></td>
+      <td>{{ project.created_at|date:"M d, Y" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

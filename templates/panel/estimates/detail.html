@@ -1,0 +1,68 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ estimate.estimate_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{{ estimate.estimate_number }}</h2>
+  <div>
+    {% if estimate.is_editable %}
+    <a href="{% url 'panel:estimate_edit' estimate.pk %}" class="btn-panel-outline">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Title</h6>
+        <p>{{ estimate.title }}</p>
+        <h6>Customer</h6>
+        <p><a href="{% url 'panel:customer_detail' estimate.customer.pk %}" style="color:#111827">{{ estimate.customer }}</a></p>
+        <h6>Status</h6>
+        <p><span class="badge-status badge-{{ estimate.status }}">{{ estimate.get_status_display }}</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Subtotal</h6>
+        <p>${{ estimate.subtotal|floatformat:2 }}</p>
+        <h6>Tax ({{ estimate.tax_rate }}%)</h6>
+        <p>${{ estimate.tax|floatformat:2 }}</p>
+        <h6>Total</h6>
+        <p style="font-size:20px; font-weight:600">${{ estimate.total|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if estimate.items.exists %}
+<h4 class="mt-4 mb-3">Line Items</h4>
+<table class="panel-table">
+  <thead>
+    <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+  </thead>
+  <tbody>
+    {% for item in estimate.items.all %}
+    <tr>
+      <td>{{ item.name }}<br><small style="color:#6b7280">{{ item.description }}</small></td>
+      <td>{{ item.quantity }}</td>
+      <td>${{ item.unit_price|floatformat:2 }}</td>
+      <td>${{ item.line_total|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if estimate.description %}
+<div class="card dashboard-card mt-4">
+  <div class="card-body">
+    <h6>Description</h6>
+    <p>{{ estimate.description }}</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

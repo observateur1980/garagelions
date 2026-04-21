@@ -1,0 +1,36 @@
+{% extends "panel/base.html" %}
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Transactions</h2>
+  <a href="{% url 'panel:transaction_create' %}" class="btn-panel">+ New Transaction</a>
+</div>
+
+<table class="panel-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Customer</th>
+      <th>Invoice</th>
+      <th>Description</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for txn in transactions %}
+    <tr>
+      <td>{{ txn.date|date:"M d, Y" }}</td>
+      <td><span class="badge-status badge-{{ txn.transaction_type }}">{{ txn.get_transaction_type_display }}</span></td>
+      <td>{{ txn.customer|default:"—" }}</td>
+      <td>{% if txn.invoice %}<a href="{% url 'panel:invoice_detail' txn.invoice.pk %}">{{ txn.invoice.invoice_number }}</a>{% else %}—{% endif %}</td>
+      <td>{{ txn.description|default:"—" }}</td>
+      <td>${{ txn.amount|floatformat:2 }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No transactions yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "panel/base.html" %}
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Invoices</h2>
+  <a href="{% url 'panel:invoice_create' %}" class="btn-panel">+ New Invoice</a>
+</div>
+
+<table class="panel-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Customer</th>
+      <th>Total</th>
+      <th>Paid</th>
+      <th>Status</th>
+      <th>Due</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for inv in invoices %}
+    <tr>
+      <td><a href="{% url 'panel:invoice_detail' inv.pk %}">{{ inv.invoice_number }}</a></td>
+      <td>{{ inv.title }}</td>
+      <td>{{ inv.customer }}</td>
+      <td>${{ inv.total|floatformat:2 }}</td>
+      <td>${{ inv.amount_paid|floatformat:2 }}</td>
+      <td><span class="badge-status badge-{{ inv.status }}">{{ inv.get_status_display }}</span></td>
+      <td>{{ inv.due_date|date:"M d, Y"|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" style="color:#6b7280; padding:24px; text-align:center">No invoices yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,492 @@
+{% extends "panel/base.html" %}
+{% block title %}Edit Estimate — {{ estimate.estimate_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Header bar ── */
+.est-header-bar {
+  background: #374151;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.est-header {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.est-header h2 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  color: #111827;
+}
+.est-header .customer-link {
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+}
+.est-header .customer-link:hover { text-decoration: underline; }
+.est-desc {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 4px 0 0;
+  cursor: pointer;
+}
+.est-desc:hover { color: #374151; }
+
+/* ── Action buttons ── */
+.est-actions {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.est-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 11px;
+}
+.est-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.est-action-btn:hover .est-action-icon { background: #e5e7eb; }
+
+/* ── Add bar ── */
+.add-bar {
+  position: relative;
+  margin-bottom: 24px;
+}
+.add-bar input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+.add-bar input:focus { outline: none; border-color: #6b7280; }
+.add-bar .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 16px;
+}
+.add-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.add-dropdown.show { display: block; }
+.add-dropdown-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.add-dropdown-item:hover { background: #f3f4f6; }
+.add-dropdown-item .price { color: #6b7280; font-size: 13px; }
+.add-dropdown-custom {
+  padding: 10px 16px;
+  border-top: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+.add-dropdown-custom:hover { background: #f3f4f6; }
+
+/* ── Items table ── */
+.items-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+.items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.items-header h4 { margin: 0; font-size: 16px; color: #111827; }
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
+.items-table td {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+.items-table .editable-cell {
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  border-radius: 4px;
+  min-width: 60px;
+  background: #f9fafb;
+}
+.items-table .editable-cell:focus {
+  outline: none;
+  border-color: #6b7280;
+  background: #fff;
+}
+.item-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #9ca3af;
+  padding: 4px;
+}
+.item-action-btn:hover { color: #374151; }
+.item-delete-btn:hover { color: #b91c1c; }
+
+/* ── Summary ── */
+.summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 320px;
+  margin-left: auto;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #374151;
+}
+.summary-row.total {
+  border-top: 2px solid #e5e7eb;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header bar -->
+<div class="est-header-bar">
+  Estimate — {{ estimate.estimate_number }}
+</div>
+<div class="est-header">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px">
+    <div style="flex:1">
+      <h2 id="est-title" class="est-desc" style="font-size:24px; color:#111827; cursor:pointer" onclick="editField('title')">{{ estimate.title }}</h2>
+      <div style="margin:6px 0">
+        <a href="{% url 'panel:customer_detail' estimate.customer.pk %}" class="customer-link">{{ estimate.customer.full_name }}</a>
+      </div>
+      {% if estimate.description %}<div style="color:#6b7280; font-size:13px; margin-top:4px">{{ estimate.description }}</div>{% endif %}
+    </div>
+    <div class="est-actions">
+      <a href="{% url 'panel:estimate_detail' estimate.pk %}" class="est-action-btn">
+        <span class="est-action-icon">&#128065;</span>
+        View
+      </a>
+      <a href="{% url 'panel:estimate_list' %}" class="est-action-btn">
+        <span class="est-action-icon">&#128203;</span>
+        All Estimates
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Add item bar -->
+<div class="add-bar">
+  <span class="search-icon">&#128269;</span>
+  <input type="text" id="add-search" placeholder="Add item (search parts or type custom)" autocomplete="off">
+  <div class="add-dropdown" id="add-dropdown"></div>
+</div>
+
+<!-- Items section -->
+<div class="items-section">
+  <div class="items-header">
+    <h4>Estimate Items</h4>
+    <div id="summary-btn" class="btn-panel-outline" style="padding:6px 14px; font-size:13px; cursor:pointer" onclick="document.getElementById('summary-section').scrollIntoView({behavior:'smooth'})">Summary</div>
+  </div>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width:36%">Description</th>
+        <th style="width:12%">Units</th>
+        <th style="width:10%">Qty</th>
+        <th style="width:16%">Category</th>
+        <th style="width:14%; text-align:right">Total</th>
+        <th style="width:12%"></th>
+      </tr>
+    </thead>
+    <tbody id="items-body">
+      {% for item in items %}
+      <tr data-item-id="{{ item.id }}">
+        <td style="font-weight:500">{{ item.name }}</td>
+        <td style="color:#6b7280; font-size:13px">{{ item.unit_label|default:"—" }}</td>
+        <td><input type="text" class="editable-cell item-qty" value="{{ item.quantity }}" data-field="quantity" style="width:70px"></td>
+        <td style="color:#6b7280; font-size:13px">{{ item.category_label|default:"—" }}</td>
+        <td style="text-align:right; font-weight:500" class="item-total">${{ item.line_total|floatformat:2 }}</td>
+        <td style="text-align:right">
+          <button class="item-action-btn item-delete-btn" onclick="deleteItem({{ item.id }})" title="Delete">&#128465;</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr id="empty-row">
+        <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items yet. Search and add parts above.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Summary -->
+<div id="summary-section" class="summary-card">
+  <div class="summary-row">
+    <span>Subtotal</span>
+    <span id="sum-subtotal">${{ estimate.subtotal|floatformat:2 }}</span>
+  </div>
+  <div class="summary-row">
+    <span>Tax (<span id="sum-tax-rate" style="cursor:pointer; text-decoration:underline dotted" onclick="editField('tax_rate')">{{ estimate.tax_rate }}%</span>)</span>
+    <span id="sum-tax">${{ estimate.tax|floatformat:2 }}</span>
+  </div>
+  <div class="summary-row total">
+    <span>Total</span>
+    <span id="sum-total">${{ estimate.total|floatformat:2 }}</span>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const EST_ID = {{ estimate.pk }};
+
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const p = v.split(`; ${name}=`);
+    return p.length === 2 ? p.pop().split(";").shift() : "";
+  }
+  const csrf = getCookie("csrftoken");
+
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-CSRFToken": csrf,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(data).toString(),
+    });
+    return res.json();
+  }
+
+  function updateSummary(data) {
+    document.getElementById("sum-subtotal").textContent = "$" + parseFloat(data.subtotal).toFixed(2);
+    document.getElementById("sum-tax").textContent = "$" + parseFloat(data.tax).toFixed(2);
+    document.getElementById("sum-total").textContent = "$" + parseFloat(data.total).toFixed(2);
+  }
+
+  // ── Inline field editing ──
+  window.editField = function(field) {
+    let current = "";
+    if (field === "title") current = document.getElementById("est-title").textContent;
+    else if (field === "description") current = document.getElementById("est-desc").textContent;
+    else if (field === "tax_rate") current = "{{ estimate.tax_rate }}";
+
+    const value = prompt(
+      field === "title" ? "Estimate title:" :
+      field === "description" ? "Description:" :
+      "Tax rate (%):",
+      current.trim()
+    );
+    if (value === null) return;
+
+    postJSON(`/panel/estimates/${EST_ID}/ajax/update-header/`, { field, value }).then(r => {
+      if (r.ok) {
+        if (field === "title") document.getElementById("est-title").textContent = value;
+        else if (field === "description") document.getElementById("est-desc").textContent = value || "Add description here...";
+        else if (field === "tax_rate") {
+          document.getElementById("sum-tax-rate").textContent = value + "%";
+          location.reload();
+        }
+      }
+    });
+  };
+
+  // ── Add bar search ──
+  const searchInput = document.getElementById("add-search");
+  const dropdown = document.getElementById("add-dropdown");
+  let searchTimer = null;
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    const q = searchInput.value.trim();
+    if (!q) { dropdown.classList.remove("show"); return; }
+
+    searchTimer = setTimeout(async () => {
+      const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?q=${encodeURIComponent(q)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      const data = await res.json();
+
+      let html = "";
+      if (data.results.length) {
+        data.results.forEach(p => {
+          html += `<div class="add-dropdown-item" onclick='addPart(${JSON.stringify(p)})'>
+            <span>${p.name}${p.sku ? " <span style='color:#9ca3af'>(" + p.sku + ")</span>" : ""}</span>
+            <span class="price">$${parseFloat(p.unit_price).toFixed(2)}</span>
+          </div>`;
+        });
+      }
+      html += `<div class="add-dropdown-custom" onclick="addCustomItem()">+ Add "${q}" as custom item</div>`;
+      dropdown.innerHTML = html;
+      dropdown.classList.add("show");
+    }, 300);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".add-bar")) dropdown.classList.remove("show");
+  });
+
+  // ── Add part from search ──
+  window.addPart = async function(part) {
+    dropdown.classList.remove("show");
+    searchInput.value = "";
+
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      part_id: part.id,
+      name: part.name,
+      quantity: "1",
+      unit_price: part.unit_price,
+      unit_label: part.unit || "",
+      category_label: part.category || "",
+    });
+
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+    }
+  };
+
+  // ── Add custom item ──
+  window.addCustomItem = async function() {
+    const name = searchInput.value.trim();
+    dropdown.classList.remove("show");
+    searchInput.value = "";
+
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      name,
+      quantity: "1",
+      unit_price: "0",
+    });
+
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+    }
+  };
+
+  function addRowToTable(item) {
+    const empty = document.getElementById("empty-row");
+    if (empty) empty.remove();
+
+    const tbody = document.getElementById("items-body");
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-item-id", item.id);
+    tr.innerHTML = `
+      <td style="font-weight:500">${item.name}</td>
+      <td style="color:#6b7280; font-size:13px">${item.unit_label || "—"}</td>
+      <td><input type="text" class="editable-cell item-qty" value="${item.quantity}" data-field="quantity" style="width:70px"></td>
+      <td style="color:#6b7280; font-size:13px">${item.category_label || "—"}</td>
+      <td style="text-align:right; font-weight:500" class="item-total">$${parseFloat(item.line_total).toFixed(2)}</td>
+      <td style="text-align:right">
+        <button class="item-action-btn item-delete-btn" onclick="deleteItem(${item.id})" title="Delete">&#128465;</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    attachCellListeners(tr);
+  }
+
+  // ── Inline cell editing ──
+  function attachCellListeners(tr) {
+    const itemId = tr.getAttribute("data-item-id");
+    tr.querySelectorAll(".editable-cell").forEach(input => {
+      input.addEventListener("change", async () => {
+        const field = input.dataset.field;
+        const value = input.value;
+        const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { [field]: value });
+        if (data.ok) {
+          tr.querySelector(".item-total").textContent = "$" + parseFloat(data.item.line_total).toFixed(2);
+          updateSummary(data);
+        }
+      });
+    });
+  }
+
+  // Attach to existing rows
+  document.querySelectorAll("#items-body tr[data-item-id]").forEach(attachCellListeners);
+
+  // ── Delete item ──
+  window.deleteItem = async function(itemId) {
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/delete-item/${itemId}/`, {});
+    if (data.ok) {
+      const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+      if (row) row.remove();
+      updateSummary(data);
+
+      if (!document.querySelector("#items-body tr[data-item-id]")) {
+        document.getElementById("items-body").innerHTML = `
+          <tr id="empty-row">
+            <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items yet. Search and add parts above.</td>
+          </tr>`;
+      }
+    }
+  };
+
+})();
+</script>
+{% endblock %}

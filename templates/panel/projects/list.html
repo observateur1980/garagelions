@@ -1,0 +1,40 @@
+{% extends "panel/base.html" %}
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Projects</h2>
+  <a href="{% url 'panel:project_create' %}" class="btn-panel">+ New Project</a>
+</div>
+
+<div class="mb-3">
+  <a href="{% url 'panel:project_list' %}" class="btn-panel-outline {% if not current_status %}fw-bold{% endif %}" style="margin-right:4px">All</a>
+  <a href="?status=not_started" class="btn-panel-outline {% if current_status == 'not_started' %}fw-bold{% endif %}" style="margin-right:4px">Not Started</a>
+  <a href="?status=in_progress" class="btn-panel-outline {% if current_status == 'in_progress' %}fw-bold{% endif %}" style="margin-right:4px">In Progress</a>
+  <a href="?status=completed" class="btn-panel-outline {% if current_status == 'completed' %}fw-bold{% endif %}" style="margin-right:4px">Completed</a>
+  <a href="?status=canceled" class="btn-panel-outline {% if current_status == 'canceled' %}fw-bold{% endif %}">Canceled</a>
+</div>
+
+<table class="panel-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Customer</th>
+      <th>Status</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for project in projects %}
+    <tr>
+      <td><a href="{% url 'panel:project_detail' project.pk %}">{{ project.name }}</a></td>
+      <td>{{ project.customer }}</td>
+      <td><span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span></td>
+      <td>{{ project.created_at|date:"M d, Y" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="color:#6b7280; padding:24px; text-align:center">No projects yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

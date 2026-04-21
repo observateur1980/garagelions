@@ -1,0 +1,39 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{{ project.name }}</h2>
+  <div>
+    <a href="{% url 'panel:project_edit' project.pk %}" class="btn-panel-outline">Edit</a>
+    <a href="{% url 'panel:project_delete' project.pk %}" class="btn-panel-outline" style="color:#b91c1c; border-color:#b91c1c; margin-left:8px">Delete</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Customer</h6>
+        <p><a href="{% url 'panel:customer_detail' project.customer.pk %}" style="color:#111827">{{ project.customer }}</a></p>
+        <h6>Status</h6>
+        <p><span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span></p>
+        <h6>Created</h6>
+        <p>{{ project.created_at|date:"M d, Y" }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Description</h6>
+        <p>{{ project.description|default:"—" }}</p>
+        <h6>Start Date</h6>
+        <p>{{ project.start_date|date:"M d, Y"|default:"—" }}</p>
+        <h6>Due Date</h6>
+        <p>{{ project.due_date|date:"M d, Y"|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

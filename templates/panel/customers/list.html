@@ -1,0 +1,41 @@
+{% extends "panel/base.html" %}
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Customers</h2>
+  <a href="{% url 'panel:customer_create' %}" class="btn-panel">+ New Customer</a>
+</div>
+
+<div class="mb-3">
+  <form method="get" style="display:inline-flex; gap:8px; align-items:center">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search customers..." style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:280px">
+    <button type="submit" class="btn-panel-outline">Search</button>
+  </form>
+</div>
+
+<table class="panel-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>City</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for customer in customers %}
+    <tr>
+      <td><a href="{% url 'panel:customer_detail' customer.pk %}">{{ customer.full_name }}</a></td>
+      <td>{{ customer.email|default:"—" }}</td>
+      <td>{{ customer.phone|default:"—" }}</td>
+      <td>{{ customer.city|default:"—" }}</td>
+      <td>{{ customer.created_at|date:"M d, Y" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:#6b7280; padding:24px; text-align:center">No customers yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "imagekit",
     "home.apps.HomeConfig",
+    "panel",
 
     "django.contrib.sitemaps",
 ]
@@ -114,7 +115,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = "/account/login/"
-LOGIN_REDIRECT_URL = "/sales/dashboard/"
+LOGIN_REDIRECT_URL = "/panel/"
 LOGOUT_REDIRECT_URL = "/account/login/"
 
 

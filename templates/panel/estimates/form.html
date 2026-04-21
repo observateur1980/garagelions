@@ -1,0 +1,35 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if estimate %}Edit Estimate{% else %}New Estimate{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{% if estimate %}Edit Estimate{% else %}New Estimate{% endif %}</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:600px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>Title</label>
+      <input type="text" name="title" value="{{ estimate.title|default:'' }}" required>
+
+      <label>Customer</label>
+      <select name="customer" required>
+        <option value="">Select customer...</option>
+        {% for c in customers %}
+        <option value="{{ c.pk }}" {% if estimate.customer_id == c.pk %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Tax Rate (%)</label>
+      <input type="number" name="tax_rate" step="0.01" value="{{ estimate.tax_rate|default:'0' }}">
+
+      <label>Description</label>
+      <textarea name="description" rows="3">{{ estimate.description|default:'' }}</textarea>
+
+      <button type="submit" class="btn-panel">{% if estimate %}Save Changes{% else %}Create Estimate{% endif %}</button>
+      <a href="{% url 'panel:estimate_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

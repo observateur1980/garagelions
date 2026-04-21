@@ -1,0 +1,85 @@
+{% extends "panel/base.html" %}
+{% block title %}New Lead{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>New Lead</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:700px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="row">
+        <div class="col-md-6">
+          <label>First Name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="col-md-6">
+          <label>Last Name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <label>Email</label>
+          {{ form.email }}
+        </div>
+        <div class="col-md-6">
+          <label>Phone</label>
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <label>Address</label>
+          {{ form.address }}
+        </div>
+        <div class="col-md-4">
+          <label>ZIP Code</label>
+          {{ form.zip_code }}
+        </div>
+      </div>
+
+      <label>Services</label>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px">
+        {{ form.consultation_types }}
+      </div>
+
+      <label>Message</label>
+      {{ form.message }}
+
+      <hr style="border-color:#e5e7eb; margin:20px 0">
+
+      <div class="row">
+        <div class="col-md-4">
+          <label>Location</label>
+          {{ form.sales_point }}
+        </div>
+        <div class="col-md-4">
+          <label>Assigned To</label>
+          {{ form.assigned_user }}
+        </div>
+        <div class="col-md-4">
+          <label>Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <label>Source</label>
+      {{ form.source_page }}
+
+      <label>Internal Notes</label>
+      {{ form.internal_notes }}
+
+      <div style="margin-top:20px">
+        <button type="submit" class="btn-panel">Create Lead</button>
+        <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

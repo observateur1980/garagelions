@@ -1,0 +1,50 @@
+{% extends "panel/base.html" %}
+{% block title %}New Transaction{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>New Transaction</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:600px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>Type</label>
+      <select name="transaction_type" required>
+        <option value="payment">Payment</option>
+        <option value="refund">Refund</option>
+        <option value="expense">Expense</option>
+      </select>
+
+      <label>Amount ($)</label>
+      <input type="number" name="amount" step="0.01" required>
+
+      <label>Date</label>
+      <input type="date" name="date" required>
+
+      <label>Customer (optional)</label>
+      <select name="customer">
+        <option value="">— None —</option>
+        {% for c in customers %}
+        <option value="{{ c.pk }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Invoice (optional)</label>
+      <select name="invoice">
+        <option value="">— None —</option>
+        {% for inv in invoices %}
+        <option value="{{ inv.pk }}">{{ inv.invoice_number }} — {{ inv.customer }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Description</label>
+      <input type="text" name="description">
+
+      <button type="submit" class="btn-panel">Create Transaction</button>
+      <a href="{% url 'panel:transaction_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

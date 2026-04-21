@@ -1,0 +1,308 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Panel{% endblock %} — Garage Lions</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    /* ── Navbar ── */
+    .panel-navbar {
+      background: rgb(164, 172, 180);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-navbar .brand {
+      color: #fff;
+      font-weight: 600;
+      font-size: 18px;
+      text-decoration: none;
+    }
+    .panel-navbar .user-info {
+      color: #fff;
+      font-size: 14px;
+    }
+    .panel-navbar .user-info a {
+      color: #fff;
+      text-decoration: underline;
+      margin-left: 12px;
+    }
+
+    /* ── Layout ── */
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 50px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 180px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      transition: width 0.25s ease;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sidebar.collapsed { width: 64px; }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+    }
+    .toggle-btn {
+      font-size: 18px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #374151;
+    }
+    .logo-text {
+      font-weight: 600;
+      white-space: nowrap;
+      color: #374151;
+    }
+    .sidebar.collapsed .logo-text { display: none; }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      color: #374151;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .sidebar-nav a:hover { background: #f3f4f6; }
+    .sidebar-nav a.active { background: #f3f4f6; font-weight: 600; }
+    .sidebar .icon { font-size: 18px; }
+    .sidebar.collapsed .text { display: none; }
+
+    /* ── Main content ── */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      background: #f9fafb;
+    }
+
+    /* ── KPI Cards ── */
+    .dashboard-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+      transition: box-shadow 0.15s;
+    }
+    .dashboard-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .dashboard-card h6 { color: #6b7280; font-size: 14px; margin-bottom: 4px; }
+    .dashboard-card h3 { color: #111827; margin: 0; }
+
+    /* ── Status badges ── */
+    .badge-status {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-not_started { background: #f3f4f6; color: #374151; }
+    .badge-in_progress { background: #eff6ff; color: #1d4ed8; }
+    .badge-completed   { background: #ecfdf5; color: #047857; }
+    .badge-canceled    { background: #fef2f2; color: #b91c1c; }
+    .badge-draft       { background: #f3f4f6; color: #374151; }
+    .badge-sent        { background: #eff6ff; color: #1d4ed8; }
+    .badge-approved    { background: #ecfdf5; color: #047857; }
+    .badge-declined    { background: #fef2f2; color: #b91c1c; }
+    .badge-expired     { background: #fef2f2; color: #b91c1c; }
+    .badge-converted   { background: #f5f3ff; color: #6d28d9; }
+    .badge-paid        { background: #ecfdf5; color: #047857; }
+    .badge-partial     { background: #fffbeb; color: #b45309; }
+    .badge-overdue     { background: #fef2f2; color: #b91c1c; }
+    .badge-payment     { background: #ecfdf5; color: #047857; }
+    .badge-refund      { background: #fef2f2; color: #b91c1c; }
+    .badge-expense     { background: #fffbeb; color: #b45309; }
+
+    /* ── Tables ── */
+    .panel-table { width: 100%; border-collapse: collapse; }
+    .panel-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #6b7280;
+      border-bottom: 1px solid #e5e7eb;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .panel-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 14px;
+      color: #374151;
+    }
+    .panel-table tr:hover td { background: #f9fafb; }
+    .panel-table a { color: #111827; text-decoration: none; font-weight: 500; }
+    .panel-table a:hover { text-decoration: underline; }
+
+    /* ── Buttons ── */
+    .btn-panel {
+      background: #374151;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-panel:hover { background: #1f2937; color: #fff; }
+    .btn-panel-outline {
+      background: #fff;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-panel-outline:hover { background: #f3f4f6; color: #374151; }
+    .btn-danger {
+      background: #b91c1c;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-danger:hover { background: #991b1b; }
+
+    /* ── Forms ── */
+    .panel-form label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    .panel-form input,
+    .panel-form select,
+    .panel-form textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .panel-form input:focus,
+    .panel-form select:focus,
+    .panel-form textarea:focus {
+      outline: none;
+      border-color: #6b7280;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .page-header h2 { margin: 0; color: #111827; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none !important; }
+      .main-content { width: 100% !important; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="panel-navbar">
+  <a href="{% url 'panel:dashboard' %}" class="brand">Garage Lions</a>
+  <div class="user-info">
+    {{ user.get_full_name }}
+    {% if user.is_project_manager %}
+      <span style="opacity:0.8; margin-left:4px">({{ user.project_manager.get_role_display }}{% if user.project_manager.sales_point %} &middot; {{ user.project_manager.sales_point.name }}{% endif %})</span>
+    {% endif %}
+    <a href="{% url 'account:profile_edit' %}">Profile</a>
+    <a href="{% url 'account:password_change' %}">Password</a>
+    <a href="{% url 'logout_shortcut' %}">Logout</a>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <button class="toggle-btn" onclick="toggleSidebar()">&#9776;</button>
+      <span class="logo-text">Overview</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="icon">&#128202;</span><span class="text">Dashboard</span>
+      </a>
+      <a href="{% url 'panel:project_list' %}" class="{% if 'project' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128193;</span><span class="text">Projects</span>
+      </a>
+      <a href="{% url 'panel:customer_list' %}" class="{% if 'customer' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128101;</span><span class="text">Customers</span>
+      </a>
+      <a href="{% url 'panel:transaction_list' %}" class="{% if 'transaction' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128179;</span><span class="text">Transactions</span>
+      </a>
+      <a href="{% url 'panel:estimate_list' %}" class="{% if 'estimate' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128196;</span><span class="text">Estimates</span>
+      </a>
+      <a href="{% url 'panel:invoice_list' %}" class="{% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#129534;</span><span class="text">Invoices</span>
+      </a>
+      <a href="{% url 'panel:part_list' %}" class="{% if 'part' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128451;</span><span class="text">Parts</span>
+      </a>
+      <a href="{% url 'panel:task_list' %}" class="{% if 'task' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#9989;</span><span class="text">Tasks</span>
+      </a>
+      <a href="{% url 'panel:lead_list' %}" class="{% if 'lead' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">&#128203;</span><span class="text">Leads</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  sb.classList.toggle("collapsed");
+  localStorage.setItem("sidebar-collapsed", sb.classList.contains("collapsed"));
+}
+document.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem("sidebar-collapsed") === "true") {
+    document.getElementById("sidebar").classList.add("collapsed");
+  }
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -15,16 +15,8 @@ User = get_user_model()
 
 
 def _dashboard_url(user):
-    """Return the correct dashboard URL based on the user's role."""
-    try:
-        role = user.project_manager.role
-        if role == ProjectManager.TERRITORY_MANAGER:
-            return reverse('sales_dashboard_territory')
-        if role == ProjectManager.LOCATION_MANAGER:
-            return reverse('sales_dashboard_manager')
-    except ProjectManager.DoesNotExist:
-        pass
-    return reverse('sales_dashboard')
+    """Return the panel dashboard URL."""
+    return reverse('panel:dashboard')
 
 
 def user_login(request):

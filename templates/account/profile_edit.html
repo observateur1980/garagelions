@@ -15,7 +15,7 @@
       <p style="margin:4px 0 0; color:#888; font-size:13px;">Personal information &amp; preferences</p>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
+      <a href="{% url 'panel:dashboard' %}" class="button button-white"><span>Dashboard</span><i class="fa fa-home"></i></a>
       <a href="{% url 'account:logout' %}" class="button button-white"><span>Logout</span><i class="fa fa-sign-out"></i></a>
     </div>
   </div>
@@ -237,7 +237,7 @@
         {# Save #}
         <div style="display:flex; gap:12px;">
           <button type="submit" class="button"><span>Save profile</span><i class="fa fa-check"></i></button>
-          <a href="{% url 'sales_dashboard' %}" class="button button-white"><span>Cancel</span></a>
+          <a href="{% url 'panel:dashboard' %}" class="button button-white"><span>Cancel</span></a>
         </div>
 
       </div>

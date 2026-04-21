@@ -1,0 +1,85 @@
+{% extends "panel/base.html" %}
+{% block title %}Leads{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Leads</h2>
+  <a href="{% url 'panel:lead_create' %}" class="btn-panel">+ New Lead</a>
+</div>
+
+<!-- Filters -->
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px">
+  <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:end">
+    <div>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, phone, zip..."
+             style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:260px">
+    </div>
+    <div>
+      <select name="status" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px" onchange="this.form.submit()">
+        <option value="">All statuses</option>
+        {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if can_filter_location %}
+    <div>
+      <select name="sales_point" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px" onchange="this.form.submit()">
+        <option value="">All locations</option>
+        {% for sp in sales_points %}
+        <option value="{{ sp.pk }}" {% if sales_point_id == sp.pk|stringformat:"d" %}selected{% endif %}>{{ sp.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <button type="submit" class="btn-panel-outline">Search</button>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="card dashboard-card">
+  <div class="card-body" style="padding:0; overflow-x:auto">
+    <table class="panel-table" style="margin:0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Assigned</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in page_obj %}
+        <tr>
+          <td><a href="{% url 'panel:lead_detail' lead.pk %}">{{ lead.first_name }} {{ lead.last_name }}</a></td>
+          <td style="font-size:13px">{{ lead.email }}</td>
+          <td style="font-size:13px">{{ lead.phone }}</td>
+          <td style="font-size:13px">{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}—{% endif %}</td>
+          <td><span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}">{{ lead.get_status_display }}</span></td>
+          <td style="font-size:13px">{{ lead.created_at|date:"m/d/y" }}</td>
+          <td style="font-size:13px">{% if lead.assigned_user %}{{ lead.assigned_user.get_full_name }}{% else %}<span style="color:#b91c1c">Unassigned</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="color:#6b7280; padding:24px; text-align:center">No leads found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div style="display:flex; justify-content:center; gap:8px; margin-top:16px">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Previous</a>
+  {% endif %}
+  <span style="padding:6px 12px; font-size:13px; color:#6b7280">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

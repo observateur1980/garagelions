@@ -1,0 +1,43 @@
+{% extends "panel/base.html" %}
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Tasks</h2>
+  <a href="{% url 'panel:task_list_create' %}" class="btn-panel">+ New List</a>
+</div>
+
+{% for tl in task_lists %}
+<div class="card dashboard-card mb-3">
+  <div class="card-body">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <h5 style="margin:0">{{ tl.name }}</h5>
+      <a href="{% url 'panel:task_create' tl.pk %}" class="btn-panel-outline" style="padding:4px 12px; font-size:13px">+ Add Task</a>
+    </div>
+    {% for task in tl.tasks.all %}
+    <div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #f3f4f6">
+      <form method="post" action="{% url 'panel:task_toggle' task.pk %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" style="background:none; border:none; cursor:pointer; font-size:18px">
+          {% if task.is_completed %}&#9745;{% else %}&#9744;{% endif %}
+        </button>
+      </form>
+      <span style="{% if task.is_completed %}text-decoration:line-through; color:#9ca3af{% endif %}">{{ task.title }}</span>
+      {% if task.due_date %}
+      <span style="font-size:12px; color:#6b7280; margin-left:auto">{{ task.due_date|date:"M d" }}</span>
+      {% endif %}
+      {% if task.is_starred %}
+      <span style="color:#f59e0b">&#9733;</span>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p style="color:#9ca3af; font-size:14px; margin:0">No tasks in this list.</p>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div style="text-align:center; color:#6b7280; padding:40px">
+  <p>No task lists yet. Create one to get started.</p>
+</div>
+{% endfor %}
+{% endblock %}

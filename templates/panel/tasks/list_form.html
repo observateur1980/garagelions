@@ -1,0 +1,20 @@
+{% extends "panel/base.html" %}
+{% block title %}New Task List{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>New Task List</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:400px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>List Name</label>
+      <input type="text" name="name" required>
+      <button type="submit" class="btn-panel">Create List</button>
+      <a href="{% url 'panel:task_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

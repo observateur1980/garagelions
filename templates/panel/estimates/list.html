@@ -1,0 +1,102 @@
+{% extends "panel/base.html" %}
+{% block title %}Estimates{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:24px">Estimates</h2>
+
+<!-- Toolbar -->
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px">
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+
+    <!-- Batch actions -->
+    <select id="batch-action" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; color:#374151; background:#fff">
+      <option value="">Batch actions</option>
+      <option value="delete">Delete selected</option>
+    </select>
+
+    <!-- Status filter -->
+    <select id="filter-status" onchange="applyFilters()" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; color:#374151; background:#fff">
+      <option value="">All</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if current_status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Year filter -->
+    <select id="filter-year" onchange="applyFilters()" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; color:#374151; background:#fff">
+      <option value="">All years</option>
+      {% for y in year_list %}
+      <option value="{{ y }}" {% if current_year == y|stringformat:"d" %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <a href="{% url 'panel:estimate_create' %}" style="background:#047857; color:#fff; padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600; text-decoration:none; display:inline-block">+ New Estimate</a>
+</div>
+
+<!-- Table -->
+<div class="card dashboard-card">
+  <div class="card-body" style="padding:0; overflow-x:auto">
+    <table class="panel-table" style="margin:0">
+      <thead>
+        <tr>
+          <th style="width:40px; padding-left:16px">
+            <input type="checkbox" id="select-all" onclick="toggleAll(this)">
+          </th>
+          <th>Date</th>
+          <th>No.</th>
+          <th>Customer / Project</th>
+          <th style="text-align:right">Amount</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for est in estimates %}
+        <tr>
+          <td style="padding-left:16px">
+            <input type="checkbox" class="row-check" value="{{ est.pk }}">
+          </td>
+          <td>{{ est.created_at|date:"m/d/y" }}</td>
+          <td><a href="{% url 'panel:estimate_detail' est.pk %}">{{ est.estimate_number }}</a></td>
+          <td>{{ est.customer.full_name }}{% if est.project %} / {{ est.project.name }}{% endif %}</td>
+          <td style="text-align:right">${{ est.total|floatformat:2 }}</td>
+          <td>{{ est.get_status_display }}</td>
+          <td>
+            {% if est.is_editable %}
+            <a href="{% url 'panel:estimate_edit' est.pk %}" style="color:#1d4ed8; text-decoration:none; font-size:13px">Edit</a>
+            <span style="color:#d1d5db; margin:0 2px">|</span>
+            <a href="#" style="color:#1d4ed8; text-decoration:none; font-size:13px">Send</a>
+            {% else %}
+            <a href="{% url 'panel:estimate_detail' est.pk %}" style="color:#1d4ed8; text-decoration:none; font-size:13px">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="color:#6b7280; padding:24px; text-align:center">No estimates yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applyFilters() {
+  const status = document.getElementById("filter-status").value;
+  const year = document.getElementById("filter-year").value;
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (year) params.set("year", year);
+  window.location.href = "{% url 'panel:estimate_list' %}" + (params.toString() ? "?" + params.toString() : "");
+}
+
+function toggleAll(el) {
+  document.querySelectorAll(".row-check").forEach(cb => cb.checked = el.checked);
+}
+</script>
+{% endblock %}

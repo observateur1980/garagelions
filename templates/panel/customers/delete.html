@@ -1,0 +1,16 @@
+{% extends "panel/base.html" %}
+{% block title %}Delete Customer{% endblock %}
+
+{% block content %}
+<div class="card dashboard-card" style="max-width:500px">
+  <div class="card-body">
+    <h5>Delete "{{ customer.full_name }}"?</h5>
+    <p style="color:#6b7280">This action cannot be undone. Any linked projects will prevent deletion.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">Delete</button>
+      <a href="{% url 'panel:customer_detail' customer.pk %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

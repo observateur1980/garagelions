@@ -1,0 +1,60 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{{ invoice.invoice_number }}</h2>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Title</h6>
+        <p>{{ invoice.title }}</p>
+        <h6>Customer</h6>
+        <p><a href="{% url 'panel:customer_detail' invoice.customer.pk %}" style="color:#111827">{{ invoice.customer }}</a></p>
+        <h6>Status</h6>
+        <p><span class="badge-status badge-{{ invoice.status }}">{{ invoice.get_status_display }}</span></p>
+        <h6>Due Date</h6>
+        <p>{{ invoice.due_date|date:"M d, Y"|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card dashboard-card">
+      <div class="card-body">
+        <h6>Subtotal</h6>
+        <p>${{ invoice.subtotal|floatformat:2 }}</p>
+        <h6>Tax ({{ invoice.tax_rate }}%)</h6>
+        <p>${{ invoice.tax|floatformat:2 }}</p>
+        <h6>Total</h6>
+        <p style="font-size:20px; font-weight:600">${{ invoice.total|floatformat:2 }}</p>
+        <h6>Amount Paid</h6>
+        <p>${{ invoice.amount_paid|floatformat:2 }}</p>
+        <h6>Balance Due</h6>
+        <p style="font-size:18px; font-weight:600; color:#b91c1c">${{ invoice.balance_due|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if invoice.items.exists %}
+<h4 class="mt-4 mb-3">Line Items</h4>
+<table class="panel-table">
+  <thead>
+    <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+  </thead>
+  <tbody>
+    {% for item in invoice.items.all %}
+    <tr>
+      <td>{{ item.name }}</td>
+      <td>{{ item.quantity }}</td>
+      <td>${{ item.unit_price|floatformat:2 }}</td>
+      <td>${{ item.line_total|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

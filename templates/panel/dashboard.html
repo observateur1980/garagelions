@@ -1,0 +1,165 @@
+{% extends "panel/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+
+<!-- KPI Cards row 1 -->
+<div class="row g-4">
+  <div class="col-md-4">
+    <a href="{% url 'panel:lead_list' %}" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>Total Leads</h6>
+          <h3>{{ lead_counts.total }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{% url 'panel:lead_list' %}?status=new" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>New Leads</h6>
+          <h3>{{ lead_counts.new_count }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{% url 'panel:estimate_list' %}" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>Estimates Pending</h6>
+          <h3>{{ estimates_pending }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{% url 'panel:invoice_list' %}" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>Open Invoices</h6>
+          <h3>${{ open_invoices|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{% url 'panel:project_list' %}" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>Total Projects</h6>
+          <h3>{{ total_projects }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{% url 'panel:customer_list' %}" class="text-decoration-none text-dark">
+      <div class="card dashboard-card h-100">
+        <div class="card-body">
+          <h6>Total Customers</h6>
+          <h3>{{ total_customers }}</h3>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Lead stats row -->
+<div class="row g-3" style="margin-top:8px">
+  <div class="col">
+    <a href="{% url 'panel:lead_list' %}?status=contacted" class="text-decoration-none text-dark">
+      <div class="card dashboard-card">
+        <div class="card-body" style="padding:12px 16px">
+          <h6 style="margin:0">Contacted</h6>
+          <h4 style="margin:4px 0 0">{{ lead_counts.contacted_count }}</h4>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'panel:lead_list' %}?status=appointment_set" class="text-decoration-none text-dark">
+      <div class="card dashboard-card">
+        <div class="card-body" style="padding:12px 16px">
+          <h6 style="margin:0">Appointments</h6>
+          <h4 style="margin:4px 0 0">{{ lead_counts.appointment_count }}</h4>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'panel:lead_list' %}?status=quoted" class="text-decoration-none text-dark">
+      <div class="card dashboard-card">
+        <div class="card-body" style="padding:12px 16px">
+          <h6 style="margin:0">Quoted</h6>
+          <h4 style="margin:4px 0 0">{{ lead_counts.quoted_count }}</h4>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'panel:lead_list' %}?status=closed_won" class="text-decoration-none text-dark">
+      <div class="card dashboard-card">
+        <div class="card-body" style="padding:12px 16px">
+          <h6 style="margin:0">Won</h6>
+          <h4 style="margin:4px 0 0; color:#047857">{{ lead_counts.won_count }}</h4>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'panel:lead_list' %}?status=closed_lost" class="text-decoration-none text-dark">
+      <div class="card dashboard-card">
+        <div class="card-body" style="padding:12px 16px">
+          <h6 style="margin:0">Lost</h6>
+          <h4 style="margin:4px 0 0; color:#b91c1c">{{ lead_counts.lost_count }}</h4>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent leads -->
+<h4 style="margin:28px 0 16px">Recent Leads</h4>
+<div class="card dashboard-card">
+  <div class="card-body" style="padding:0; overflow-x:auto">
+    <table class="panel-table" style="margin:0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Assigned</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in recent_leads %}
+        <tr>
+          <td><a href="{% url 'panel:lead_detail' lead.pk %}">{{ lead.first_name }} {{ lead.last_name }}</a></td>
+          <td style="font-size:13px">{{ lead.phone }}</td>
+          <td style="font-size:13px">{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}—{% endif %}</td>
+          <td><span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}">{{ lead.get_status_display }}</span></td>
+          <td style="font-size:13px">{{ lead.created_at|date:"m/d/y" }}</td>
+          <td style="font-size:13px">{% if lead.assigned_user %}{{ lead.assigned_user.get_full_name }}{% else %}—{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No leads yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div style="margin-top:12px">
+  <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">View all leads</a>
+</div>
+{% endblock %}

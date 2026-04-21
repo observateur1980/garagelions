@@ -1,0 +1,119 @@
+{% extends "panel/base.html" %}
+{% block title %}Lead #{{ lead.pk }} — {{ lead.first_name }} {{ lead.last_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{{ lead.first_name }} {{ lead.last_name }}</h2>
+  <div style="display:flex; gap:8px; align-items:center">
+    <span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}" style="padding:6px 14px">{{ lead.get_status_display }}</span>
+    <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">All Leads</a>
+  </div>
+</div>
+
+<p style="color:#6b7280; font-size:13px; margin-top:-16px; margin-bottom:24px">
+  Lead #{{ lead.pk }} &middot; {{ lead.created_at|date:"F j, Y g:i a" }}
+  {% if lead.sales_point %}&middot; {{ lead.sales_point.name }}{% endif %}
+  {% if lead.assigned_user %}&middot; Assigned to <strong>{{ lead.assigned_user.get_full_name }}</strong>{% else %}&middot; <span style="color:#b91c1c">Unassigned</span>{% endif %}
+</p>
+
+<div class="row g-4">
+  <!-- Left column -->
+  <div class="col-md-7">
+    <!-- Contact -->
+    <div class="card dashboard-card mb-3">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Contact Information</h6>
+        <div style="font-size:14px; color:#374151; line-height:2">
+          <div><a href="mailto:{{ lead.email }}" style="color:#374151">{{ lead.email }}</a></div>
+          <div><a href="tel:{{ lead.phone }}" style="color:#374151">{{ lead.phone }}</a></div>
+          {% if lead.address %}<div>{{ lead.address }}</div>{% endif %}
+          <div>ZIP {{ lead.zip_code }}{% if lead.service_city %} — {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="card dashboard-card mb-3">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Services Requested</h6>
+        {% if lead.consultation_types %}
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          {% for val, label in lead.CONSULTATION_CHOICES %}
+            {% if val in lead.consultation_types %}
+            <span style="padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; background:#f9fafb">{{ label }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#9ca3af; margin:0; font-size:14px">No services specified.</p>
+        {% endif %}
+
+        {% if lead.message %}
+        <div style="border-top:1px solid #e5e7eb; margin-top:12px; padding-top:12px">
+          <h6 style="font-size:11px; text-transform:uppercase; color:#9ca3af; margin-bottom:6px">Message</h6>
+          <p style="color:#374151; font-size:14px; white-space:pre-line; margin:0">{{ lead.message }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Estimate action -->
+    <a href="{% url 'panel:lead_to_estimate' lead_pk=lead.pk %}" class="btn-panel" style="width:100%; text-align:center; padding:14px">
+      Create Estimate in Panel
+    </a>
+  </div>
+
+  <!-- Right column -->
+  <div class="col-md-5">
+    <!-- Update form -->
+    <div class="card dashboard-card mb-3">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Update Lead</h6>
+        <form method="post" class="panel-form">
+          {% csrf_token %}
+          <label>Status</label>
+          {{ form.status }}
+          <label style="margin-top:12px">Internal Notes</label>
+          {{ form.internal_notes }}
+          <button type="submit" class="btn-panel" style="width:100%; margin-top:12px">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="card dashboard-card mb-3">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Quick Actions</h6>
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <a href="tel:{{ lead.phone }}" style="display:flex; justify-content:space-between; padding:10px 12px; border:1px solid #e5e7eb; border-radius:6px; text-decoration:none; color:#374151; font-size:14px">
+            Call {{ lead.phone }} <span style="color:#9ca3af">&#8594;</span>
+          </a>
+          <a href="mailto:{{ lead.email }}" style="display:flex; justify-content:space-between; padding:10px 12px; border:1px solid #e5e7eb; border-radius:6px; text-decoration:none; color:#374151; font-size:14px">
+            Email {{ lead.email }} <span style="color:#9ca3af">&#8594;</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Activity log -->
+{% if activities %}
+<div class="card dashboard-card" style="margin-top:24px">
+  <div class="card-body">
+    <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Activity Log</h6>
+    {% for activity in activities %}
+    <div style="display:flex; gap:12px; padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px; color:#374151">
+      <div style="flex:1">
+        {{ activity.detail }}
+        <div style="font-size:11px; color:#9ca3af; margin-top:2px">
+          {{ activity.created_at|date:"M j, Y g:i a" }}
+          {% if activity.user %}&middot; {{ activity.user.get_full_name }}{% else %}&middot; System{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
