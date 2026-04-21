@@ -1,0 +1,46 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if part %}Edit Part{% else %}New Part{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>{% if part %}Edit Part{% else %}New Part{% endif %}</h2>
+</div>
+
+<div class="card dashboard-card" style="max-width:600px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>Name</label>
+      <input type="text" name="name" value="{{ part.name|default:'' }}" required>
+
+      <label>SKU</label>
+      <input type="text" name="sku" value="{{ part.sku|default:'' }}">
+
+      <label>Category</label>
+      <select name="category">
+        <option value="">— None —</option>
+        {% for cat in categories %}
+        <option value="{{ cat.pk }}" {% if part.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Unit</label>
+      <select name="unit">
+        <option value="">— None —</option>
+        {% for u in units %}
+        <option value="{{ u.pk }}" {% if part.unit_id == u.pk %}selected{% endif %}>{{ u }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Unit Price ($)</label>
+      <input type="number" name="unit_price" step="0.01" value="{{ part.unit_price|default:'0' }}">
+
+      <label>Notes</label>
+      <textarea name="notes" rows="3">{{ part.notes|default:'' }}</textarea>
+
+      <button type="submit" class="btn-panel">{% if part %}Save Changes{% else %}Create Part{% endif %}</button>
+      <a href="{% url 'panel:part_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

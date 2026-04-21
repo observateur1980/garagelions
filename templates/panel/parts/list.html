@@ -1,0 +1,832 @@
+{% extends "panel/base.html" %}
+{% block title %}Parts{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px">
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab">
+        Part Categories
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-parts" type="button" role="tab">
+        Parts
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-templates" type="button" role="tab">
+        Templates
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- ═══ TAB 1: Categories ═══ -->
+    <div class="tab-pane fade show active" id="tab-categories" role="tabpanel">
+      <div class="card dashboard-card">
+        <div class="card-body">
+
+          <h5 style="margin-bottom:4px">Part Categories</h5>
+          <p style="color:#6b7280; font-size:14px; margin-bottom:20px">
+            Manage your categories. Add custom ones or remove existing.
+          </p>
+
+          <div id="pc-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+
+          <!-- Selected -->
+          <div style="margin-bottom:20px">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+              <span style="font-weight:600; font-size:14px">Selected</span>
+              <span style="color:#9ca3af; font-size:12px">Click x to remove</span>
+            </div>
+            <div id="pc-selected" style="display:flex; flex-wrap:wrap; gap:8px">
+              {% for cat in selected_categories %}
+              <span class="pc-chip" data-id="{{ cat.pk }}" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; font-weight:500; background:#fff; cursor:default">
+                {{ cat.name }}
+                <button type="button" data-pc-remove="{{ cat.pk }}" style="background:none; border:none; cursor:pointer; font-size:14px; color:#6b7280; padding:0; line-height:1">&times;</button>
+              </span>
+              {% empty %}
+              <span style="color:#9ca3af; font-size:14px">No categories selected.</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Add custom -->
+          <div style="margin-bottom:24px">
+            <div style="font-weight:600; font-size:14px; margin-bottom:8px">Add custom category</div>
+            <div style="display:flex; gap:8px; max-width:520px">
+              <input id="pc-custom-name" type="text" placeholder="e.g. Roofing, Concrete, Cabinets"
+                     style="flex:1; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+              <button id="pc-add-btn" type="button" class="btn-panel">Add</button>
+            </div>
+            <p style="color:#9ca3af; font-size:13px; margin-top:6px">
+              If the name exists globally (like "Plumbing"), it will be added as a global category.
+            </p>
+          </div>
+
+          <!-- Suggested (Global) -->
+          {% if suggested_global %}
+          <div>
+            <div style="font-weight:600; font-size:14px; margin-bottom:8px">Suggested (Global)</div>
+            <div id="pc-suggested" style="padding:14px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; display:flex; flex-wrap:wrap; gap:8px">
+              {% for cat in suggested_global %}
+              <button type="button" data-pc-add-global="{{ cat.pk }}" data-category-id="{{ cat.pk }}"
+                      style="padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; background:#fff; cursor:pointer; color:#374151">
+                + {{ cat.name }}
+              </button>
+              {% endfor %}
+            </div>
+            <p style="color:#9ca3af; font-size:13px; margin-top:6px">You can come back later to add more.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- Units section -->
+      <div class="card dashboard-card" style="margin-top:16px">
+        <div class="card-body">
+
+          <h5 style="margin-bottom:4px">Units</h5>
+          <p style="color:#6b7280; font-size:14px; margin-bottom:16px">
+            Measurement units used when creating parts (e.g. Each, Hour, Sq Ft).
+          </p>
+
+          <div id="unit-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+
+          <!-- Selected units -->
+          <div style="margin-bottom:20px">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+              <span style="font-weight:600; font-size:14px">Selected</span>
+              <span style="color:#9ca3af; font-size:12px">Click x to remove</span>
+            </div>
+            <div id="unit-chips" style="display:flex; flex-wrap:wrap; gap:8px">
+              {% for u in units %}
+              <span class="unit-chip" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; font-weight:500; background:#fff; cursor:default">
+                {{ u.name }} <span style="color:#9ca3af">({{ u.abbreviation }})</span>
+                <button type="button" data-unit-remove="{{ u.pk }}" style="background:none; border:none; cursor:pointer; font-size:14px; color:#6b7280; padding:0; line-height:1">&times;</button>
+              </span>
+              {% empty %}
+              <span style="color:#9ca3af; font-size:14px">No units selected.</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Add custom unit -->
+          <div style="margin-bottom:24px">
+            <div style="font-weight:600; font-size:14px; margin-bottom:8px">Add custom unit</div>
+            <div style="display:flex; gap:8px; max-width:520px">
+              <input id="unit-name" type="text" placeholder="Name (e.g. Square Foot)"
+                     style="flex:1; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+              <input id="unit-abbr" type="text" placeholder="Abbr (e.g. sq ft)"
+                     style="width:120px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+              <button id="unit-add-btn" type="button" class="btn-panel">Add</button>
+            </div>
+            <p style="color:#9ca3af; font-size:13px; margin-top:6px">
+              If the name exists globally, it will be added as a global unit.
+            </p>
+          </div>
+
+          <!-- Suggested (Global) units -->
+          {% if suggested_units %}
+          <div id="unit-suggested-wrapper">
+            <div style="font-weight:600; font-size:14px; margin-bottom:8px">Suggested (Global)</div>
+            <div id="unit-suggested" style="padding:14px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; display:flex; flex-wrap:wrap; gap:8px">
+              {% for u in suggested_units %}
+              <button type="button" data-unit-add-global="{{ u.pk }}" data-unit-id="{{ u.pk }}"
+                      style="padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; background:#fff; cursor:pointer; color:#374151">
+                + {{ u.name }} ({{ u.abbreviation }})
+              </button>
+              {% endfor %}
+            </div>
+            <p style="color:#9ca3af; font-size:13px; margin-top:6px">You can come back later to add more.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB 2: Parts ═══ -->
+    <div class="tab-pane fade" id="tab-parts" role="tabpanel">
+
+      <div class="card dashboard-card mb-3">
+        <div class="card-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px">
+            <div>
+              <h5 style="margin:0">Parts</h5>
+              <p style="color:#6b7280; font-size:14px; margin:4px 0 0">Create and manage your parts library.</p>
+            </div>
+            <button class="btn-panel" type="button" data-bs-toggle="modal" data-bs-target="#newPartModal">+ New Part</button>
+          </div>
+
+          <hr style="border-color:#e5e7eb; margin:0 0 16px">
+
+          <!-- Filters -->
+          <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+              <label style="font-size:12px; color:#6b7280; margin-bottom:4px; display:block">Search</label>
+              <input id="parts-q" type="text" placeholder="Search by name or SKU"
+                     style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:12px; color:#6b7280; margin-bottom:4px; display:block">Category</label>
+              <select id="parts-category" style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+                <option value="">All categories</option>
+                {% for c in selected_categories %}
+                <option value="{{ c.pk }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="parts-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:12px; font-size:14px"></div>
+
+      <!-- Parts table (enabled global + local) -->
+      <div class="card dashboard-card mb-3">
+        <div class="card-body" style="padding:0">
+          <div id="parts-table">
+            <div style="padding:24px; color:#9ca3af">Loading parts...</div>
+          </div>
+        </div>
+      </div>
+
+      {% if sales_point %}
+      <!-- Add from Global Library -->
+      <div class="card dashboard-card">
+        <div class="card-body">
+          <h5 style="margin:0 0 4px">Add from Global Library</h5>
+          <p style="color:#6b7280; font-size:14px; margin:4px 0 16px">Search and add parts created by admin to your location.</p>
+
+          <div style="margin-bottom:16px">
+            <input id="global-parts-q" type="text" placeholder="Search global parts by name or SKU..."
+                   style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+          </div>
+
+          <div id="global-parts-content">
+            <div style="padding:16px; color:#9ca3af; font-size:14px; text-align:center">Loading global parts...</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ═══ TAB 3: Templates ═══ -->
+    <div class="tab-pane fade" id="tab-templates" role="tabpanel">
+      <div class="card dashboard-card">
+        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <h5 style="margin:0 0 4px">Templates</h5>
+            <p style="color:#6b7280; font-size:14px; margin:0">Reusable groups of parts (coming soon).</p>
+          </div>
+          <button class="btn-panel-outline" disabled>+ New Template</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ New Part Modal ═══ -->
+<div class="modal fade" id="newPartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px">
+      <div class="modal-header" style="border-bottom:1px solid #e5e7eb; padding:16px 24px">
+        <h5 style="margin:0; font-size:18px">New Part</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body panel-form" style="padding:24px">
+        <div id="newpart-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label>Name</label>
+            <input id="np-name" type="text" placeholder="e.g. 2x4 Stud">
+          </div>
+          <div class="col-md-4">
+            <label>SKU (optional)</label>
+            <input id="np-sku" type="text" placeholder="e.g. ST-24">
+          </div>
+          <div class="col-md-6">
+            <label>Category</label>
+            <select id="np-category">
+              <option value="">No category</option>
+              {% for c in selected_categories %}
+              <option value="{{ c.pk }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Unit</label>
+            <select id="np-unit">
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Unit Price</label>
+            <input id="np-price" type="text" placeholder="0.00">
+          </div>
+          <div class="col-12">
+            <label>Notes</label>
+            <textarea id="np-notes" rows="3" placeholder="Optional notes..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
+        <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button id="np-save" class="btn-panel" type="button">Create Part</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Edit Part Modal ═══ -->
+<div class="modal fade" id="editPartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px">
+      <div class="modal-header" style="border-bottom:1px solid #e5e7eb; padding:16px 24px">
+        <h5 style="margin:0; font-size:18px">Edit Part</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body panel-form" style="padding:24px">
+        <div id="editpart-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+        <input type="hidden" id="ep-id">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label>Name</label>
+            <input id="ep-name" type="text" disabled style="background:#f3f4f6; color:#6b7280">
+          </div>
+          <div class="col-md-4">
+            <label>SKU</label>
+            <input id="ep-sku" type="text" disabled style="background:#f3f4f6; color:#6b7280">
+          </div>
+          <div class="col-md-6">
+            <label>Unit</label>
+            <select id="ep-unit">
+              <option value="">No unit</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label>Price</label>
+            <input id="ep-price" type="text" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
+        <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button id="ep-save" class="btn-panel" type="button">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // ── CSRF helper ──
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const p = v.split(`; ${name}=`);
+    return p.length === 2 ? p.pop().split(";").shift() : "";
+  }
+  const csrf = getCookie("csrftoken");
+  const IS_ADMIN = {{ is_admin|yesno:"true,false" }};
+
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-CSRFToken": csrf,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(data).toString(),
+    });
+    const payload = await res.json().catch(() => null);
+    if (!res.ok || !payload || payload.ok !== true) throw new Error(payload?.error || "Request failed");
+    return payload;
+  }
+
+  // ═══════════════════════════════════════════════
+  // CATEGORIES TAB
+  // ═══════════════════════════════════════════════
+  const selectedEl = document.getElementById("pc-selected");
+  const errEl = document.getElementById("pc-error");
+  const inputEl = document.getElementById("pc-custom-name");
+  const addBtn = document.getElementById("pc-add-btn");
+
+  function showCatErr(msg) { errEl.textContent = msg; errEl.style.display = "block"; }
+  function clearCatErr() { errEl.style.display = "none"; }
+
+  const suggestedEl = document.getElementById("pc-suggested");
+
+  function applyCategories(payload) {
+    // Render selected chips
+    if (!payload.selected.length) {
+      selectedEl.innerHTML = '<span style="color:#9ca3af; font-size:14px">No categories selected.</span>';
+    } else {
+      selectedEl.innerHTML = payload.selected.map(c =>
+        `<span class="pc-chip" data-id="${c.id}" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; font-weight:500; background:#fff; cursor:default">
+          ${c.name}
+          <button type="button" data-pc-remove="${c.id}" style="background:none; border:none; cursor:pointer; font-size:14px; color:#6b7280; padding:0; line-height:1">&times;</button>
+        </span>`
+      ).join("");
+    }
+
+    // Render suggested global
+    if (suggestedEl) {
+      if (payload.suggested && payload.suggested.length) {
+        suggestedEl.innerHTML = payload.suggested.map(c =>
+          `<button type="button" data-pc-add-global="${c.id}" data-category-id="${c.id}"
+                  style="padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; background:#fff; cursor:pointer; color:#374151">
+            + ${c.name}
+          </button>`
+        ).join("");
+        suggestedEl.parentElement.style.display = "";
+      } else {
+        suggestedEl.innerHTML = "";
+        suggestedEl.parentElement.style.display = "none";
+      }
+    }
+
+    // Update category dropdowns in Parts tab
+    const cats = payload.active_categories || payload.selected;
+    const filterSel = document.getElementById("parts-category");
+    const modalSel = document.getElementById("np-category");
+    const opts = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    if (filterSel) filterSel.innerHTML = `<option value="">All categories</option>` + opts;
+    if (modalSel) modalSel.innerHTML = `<option value="">No category</option>` + opts;
+  }
+
+  addBtn?.addEventListener("click", async () => {
+    clearCatErr();
+    const name = (inputEl.value || "").trim();
+    if (!name) return showCatErr("Category name is required.");
+    try {
+      const payload = await postJSON("{% url 'panel:ajax_category_add' %}", { name });
+      applyCategories(payload);
+      inputEl.value = "";
+      inputEl.focus();
+    } catch (e) { showCatErr(e.message); }
+  });
+
+  inputEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addBtn.click(); }
+  });
+
+  document.addEventListener("click", async (e) => {
+    // Add suggested global category
+    const addGlobalBtn = e.target.closest("[data-pc-add-global]");
+    if (addGlobalBtn) {
+      clearCatErr();
+      try {
+        const payload = await postJSON("{% url 'panel:ajax_category_add_global' %}", { category_id: addGlobalBtn.dataset.categoryId });
+        applyCategories(payload);
+      } catch (err) { showCatErr(err.message); }
+      return;
+    }
+
+    // Category remove
+    const removeBtn = e.target.closest("[data-pc-remove]");
+    if (removeBtn) {
+      clearCatErr();
+      try {
+        const payload = await postJSON("{% url 'panel:ajax_category_remove' %}", { category_id: removeBtn.dataset.pcRemove });
+        applyCategories(payload);
+      } catch (err) { showCatErr(err.message); }
+      return;
+    }
+
+    // Unit add global
+    const unitAddGlobalBtn = e.target.closest("[data-unit-add-global]");
+    if (unitAddGlobalBtn) {
+      clearUnitErr();
+      try {
+        const payload = await postJSON("{% url 'panel:ajax_unit_add_global' %}", { unit_id: unitAddGlobalBtn.dataset.unitId });
+        applyUnits(payload);
+      } catch (err) { showUnitErr(err.message); }
+      return;
+    }
+
+    // Unit remove
+    const unitRemBtn = e.target.closest("[data-unit-remove]");
+    if (unitRemBtn) {
+      clearUnitErr();
+      try {
+        const payload = await postJSON("{% url 'panel:ajax_unit_remove' %}", { unit_id: unitRemBtn.dataset.unitRemove });
+        applyUnits(payload);
+      } catch (err) { showUnitErr(err.message); }
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // UNITS
+  // ═══════════════════════════════════════════════
+  const unitChipsEl = document.getElementById("unit-chips");
+  const unitErrEl = document.getElementById("unit-error");
+  const unitNameEl = document.getElementById("unit-name");
+  const unitAbbrEl = document.getElementById("unit-abbr");
+  const unitAddBtn = document.getElementById("unit-add-btn");
+  const unitSuggestedEl = document.getElementById("unit-suggested");
+  const unitSuggestedWrapper = document.getElementById("unit-suggested-wrapper");
+
+  function showUnitErr(msg) { unitErrEl.textContent = msg; unitErrEl.style.display = "block"; }
+  function clearUnitErr() { unitErrEl.style.display = "none"; }
+
+  function applyUnits(payload) {
+    // Render selected chips — all selected can be removed (x)
+    if (!payload.units.length) {
+      unitChipsEl.innerHTML = '<span style="color:#9ca3af; font-size:14px">No units selected.</span>';
+    } else {
+      unitChipsEl.innerHTML = payload.units.map(u =>
+        `<span class="unit-chip" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; font-weight:500; background:#fff; cursor:default">
+          ${u.name} <span style="color:#9ca3af">(${u.abbreviation})</span>
+          <button type="button" data-unit-remove="${u.id}" style="background:none; border:none; cursor:pointer; font-size:14px; color:#6b7280; padding:0; line-height:1">&times;</button>
+        </span>`
+      ).join("");
+    }
+
+    // Render suggested global units
+    if (unitSuggestedEl) {
+      if (payload.suggested && payload.suggested.length) {
+        unitSuggestedEl.innerHTML = payload.suggested.map(u =>
+          `<button type="button" data-unit-add-global="${u.id}" data-unit-id="${u.id}"
+                  style="padding:6px 12px; border:1px solid #d1d5db; border-radius:20px; font-size:13px; background:#fff; cursor:pointer; color:#374151">
+            + ${u.name} (${u.abbreviation})
+          </button>`
+        ).join("");
+        if (unitSuggestedWrapper) unitSuggestedWrapper.style.display = "";
+      } else {
+        unitSuggestedEl.innerHTML = "";
+        if (unitSuggestedWrapper) unitSuggestedWrapper.style.display = "none";
+      }
+    }
+
+    // Update unit dropdown in New Part modal
+    const npUnit = document.getElementById("np-unit");
+    if (npUnit) {
+      npUnit.innerHTML = `<option value="">No unit</option>` +
+        payload.units.map(u => `<option value="${u.id}">${u.name}${u.abbreviation ? " (" + u.abbreviation + ")" : ""}</option>`).join("");
+    }
+  }
+
+  unitAddBtn?.addEventListener("click", async () => {
+    clearUnitErr();
+    const name = (unitNameEl.value || "").trim();
+    const abbr = (unitAbbrEl.value || "").trim();
+    if (!name) return showUnitErr("Unit name is required.");
+    if (!abbr) return showUnitErr("Abbreviation is required.");
+    try {
+      const payload = await postJSON("{% url 'panel:ajax_unit_add' %}", { name, abbreviation: abbr });
+      applyUnits(payload);
+      unitNameEl.value = "";
+      unitAbbrEl.value = "";
+      unitNameEl.focus();
+    } catch (e) { showUnitErr(e.message); }
+  });
+
+  unitNameEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); unitAddBtn.click(); }
+  });
+  unitAbbrEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); unitAddBtn.click(); }
+  });
+
+  // ═══════════════════════════════════════════════
+  // PARTS TAB
+  // ═══════════════════════════════════════════════
+  const tableEl = document.getElementById("parts-table");
+  const partsErr = document.getElementById("parts-error");
+  const qEl = document.getElementById("parts-q");
+  const catEl = document.getElementById("parts-category");
+  let partsTimer = null;
+
+  function showPartsErr(msg) { partsErr.textContent = msg; partsErr.style.display = "block"; }
+  function clearPartsErr() { partsErr.style.display = "none"; }
+
+  async function refreshParts() {
+    clearPartsErr();
+    const params = new URLSearchParams();
+    if (qEl?.value.trim()) params.set("q", qEl.value.trim());
+    if (catEl?.value) params.set("category", catEl.value);
+
+    try {
+      const res = await fetch(`{% url 'panel:ajax_parts_list' %}?${params.toString()}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      const payload = await res.json();
+      if (payload.ok) {
+        tableEl.innerHTML = payload.html;
+        injectPartActions();
+      }
+      else showPartsErr(payload.error || "Failed to load parts.");
+    } catch (e) { showPartsErr("Failed to load parts."); }
+  }
+
+  function injectPartActions() {
+    document.querySelectorAll(".part-actions").forEach(td => {
+      td.style.whiteSpace = "nowrap";
+      const isGlobal = td.dataset.isGlobal === "true";
+      const partId = td.closest("tr").dataset.partId;
+      const editBtn = `<button type="button" onclick="editPartInline(${partId})" style="background:none; border:none; color:#1d4ed8; cursor:pointer; font-size:13px; padding:0">Edit</button>`;
+      const sep = `<span style="color:#d1d5db; margin:0 4px">|</span>`;
+
+      if (isGlobal && !IS_ADMIN) {
+        td.innerHTML = editBtn + sep + `<button type="button" onclick="deletePart(${partId})" style="background:none; border:none; color:#6b7280; cursor:pointer; font-size:13px; padding:0">Remove</button>`;
+      } else {
+        td.innerHTML = editBtn + sep + `<button type="button" onclick="deletePart(${partId})" style="background:none; border:none; color:#b91c1c; cursor:pointer; font-size:13px; padding:0">Delete</button>`;
+      }
+    });
+  }
+
+  // Dynamic search on typing (debounced)
+  qEl?.addEventListener("input", () => {
+    clearTimeout(partsTimer);
+    partsTimer = setTimeout(refreshParts, 250);
+  });
+
+  // Dynamic filter on category change
+  catEl?.addEventListener("change", refreshParts);
+
+  // Load parts when tab is shown
+  document.querySelector('[data-bs-target="#tab-parts"]')?.addEventListener("shown.bs.tab", refreshParts);
+
+  // Delete/remove part
+  window.deletePart = async function(partId) {
+    try {
+      const payload = await postJSON("{% url 'panel:ajax_parts_delete' %}", { part_id: partId });
+      if (payload.ok) {
+        tableEl.innerHTML = payload.html;
+        injectPartActions();
+      }
+    } catch (e) { showPartsErr(e.message); }
+  };
+
+  // ═══════════════════════════════════════════════
+  // ADD FROM GLOBAL LIBRARY
+  // ═══════════════════════════════════════════════
+  const globalQEl = document.getElementById("global-parts-q");
+  const globalContent = document.getElementById("global-parts-content");
+  let globalTimer = null;
+
+  async function loadGlobalParts() {
+    const q = globalQEl ? globalQEl.value.trim() : "";
+    const url = `{% url 'panel:ajax_global_parts_list' %}` + (q ? `?q=${encodeURIComponent(q)}` : "");
+    try {
+      const res = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const data = await res.json();
+      renderGlobalParts(data.categories || []);
+    } catch (e) {}
+  }
+
+  function renderGlobalParts(categories) {
+    if (!globalContent) return;
+    if (!categories.length) {
+      globalContent.innerHTML = '<div style="padding:16px; color:#9ca3af; font-size:14px; text-align:center">No global parts available to add.</div>';
+      return;
+    }
+
+    let html = "";
+    categories.forEach(cat => {
+      html += `<div style="margin-bottom:24px">
+        <div style="font-size:15px; font-weight:700; color:#111827; margin:0 0 10px; padding:8px 12px; background:#f3f4f6; border-radius:6px; border-left:4px solid #374151">${cat.name}</div>
+        <table class="panel-table" style="margin:0">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>SKU</th>
+              <th>Unit</th>
+              <th style="width:80px"></th>
+            </tr>
+          </thead>
+          <tbody>`;
+      cat.parts.forEach(p => {
+        html += `<tr>
+              <td style="font-weight:500">${p.name}</td>
+              <td style="color:#6b7280">${p.sku || "—"}</td>
+              <td>${p.unit || "—"}</td>
+              <td style="text-align:right">
+                <button type="button" onclick="addGlobalPart(${p.id})" class="btn-panel" style="padding:4px 12px; font-size:12px">+ Add</button>
+              </td>
+            </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    });
+    globalContent.innerHTML = html;
+  }
+
+  if (globalQEl) {
+    globalQEl.addEventListener("input", () => {
+      clearTimeout(globalTimer);
+      globalTimer = setTimeout(loadGlobalParts, 250);
+    });
+  }
+
+  // Load global parts when Parts tab is shown
+  document.querySelector('[data-bs-target="#tab-parts"]')?.addEventListener("shown.bs.tab", () => {
+    refreshParts();
+    loadGlobalParts();
+  });
+
+  window.addGlobalPart = async function(partId) {
+    try {
+      const payload = await postJSON("{% url 'panel:ajax_parts_add_global' %}", { part_id: partId });
+      if (payload.ok) {
+        tableEl.innerHTML = payload.html;
+        injectPartActions();
+        loadGlobalParts();
+      }
+    } catch (e) { showPartsErr(e.message); }
+  };
+
+  // Update price inline
+  window.updatePartPrice = async function(input) {
+    const partId = input.dataset.partId;
+    const price = input.value.trim();
+    try {
+      await postJSON("{% url 'panel:ajax_parts_update_price' %}", { part_id: partId, price });
+    } catch (e) {}
+  };
+
+  // ═══════════════════════════════════════════════
+  // NEW PART MODAL
+  // ═══════════════════════════════════════════════
+  const npErr = document.getElementById("newpart-error");
+  const npName = document.getElementById("np-name");
+  const npSku = document.getElementById("np-sku");
+  const npCategory = document.getElementById("np-category");
+  const npUnit = document.getElementById("np-unit");
+  const npPrice = document.getElementById("np-price");
+  const npNotes = document.getElementById("np-notes");
+
+  function showNpErr(msg) { npErr.textContent = msg; npErr.style.display = "block"; }
+  function clearNpErr() { npErr.style.display = "none"; }
+
+  async function loadUnits() {
+    try {
+      const res = await fetch("{% url 'panel:ajax_units' %}", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const payload = await res.json();
+      npUnit.innerHTML = `<option value="">No unit</option>` +
+        payload.results.map(u => `<option value="${u.id}">${u.name}${u.abbr ? " (" + u.abbr + ")" : ""}</option>`).join("");
+    } catch (e) {
+      npUnit.innerHTML = `<option value="">No unit</option>`;
+    }
+  }
+
+  document.getElementById("newPartModal")?.addEventListener("show.bs.modal", () => {
+    clearNpErr(); loadUnits();
+    npName.value = ""; npSku.value = ""; npCategory.value = ""; npPrice.value = ""; npNotes.value = "";
+    setTimeout(() => npName.focus(), 150);
+  });
+
+  document.getElementById("np-save")?.addEventListener("click", async () => {
+    clearNpErr();
+    const name = (npName.value || "").trim();
+    if (!name) return showNpErr("Name is required.");
+
+    try {
+      const payload = await postJSON("{% url 'panel:ajax_parts_create' %}", {
+        name,
+        sku: (npSku.value || "").trim(),
+        category_id: npCategory.value || "",
+        unit_id: npUnit.value || "",
+        unit_price: (npPrice.value || "").trim(),
+        notes: (npNotes.value || "").trim(),
+      });
+
+      tableEl.innerHTML = payload.html;
+      injectPartActions();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("newPartModal"));
+      modal.hide();
+    } catch (e) { showNpErr(e.message); }
+  });
+
+  // ═══════════════════════════════════════════════
+  // EDIT PART MODAL
+  // ═══════════════════════════════════════════════
+  const epErr = document.getElementById("editpart-error");
+  const epId = document.getElementById("ep-id");
+  const epName = document.getElementById("ep-name");
+  const epSku = document.getElementById("ep-sku");
+  const epUnit = document.getElementById("ep-unit");
+  const epPrice = document.getElementById("ep-price");
+
+  function showEpErr(msg) { epErr.textContent = msg; epErr.style.display = "block"; }
+  function clearEpErr() { epErr.style.display = "none"; }
+
+  window.editPartInline = async function(partId) {
+    clearEpErr();
+    // Load units into dropdown
+    try {
+      const unitsRes = await fetch("{% url 'panel:ajax_units' %}", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const unitsData = await unitsRes.json();
+      epUnit.innerHTML = `<option value="">No unit</option>` +
+        unitsData.results.map(u => `<option value="${u.id}">${u.name}${u.abbr ? " (" + u.abbr + ")" : ""}</option>`).join("");
+    } catch (e) {
+      epUnit.innerHTML = `<option value="">No unit</option>`;
+    }
+
+    // Load part details
+    try {
+      const res = await fetch(`{% url 'panel:ajax_part_detail' %}?part_id=${partId}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const data = await res.json();
+      if (!data.ok) return;
+
+      epId.value = data.part.id;
+      epName.value = data.part.name;
+      epSku.value = data.part.sku;
+      epPrice.value = data.part.price;
+      epUnit.value = data.part.unit_id || "";
+
+      // For local parts, allow name editing
+      if (!data.part.is_global) {
+        epName.disabled = false;
+        epName.style.background = "";
+        epName.style.color = "";
+      } else {
+        epName.disabled = true;
+        epName.style.background = "#f3f4f6";
+        epName.style.color = "#6b7280";
+      }
+      epSku.disabled = data.part.is_global;
+      epSku.style.background = data.part.is_global ? "#f3f4f6" : "";
+      epSku.style.color = data.part.is_global ? "#6b7280" : "";
+
+      const editModal = new bootstrap.Modal(document.getElementById("editPartModal"));
+      editModal.show();
+    } catch (e) {}
+  };
+
+  document.getElementById("ep-save")?.addEventListener("click", async () => {
+    clearEpErr();
+    const partId = epId.value;
+    const data = {
+      part_id: partId,
+      price: epPrice.value.trim(),
+      unit_id: epUnit.value || "",
+    };
+    // Send name/SKU for local parts
+    if (!epName.disabled) {
+      data.name = epName.value.trim();
+      data.sku = epSku.value.trim();
+    }
+
+    try {
+      await postJSON("{% url 'panel:ajax_parts_update_price' %}", data);
+      await refreshParts();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("editPartModal"));
+      modal.hide();
+    } catch (e) { showEpErr(e.message); }
+  });
+
+})();
+</script>
+{% endblock %}

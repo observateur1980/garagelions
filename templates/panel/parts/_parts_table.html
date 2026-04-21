@@ -1,0 +1,43 @@
+{% if parts_list %}
+<table class="panel-table" style="margin:0">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>SKU</th>
+      <th>Category</th>
+      <th>Unit</th>
+      <th style="text-align:right; width:120px">Price</th>
+      <th style="width:60px"></th>
+      <th style="width:100px"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in parts_list %}
+    <tr data-part-id="{{ item.obj.pk }}">
+      <td style="font-weight:500">{{ item.obj.name }}</td>
+      <td style="color:#6b7280">{{ item.obj.sku|default:"—" }}</td>
+      <td>{% if item.obj.category %}{{ item.obj.category.name }}{% else %}—{% endif %}</td>
+      <td>{% if item.effective_unit %}{{ item.effective_unit.abbreviation|default:item.effective_unit.name }}{% else %}—{% endif %}</td>
+      <td style="text-align:right">
+        <input type="text" class="part-price-input" data-part-id="{{ item.obj.pk }}"
+               value="{{ item.effective_price }}"
+               style="width:90px; padding:4px 8px; border:1px solid transparent; border-radius:4px; text-align:right; font-size:14px; background:#f9fafb"
+               onfocus="this.style.borderColor='#6b7280'; this.style.background='#fff'"
+               onblur="this.style.borderColor='transparent'; this.style.background='#f9fafb'; updatePartPrice(this)">
+      </td>
+      <td style="text-align:center">
+        {% if item.obj.sales_point %}
+        <span style="font-size:11px; color:#6b7280; background:#f3f4f6; padding:2px 8px; border-radius:10px">Local</span>
+        {% else %}
+        <span style="font-size:11px; color:#6b7280; background:#eff6ff; padding:2px 8px; border-radius:10px">Global</span>
+        {% endif %}
+      </td>
+      <td style="text-align:right; white-space:nowrap" class="part-actions" data-is-global="{{ item.obj.sales_point|yesno:'false,true' }}">
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div style="padding:24px; color:#9ca3af; font-size:14px">No parts yet. Click "+ New Part" to add your first one.</div>
+{% endif %}
