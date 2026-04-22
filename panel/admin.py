@@ -60,10 +60,18 @@ class PartAdmin(admin.ModelAdmin):
     list_filter = ("category", "is_active", "sales_point")
 
 
+class PartInline(admin.TabularInline):
+    model = Part
+    extra = 1
+    fields = ("name", "sku", "unit", "unit_price", "is_active")
+    show_change_link = True
+
+
 @admin.register(PartCategory)
 class PartCategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "sales_point", "is_active")
     list_filter = ("is_active", "sales_point")
+    inlines = [PartInline]
 
 
 @admin.register(SalesPointPartCategory)
