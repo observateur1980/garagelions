@@ -31,6 +31,8 @@ urlpatterns = [
     path("estimates/<int:pk>/ajax/update-item/<int:item_pk>/", views.ajax_estimate_update_item, name="ajax_estimate_update_item"),
     path("estimates/<int:pk>/ajax/delete-item/<int:item_pk>/", views.ajax_estimate_delete_item, name="ajax_estimate_delete_item"),
     path("estimates/<int:pk>/ajax/update-header/", views.ajax_estimate_update_header, name="ajax_estimate_update_header"),
+    path("estimates/<int:pk>/ajax/move-items/", views.ajax_estimate_move_items, name="ajax_estimate_move_items"),
+    path("estimates/<int:pk>/ajax/list-other/", views.ajax_estimate_list_other, name="ajax_estimate_list_other"),
 
     # Invoices
     path("invoices/", views.invoice_list, name="invoice_list"),

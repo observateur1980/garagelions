@@ -5,276 +5,457 @@
 
     <style>
 
-
-
-.testimonial-5 .testimonial-block {
-    margin-bottom: 60px;
-}
-h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
-    color: #696969;
+/* ── Force solid navbar on about page ──────────────────── */
+.header-9 .mega-menu > section.menu-list-items {
+    background: whitesmoke !important;
+    border-bottom: 1px solid rgb(76, 73, 73) !important;
 }
 
+/* ── About page styles ─────────────────────────────────── */
 
-.team-4 {
-    margin-bottom: 60px;
-}
-.blue-bg {
-    background: #c64d1e;
-}
-.text-blue {
-    color: dimgrey;
-}
-.action-box {
-    background: #c64d1e;
-    padding: 48px 0 40px;
+.about-hero {
     position: relative;
+    overflow: hidden;
 }
-
-
-
-#img1,
-#img2 {
-    position: relative;
-}
-
-#img1 > img,
-#img2 > img {
-    display: block;
+.about-hero img {
     width: 100%;
+    display: block;
 }
-
-#img1:before,
-#img2:before {
-    content: "";
+.about-hero-overlay {
     position: absolute;
     inset: 0;
-    z-index: 2;
-}
-
-#img1:before {
     background: linear-gradient(
         90deg,
-        rgba(20,20,20,0.68) 0%,
-        rgba(20,20,20,0.38) 38%,
-        rgba(20,20,20,0.10) 100%
+        rgba(20,20,20,0.72) 0%,
+        rgba(20,20,20,0.40) 45%,
+        rgba(20,20,20,0.08) 100%
     );
+    z-index: 1;
 }
-
-#img2:before {
-    background: linear-gradient(
-        180deg,
-        rgba(20,20,20,0.22) 0%,
-        rgba(20,20,20,0.46) 38%,
-        rgba(20,20,20,0.78) 100%
-    );
-}
-
-#img1 .hero-buttons,
-#img2 .hero-buttons {
-    display: none;
-}
-
-.gl-hero-copy {
+.about-hero-content {
     position: absolute;
-    z-index: 3;
-    color: #ffffff;
-}
-
-.gl-hero-copy h1 {
-    margin: 0 0 18px 0;
-    color: #ffffff;
-    font-size: 60px;
-    line-height: 1.02;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.gl-hero-copy p {
-    margin: 0 0 26px 0;
-    color: rgba(255,255,255,0.92);
-    font-size: 20px;
-    line-height: 1.65;
-    max-width: 620px;
-}
-
-.gl-hero-cta .button {
-    margin-right: 12px;
-    margin-bottom: 12px;
-}
-
-.gl-hero-btn-main {
-    background: #c64d1e !important;
-    border-color: #c64d1e !important;
-    color: #ffffff !important;
-}
-
-.gl-hero-btn-main:hover {
-    background: #8f4528 !important;
-    border-color: #8f4528 !important;
-    color: #ffffff !important;
-}
-
-.gl-hero-btn-alt {
-    background: transparent !important;
-    border: 1px solid rgba(255,255,255,0.45) !important;
-    color: #ffffff !important;
-}
-
-.gl-hero-btn-alt:hover {
-    background: rgba(255,255,255,0.08) !important;
-    border-color: #ffffff !important;
-    color: #ffffff !important;
-}
-
-.gl-hero-desktop {
+    z-index: 2;
     left: 7%;
     top: 50%;
     transform: translateY(-50%);
-    max-width: 700px;
+    max-width: 680px;
+    color: #fff;
+}
+.about-hero-content h1 {
+    font-size: 52px;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.05;
+    margin: 0 0 18px 0;
+    color: #fff;
+}
+.about-hero-content p {
+    font-size: 19px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.92);
+    margin: 0 0 28px 0;
+    max-width: 560px;
+}
+.about-hero-btn {
+    display: inline-block;
+    padding: 14px 32px;
+    background: #c64d1e;
+    color: #fff !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background .2s;
+}
+.about-hero-btn:hover {
+    background: #a33f18;
+    text-decoration: none;
+    color: #fff !important;
 }
 
-.gl-hero-mobile {
-    left: 20px;
-    right: 20px;
-    bottom: 34px;
-    text-align: left;
+/* Mobile hero */
+.about-hero-mobile {
     display: none;
 }
-
-.gl-hero-mobile h1 {
-    font-size: 30px;
-    line-height: 1.08;
-    margin-bottom: 14px;
+@media (max-width: 991px) {
+    .about-hero-desktop { display: none; }
+    .about-hero-mobile { display: block; }
+    .about-hero-overlay {
+        background: linear-gradient(
+            180deg,
+            rgba(20,20,20,0.15) 0%,
+            rgba(20,20,20,0.70) 100%
+        );
+    }
+    .about-hero-content {
+        left: 20px;
+        right: 20px;
+        top: auto;
+        bottom: 30px;
+        transform: none;
+    }
+    .about-hero-content h1 {
+        font-size: 30px;
+    }
+    .about-hero-content p {
+        font-size: 16px;
+        max-width: none;
+    }
 }
 
-.gl-hero-mobile p {
+/* ── Intro / story section ─────────────────────────────── */
+.about-intro {
+    padding: 80px 0;
+    background: #fff;
+}
+.about-intro h2 {
+    font-size: 32px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #4c4949;
+    margin-bottom: 10px;
+}
+.about-intro .title-line {
+    width: 60px;
+    height: 3px;
+    background: #c64d1e;
+    margin-bottom: 28px;
+}
+.about-intro p {
+    font-size: 17px;
+    line-height: 1.8;
+    color: #626262;
+    margin-bottom: 16px;
+}
+
+/* ── Stats counter ─────────────────────────────────────── */
+.about-stats {
+    background: #c64d1e;
+    padding: 50px 0;
+}
+.about-stat-item {
+    text-align: center;
+    padding: 20px 10px;
+}
+.about-stat-number {
+    font-size: 48px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.about-stat-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.88);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+/* ── Three-column features ─────────────────────────────── */
+.about-features {
+    padding: 80px 0;
+    background: #f7f7f7;
+}
+.about-feature-card {
+    text-align: center;
+    padding: 30px 20px;
+    margin-bottom: 30px;
+}
+.about-feature-card .feature-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #c64d1e;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 22px;
+}
+.about-feature-card h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4c4949;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+.about-feature-card p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #626262;
+    margin: 0;
+}
+
+/* ── Credentials bar ───────────────────────────────────── */
+.about-credentials {
+    background: #fff;
+    padding: 50px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+.about-credentials .cred-item {
+    text-align: center;
+    padding: 15px 10px;
+}
+.about-credentials .cred-icon {
+    font-size: 36px;
+    color: #c64d1e;
+    margin-bottom: 10px;
+}
+.about-credentials h5 {
     font-size: 16px;
-    line-height: 1.55;
-    max-width: none;
+    font-weight: 700;
+    color: #4c4949;
+    margin-bottom: 6px;
+}
+.about-credentials p {
+    font-size: 14px;
+    color: #626262;
+    margin: 0;
+}
+
+/* ── Services showcase ─────────────────────────────────── */
+.about-services {
+    padding: 80px 0;
+    background: #fff;
+}
+.about-services h2 {
+    font-size: 32px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #4c4949;
+    margin-bottom: 8px;
+}
+.about-services .title-line {
+    width: 60px;
+    height: 3px;
+    background: #c64d1e;
+    margin: 0 auto 40px auto;
+}
+.about-service-item {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.about-service-item img {
+    border-radius: 7%;
+    width: 100%;
+    margin-bottom: 14px;
+}
+.about-service-item h5 a {
+    color: #4c4949;
+    font-weight: 600;
+}
+.about-service-item h5 a:hover {
+    color: #c64d1e;
+    text-decoration: none;
+}
+
+/* ── CTA section ───────────────────────────────────────── */
+.about-cta {
+    background: #c64d1e;
+    padding: 48px 0 40px;
+}
+.about-cta h2 {
+    color: #fff;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+}
+.about-cta h3 {
+    color: rgba(255,255,255,0.90);
+    font-weight: 400;
+    margin: 0;
+}
+.about-cta .button.button-white {
+    background: #fff !important;
+    color: #c64d1e !important;
+    border-color: #fff !important;
+}
+.about-cta .button.button-white span {
+    color: #c64d1e !important;
+}
+.about-cta .button.button-white i {
+    color: #c64d1e !important;
+    background: rgba(198,77,30,0.08) !important;
+}
+
+/* ── Video section ─────────────────────────────────────── */
+.about-video {
+    padding: 70px 0;
+    background: #eee;
+}
+
+/* ── Reviews CTA ───────────────────────────────────────── */
+.about-reviews-cta {
+    padding: 60px 0;
+    background: #f7f7f7;
+}
+.about-reviews-cta h2 {
+    color: #4c4949;
+    font-weight: 700;
     margin-bottom: 20px;
 }
 
-@media screen and (max-width: 991px) {
-    #img1 {
-        display: none;
-    }
-
-    #img2 {
-        display: block;
-    }
-
-    .gl-hero-desktop {
-        display: none;
-    }
-
-    .gl-hero-mobile {
-        display: block;
-    }
-}
-
-@media screen and (min-width: 992px) {
-    #img1 {
-        display: block;
-    }
-
-    #img2 {
-        display: none;
-    }
-
-    .gl-hero-desktop {
-        display: block;
-    }
-
-    .gl-hero-mobile {
-        display: none;
-    }
-}
-
-@media screen and (max-width: 1199px) and (min-width: 992px) {
-    .gl-hero-desktop h1 {
-        font-size: 48px;
-    }
-
-    .gl-hero-desktop p {
-        font-size: 18px;
-        max-width: 560px;
-    }
-}
+    </style>
 
 
-.gl-hero-cta {
-    display: flex;
-    flex-wrap: wrap;
-}
+    <!-- ══════════════════════════════════════════════════
+         HERO
+         ══════════════════════════════════════════════════ -->
+    <section class="about-hero about-hero-desktop">
+        <img loading="lazy" src="{% static 'images/slider/bg_photo_office.png' %}" alt="About Garagelions">
+        <div class="about-hero-overlay"></div>
+        <div class="about-hero-content">
+            <h1>About Garagelions</h1>
+            <p>Southern California's trusted garage renovation experts. We transform ordinary garages into extraordinary spaces — built right, every time.</p>
+            <a href="{% url 'create_lead' %}" class="about-hero-btn">Request a Consultation</a>
+        </div>
+    </section>
 
-@media screen and (max-width: 767px) {
-    .gl-hero-cta {
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .gl-hero-cta .button {
-        margin-right: 0 !important;
-        margin-bottom: 0 !important;
-    }
-}
-
-.header-9 .mega-menu > section.menu-list-items {
-    background: transparent;
-    opacity: 100%;
-    border-color: transparent;
-}
-
-
-#img1:before {
-    background: transparent;
-}
-
-</style>
+    <section class="about-hero about-hero-mobile">
+        <img loading="lazy" src="{% static 'images/slider/bg_photo_office_vertical.png' %}" alt="About Garagelions">
+        <div class="about-hero-overlay"></div>
+        <div class="about-hero-content">
+            <h1>About Garagelions</h1>
+            <p>Southern California's trusted garage renovation experts.</p>
+            <a href="{% url 'create_lead' %}" class="about-hero-btn">Request a Consultation</a>
+        </div>
+    </section>
 
 
+    <!-- ══════════════════════════════════════════════════
+         STATS BAR
+         ══════════════════════════════════════════════════ -->
+    <section class="about-stats">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                    <div class="about-stat-item">
+                        <div class="about-stat-number">1000+</div>
+                        <div class="about-stat-label">Garages Transformed</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                    <div class="about-stat-item">
+                        <div class="about-stat-number">15+</div>
+                        <div class="about-stat-label">Years Experience</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                    <div class="about-stat-item">
+                        <div class="about-stat-number">100%</div>
+                        <div class="about-stat-label">In-House Crews</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                    <div class="about-stat-item">
+                        <div class="about-stat-number">5★</div>
+                        <div class="about-stat-label">Customer Rating</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
- <section>
-    <div class="img_sld" id="img2">
-        <img loading="lazy" src="{% static 'images/slider/bg_photo_office_vertical.png' %}" alt="Garage transformation mobile">
+
+    <!-- ══════════════════════════════════════════════════
+         COMPANY STORY
+         ══════════════════════════════════════════════════ -->
+    <section class="about-intro">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-md-6">
+                    <h2>We're Renovation Experts</h2>
+                    <div class="title-line"></div>
+                    <p>
+                        Garagelions has been transforming garages across Southern California with a simple mission:
+                        deliver premium craftsmanship at fair prices, backed by service you can trust.
+                    </p>
+                    <p>
+                        Every project is completed by our own trained, in-house crews — never subcontractors.
+                        From custom cabinetry and polyaspartic floor coatings to overhead storage and complete garage makeovers,
+                        we handle it all under one roof so you get a seamless result.
+                    </p>
+                    <p>
+                        We're fully licensed, insured, and bonded, which means zero stress for you.
+                        Our team takes pride in every installation because your garage is a reflection of our name.
+                    </p>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <img src="{% static 'images/services/schildorf garage makeover.jpg' %}"
+                         alt="Garage transformation"
+                         style="width:100%; border-radius:8px; margin-top:10px;">
+                </div>
+            </div>
+        </div>
+    </section>
 
 
-    </div>
-</section>
+    <!-- ══════════════════════════════════════════════════
+         THREE PILLARS
+         ══════════════════════════════════════════════════ -->
+    <section class="about-features">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-4">
+                    <div class="about-feature-card">
+                        <div class="feature-icon">
+                            <i class="fa fa-diamond"></i>
+                        </div>
+                        <h4>Premium Products</h4>
+                        <p>We use only commercial-grade materials — heavy-gauge steel cabinetry, industrial polyaspartic floor coatings, and professional-grade storage systems built to last a lifetime.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <div class="about-feature-card">
+                        <div class="feature-icon">
+                            <i class="fa fa-handshake-o"></i>
+                        </div>
+                        <h4>Fair Pricing & Warranty</h4>
+                        <p>No hidden fees, no upselling. You get transparent, competitive pricing with every project backed by our satisfaction guarantee and product warranty.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <div class="about-feature-card">
+                        <div class="feature-icon">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <h4>Our Own Crews</h4>
+                        <p>Every installation is done by our trained, in-house team — never subcontractors. That means consistent quality, accountability, and a crew that takes pride in the work.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<section>
-    <div class="img_sld" id="img1">
-        <img loading="lazy" src="{% static 'images/slider/bg_photo_office.png' %}" alt="Garage transformation desktop">
 
-
-    </div>
-</section>
-
-
-
-    <section class="page-section-ptb blue-bg section-padding-sm">
+    <!-- ══════════════════════════════════════════════════
+         CREDENTIALS BAR
+         ══════════════════════════════════════════════════ -->
+    <section class="about-credentials">
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-md-4 col-sm-4">
-                    <div class="features-14">
-                        <span aria-hidden="true" class="icon-bulb"></span>
-                        <h4 class="mb-15 text-white">INSURED</h4>
-                        <p class="text-white">Up to $1 000,000.00 With Ferrante Insurance Inc</p>
+                    <div class="cred-item">
+                        <div class="cred-icon"><i class="fa fa-shield"></i></div>
+                        <h5>Fully Insured</h5>
+                        <p>Up to $1,000,000 with Ferrante Insurance Inc</p>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-4">
-                    <div class="features-14">
-                        <span aria-hidden="true" class="icon-like"></span>
-                        <h4 class="mb-15 text-white">LICENSED</h4>
-                        <p class="text-white">License #1140458 + BONDED = NO STRESS</p>
+                    <div class="cred-item">
+                        <div class="cred-icon"><i class="fa fa-certificate"></i></div>
+                        <h5>Licensed & Bonded</h5>
+                        <p>California License #1140458</p>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-4">
-                    <div class="features-14">
-                        <span aria-hidden="true" class="icon-user"></span>
-                        <h4 class="mb-15 text-white">Workers Comp Insurance</h4>
-                        <p class="text-white">Safety doesn't happen by accident</p>
+                    <div class="cred-item">
+                        <div class="cred-icon"><i class="fa fa-heart"></i></div>
+                        <h5>Workers Comp Insurance</h5>
+                        <p>Safety doesn't happen by accident</p>
                     </div>
                 </div>
             </div>
@@ -282,281 +463,149 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
     </section>
 
 
-
-    <!--=================================
-    action-box -->
-
-
-    <section class="team-4-main white-bg page-section-ptb">
-        <div class="container" style="padding-bottom: 120px; padding-top: 100px">
+    <!-- ══════════════════════════════════════════════════
+         SERVICES SHOWCASE
+         ══════════════════════════════════════════════════ -->
+    <section class="about-services">
+        <div class="container">
             <div class="row">
-                <div class="section-title-2 text-center">
-                    <h1 class="text-blue">Your One-Stop Solution for a Complete Garage Transformation</h1>
+                <div class="col-lg-12 text-center">
+                    <h2>Your One-Stop Garage Solution</h2>
                     <div class="title-line"></div>
-
                 </div>
             </div>
-            <div class="row service_row_margin_bottom">
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_makeover' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_cabinet' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf garage cabinets.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_cabinet' %}"> Garage Cabinets</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_flooring' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf epoxy floor.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_flooring' %}">Garage Flooring</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_slatwall' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf slat wall.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_slatwall' %}">Slat Wall Solutions</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
-
-
-
-            </div>
-
             <div class="row">
                 <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'storage_rack' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf overhead storage.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'storage_rack' %}">Storage Racks</a></h5>
-
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_door' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildorf garage door.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_door' %}">Garage Doors</a></h5>
-
-                        </div>
-
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_makeover' %}">
+                            <img src="{% static 'images/services/schildorf garage makeover.jpg' %}" alt="Garage Makeovers">
+                        </a>
+                        <h5><a href="{% url 'garage_makeover' %}">Garage Makeovers</a></h5>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'garage_conversion' %}">
-                            <img class="img-responsive center-block"
-                                 src="{% static 'images/services/schildrof garage conversion.jpg' %}" alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'garage_conversion' %}">Garage Conversion</a></h5>
-
-                        </div>
-
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_cabinet' %}">
+                            <img src="{% static 'images/services/schildorf garage cabinets.jpg' %}" alt="Garage Cabinets">
+                        </a>
+                        <h5><a href="{% url 'garage_cabinet' %}">Garage Cabinets</a></h5>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-3 col-sm-6">
-                    <div class="team-4 text-center">
-                        <div class="team-image">
-                            <a href="{% url 'car_lift' %}">
-                            <img class="img-responsive center-block" src="{% static 'images/services/car lift.jpg' %}"
-                                 alt="">
-                            </a>
-                        </div>
-                        <div class="team-name">
-                            <h5><a href="{% url 'car_lift' %}">Car Lifts</a></h5>
-
-                        </div>
-
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_flooring' %}">
+                            <img src="{% static 'images/services/schildorf epoxy floor.jpg' %}" alt="Garage Flooring">
+                        </a>
+                        <h5><a href="{% url 'garage_flooring' %}">Garage Flooring</a></h5>
                     </div>
                 </div>
-
-
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_slatwall' %}">
+                            <img src="{% static 'images/services/schildorf slat wall.jpg' %}" alt="Slat Wall Solutions">
+                        </a>
+                        <h5><a href="{% url 'garage_slatwall' %}">Slat Wall Solutions</a></h5>
+                    </div>
+                </div>
             </div>
-
-
+            <div class="row">
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="about-service-item">
+                        <a href="{% url 'storage_rack' %}">
+                            <img src="{% static 'images/services/schildorf overhead storage.jpg' %}" alt="Storage Racks">
+                        </a>
+                        <h5><a href="{% url 'storage_rack' %}">Storage Racks</a></h5>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_door' %}">
+                            <img src="{% static 'images/services/schildorf garage door.jpg' %}" alt="Garage Doors">
+                        </a>
+                        <h5><a href="{% url 'garage_door' %}">Garage Doors</a></h5>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="about-service-item">
+                        <a href="{% url 'garage_conversion' %}">
+                            <img src="{% static 'images/services/schildrof garage conversion.jpg' %}" alt="Garage Conversion">
+                        </a>
+                        <h5><a href="{% url 'garage_conversion' %}">Garage Conversion</a></h5>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="about-service-item">
+                        <a href="{% url 'car_lift' %}">
+                            <img src="{% static 'images/services/car lift.jpg' %}" alt="Car Lifts">
+                        </a>
+                        <h5><a href="{% url 'car_lift' %}">Car Lifts</a></h5>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
 
-
-    <!--=================================
-    custom-content  -->
-
-
-
-    <section class="action-box">
+    <!-- ══════════════════════════════════════════════════
+         CTA BAR
+         ══════════════════════════════════════════════════ -->
+    <section class="about-cta">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-md-8">
-                    <h2 class="text-white">Free Design Consultation</h2>
-                    <h3 class="text-white">Contact us today for a free estimate</h3>
+                    <h2>Complimentary Design Consultation</h2>
+                    <h3>Let our experts design the perfect garage for your home</h3>
                 </div>
                 <div class="col-lg-4 col-md-4 text-right action-box-button">
                     <a href="{% url 'create_lead' %}" class="button button-white mt-15 btn-lg">
                         <span>REQUEST YOUR FREE CONSULTATION</span>
                         <i class="fa fa-hand-o-right"></i>
                     </a>
-
                 </div>
             </div>
         </div>
     </section>
 
 
-
-    <section class="blog page-section-ptb" style="background-color: #eeeeee">
+    <!-- ══════════════════════════════════════════════════
+         VIDEO
+         ══════════════════════════════════════════════════ -->
+    <section class="about-video">
         <div class="container">
             <div class="row">
-                <div class="col-lg-12 col-lg-12">
-
-                    <!-- ================================================ -->
-
-                    <!-- ================================================ -->
+                <div class="col-lg-12">
                     <div class="blog-entry post-2">
                         <div class="blog-entry-html-video audio-video">
                             <video preload="metadata" playsinline style="width:100%;height:100%;" id="player1"
                                    poster="{% static 'video/garagelionsvideo.jpg' %}" controls="controls"
                                    preload="none">
                                 <source type="video/mp4" src="{% static 'video/garagelions.mp4' %}"/>
-
                             </video>
                         </div>
                     </div>
-
                     <div class="text-center mt-30">
                         <a href="{% url 'galleries' %}" class="button">
-                            <span style="background: dimgrey">See what we've done</span>
+                            <span style="background: dimgrey">See What We've Done</span>
                             <i style="background: dimgrey" class="fa fa-hand-o-right"></i>
                         </a>
                     </div>
-
-
                 </div>
             </div>
         </div>
     </section>
-    <!--=================================
-    testimonial  -->
-
-{#    <section class="testimonial-5 white-bg page-section-ptb">#}
-{#        <div class="container">#}
-{##}
-{#            <div class="row">#}
-{#                <div class="col-lg-12 text-center">#}
-{#                    <div class="section-title-3">#}
-{#                        <h1>Real People, Real Reviews</h1>#}
-{#                        <p style="font-size: large">Trusted by Homeowners Like You</p>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{##}
-{#            <div class="row">#}
-{#                {% for t in testimonials %}#}
-{#                    <div class="col-lg-4 col-md-4 col-sm-4">#}
-{#                        <div class="testimonial-block">#}
-{##}
-{#                            <div class="testimonial-avtar">#}
-{#                                <img src="{{ t.photo.url }}" alt="{{ t.name }}" style="border-radius:50%">#}
-{#                            </div>#}
-{##}
-{#                            <div class="testimonial-content">#}
-{#                               <h4>{{ t.name }}&nbsp;#}
-{##}
-{#    {% for _ in t.filled_stars %}#}
-{#        <img src="{% static 'icons/yelp_star.png' %}"#}
-{#             width="16" height="16" alt="star">#}
-{#    {% endfor %}#}
-{##}
-{#    {% for _ in t.empty_stars %}#}
-{#        <img src="{% static 'icons/yelp_star_empty.png' %}"#}
-{#             width="16" height="16" alt="empty star">#}
-{#    {% endfor %}#}
-{##}
-{#</h4>#}
-{##}
-{#                                <p>{{ t.message }}</p>#}
-{##}
-{#                                {% if t.source_url %}#}
-{#                                    <span><a href="{{ t.source_url }}"#}
-{#                                             target="_blank">click for original review</a></span>#}
-{#                                {% endif %}#}
-{#                            </div>#}
-{##}
-{#                        </div>#}
-{#                    </div>#}
-{#                {% endfor %}#}
-{#            </div>#}
-{##}
-{#        </div>#}
-{#    </section>#}
 
 
-    <!--=================================
-    testimonial  -->
-
-    <section class="custom-content-7 bg-14 page-section-ptb">
+    <!-- ══════════════════════════════════════════════════
+         REVIEWS CTA
+         ══════════════════════════════════════════════════ -->
+    <section class="about-reviews-cta text-center">
         <div class="container">
             <div class="row">
-                <div class="col-lg-12 col-md-12 text-center">
-                    <h2 class="mb-30" style="color: grey">See why homeowners trust us.</h2>
-
-                    <a class="button button-black"
-                       href="{% url 'videoreviews' %}"><span> Explore stories from our happy clients. </span></a>
+                <div class="col-lg-12">
+                    <h2>See Why Homeowners Trust Us</h2>
+                    <a class="button button-black" href="{% url 'videoreviews' %}">
+                        <span>Explore Stories From Our Happy Clients</span>
+                    </a>
                 </div>
             </div>
         </div>

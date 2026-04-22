@@ -1,11 +1,20 @@
 {% load static %}
 <style>
-.header-9 .mega-menu > section.menu-list-items,
-.header-9 .mega-menu.desktopTopFixed .menu-list-items {
+.header-9 .mega-menu > section.menu-list-items {
     border-bottom: 1px solid rgb(76, 73, 73);
     height: 96px;
     background: whitesmoke;
     position: relative;
+}
+.header-9 .mega-menu.desktopTopFixed .menu-list-items {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    border-bottom: 1px solid rgb(76, 73, 73);
+    height: 96px;
+    background: whitesmoke;
+    z-index: 9999;
 }
 
 .header-9 .mega-menu > section.menu-list-items {

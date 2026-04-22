@@ -179,7 +179,65 @@
   padding: 4px;
 }
 .item-action-btn:hover { color: #374151; }
+.item-edit-btn:hover { color: #2563eb; }
 .item-delete-btn:hover { color: #b91c1c; }
+.item-actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.item-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #374151;
+}
+
+/* ── Bulk Actions dropdown ── */
+.bulk-actions-wrap {
+  position: relative;
+  display: inline-block;
+}
+.bulk-actions-btn {
+  background: #374151;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bulk-actions-btn:hover { background: #1f2937; }
+.bulk-actions-btn:disabled { opacity: 0.5; cursor: default; }
+.bulk-actions-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 120;
+  min-width: 170px;
+  overflow: hidden;
+}
+.bulk-actions-menu.show { display: block; }
+.bulk-actions-menu-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bulk-actions-menu-item:hover { background: #f3f4f6; }
+.bulk-actions-menu-item.danger { color: #b91c1c; }
+.bulk-actions-menu-item.danger:hover { background: #fef2f2; }
 
 /* ── Summary ── */
 .summary-card {
@@ -247,17 +305,31 @@
 <div class="items-section">
   <div class="items-header">
     <h4>Estimate Items</h4>
-    <div id="summary-btn" class="btn-panel-outline" style="padding:6px 14px; font-size:13px; cursor:pointer" onclick="document.getElementById('summary-section').scrollIntoView({behavior:'smooth'})">Summary</div>
+    <div style="display:flex; gap:10px; align-items:center">
+      <div class="bulk-actions-wrap">
+        <button class="bulk-actions-btn" id="bulk-actions-btn" disabled onclick="toggleBulkMenu()">
+          Actions <span style="font-size:10px">&#9660;</span>
+        </button>
+        <div class="bulk-actions-menu" id="bulk-actions-menu">
+          <div class="bulk-actions-menu-item" onclick="bulkAction('move')">Move</div>
+          <div class="bulk-actions-menu-item" onclick="bulkAction('copy')">Copy</div>
+          <div class="bulk-actions-menu-item danger" onclick="bulkAction('delete')">Delete</div>
+        </div>
+      </div>
+      <div id="summary-btn" class="btn-panel-outline" style="padding:6px 14px; font-size:13px; cursor:pointer" onclick="document.getElementById('summary-section').scrollIntoView({behavior:'smooth'})">Summary</div>
+    </div>
   </div>
   <table class="items-table">
     <thead>
       <tr>
-        <th style="width:36%">Description</th>
-        <th style="width:12%">Units</th>
-        <th style="width:10%">Qty</th>
-        <th style="width:16%">Category</th>
+        <th style="width:34%">Description</th>
+        <th style="width:10%">Units</th>
+        <th style="width:9%">Qty</th>
+        <th style="width:15%">Category</th>
         <th style="width:14%; text-align:right">Total</th>
-        <th style="width:12%"></th>
+        <th style="width:18%; text-align:right">
+          <input type="checkbox" class="item-checkbox" id="select-all-cb" title="Select all" onclick="toggleSelectAll(this)">
+        </th>
       </tr>
     </thead>
     <tbody id="items-body">
@@ -269,7 +341,11 @@
         <td style="color:#6b7280; font-size:13px">{{ item.category_label|default:"—" }}</td>
         <td style="text-align:right; font-weight:500" class="item-total">${{ item.line_total|floatformat:2 }}</td>
         <td style="text-align:right">
-          <button class="item-action-btn item-delete-btn" onclick="deleteItem({{ item.id }})" title="Delete">&#128465;</button>
+          <div class="item-actions-cell">
+            <button class="item-action-btn item-edit-btn" onclick="editItem({{ item.id }})" title="Edit">&#9998;</button>
+            <button class="item-action-btn item-delete-btn" onclick="deleteItem({{ item.id }})" title="Delete">&#128465;</button>
+            <input type="checkbox" class="item-checkbox row-cb" data-item-id="{{ item.id }}" onchange="updateBulkBtn()">
+          </div>
         </td>
       </tr>
       {% empty %}
@@ -444,7 +520,11 @@
       <td style="color:#6b7280; font-size:13px">${item.category_label || "—"}</td>
       <td style="text-align:right; font-weight:500" class="item-total">$${parseFloat(item.line_total).toFixed(2)}</td>
       <td style="text-align:right">
-        <button class="item-action-btn item-delete-btn" onclick="deleteItem(${item.id})" title="Delete">&#128465;</button>
+        <div class="item-actions-cell">
+          <button class="item-action-btn item-edit-btn" onclick="editItem(${item.id})" title="Edit">&#9998;</button>
+          <button class="item-action-btn item-delete-btn" onclick="deleteItem(${item.id})" title="Delete">&#128465;</button>
+          <input type="checkbox" class="item-checkbox row-cb" data-item-id="${item.id}" onchange="updateBulkBtn()">
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -469,6 +549,124 @@
 
   // Attach to existing rows
   document.querySelectorAll("#items-body tr[data-item-id]").forEach(attachCellListeners);
+
+  // ── Edit item (open inline editing for all fields) ──
+  window.editItem = function(itemId) {
+    const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+    if (!row) return;
+
+    const nameCell = row.querySelector("td:first-child");
+    const currentName = nameCell.textContent.trim();
+    const newName = prompt("Item name:", currentName);
+    if (newName !== null && newName.trim() !== "") {
+      postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { name: newName.trim() }).then(data => {
+        if (data.ok) {
+          nameCell.textContent = newName.trim();
+          row.querySelector(".item-total").textContent = "$" + parseFloat(data.item.line_total).toFixed(2);
+          updateSummary(data);
+        }
+      });
+    }
+  };
+
+  // ── Select all / Bulk actions ──
+  window.toggleSelectAll = function(el) {
+    document.querySelectorAll(".row-cb").forEach(cb => { cb.checked = el.checked; });
+    updateBulkBtn();
+  };
+
+  window.updateBulkBtn = function() {
+    const checked = document.querySelectorAll(".row-cb:checked").length;
+    document.getElementById("bulk-actions-btn").disabled = checked === 0;
+    // sync select-all checkbox
+    const all = document.querySelectorAll(".row-cb");
+    const selectAllCb = document.getElementById("select-all-cb");
+    if (selectAllCb) selectAllCb.checked = all.length > 0 && checked === all.length;
+  };
+
+  window.toggleBulkMenu = function() {
+    const menu = document.getElementById("bulk-actions-menu");
+    menu.classList.toggle("show");
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".bulk-actions-wrap")) {
+      document.getElementById("bulk-actions-menu").classList.remove("show");
+    }
+  });
+
+  window.bulkAction = async function(action) {
+    document.getElementById("bulk-actions-menu").classList.remove("show");
+    const checkedIds = Array.from(document.querySelectorAll(".row-cb:checked")).map(cb => cb.dataset.itemId);
+    if (!checkedIds.length) return;
+
+    if (action === "delete") {
+      if (!confirm(`Delete ${checkedIds.length} selected item(s)?`)) return;
+      for (const id of checkedIds) {
+        await window.deleteItem(parseInt(id));
+      }
+    } else if (action === "move") {
+      // Fetch other estimates and show a picker
+      const res = await fetch(`/panel/estimates/${EST_ID}/ajax/list-other/`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      const data = await res.json();
+      if (!data.estimates.length) { alert("No other estimates to move items to."); return; }
+
+      let options = data.estimates.map(e => `${e.number} — ${e.title} (ID: ${e.id})`).join("\n");
+      const choice = prompt(`Move ${checkedIds.length} item(s) to which estimate?\nEnter the ID:\n\n${options}`);
+      if (!choice) return;
+      const targetId = parseInt(choice);
+      if (!targetId) { alert("Invalid estimate ID."); return; }
+
+      const formData = new URLSearchParams();
+      formData.append("target_id", targetId);
+      checkedIds.forEach(id => formData.append("item_ids[]", id));
+
+      const moveRes = await fetch(`/panel/estimates/${EST_ID}/ajax/move-items/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "X-CSRFToken": csrf,
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: formData.toString(),
+      });
+      const moveData = await moveRes.json();
+      if (moveData.ok) {
+        checkedIds.forEach(id => {
+          const row = document.querySelector(`tr[data-item-id="${id}"]`);
+          if (row) row.remove();
+        });
+        updateSummary(moveData);
+        if (!document.querySelector("#items-body tr[data-item-id]")) {
+          document.getElementById("items-body").innerHTML = `
+            <tr id="empty-row">
+              <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items yet. Search and add parts above.</td>
+            </tr>`;
+        }
+      }
+    } else if (action === "copy") {
+      for (const id of checkedIds) {
+        const row = document.querySelector(`tr[data-item-id="${id}"]`);
+        if (!row) continue;
+        const name = row.querySelector("td:first-child").textContent.trim();
+        const qty = row.querySelector(".item-qty").value;
+        const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+          name,
+          quantity: qty,
+          unit_price: "0",
+          clone_from: id,
+        });
+        if (data.ok) {
+          addRowToTable(data.item);
+          updateSummary(data);
+        }
+      }
+    }
+    document.querySelectorAll(".row-cb").forEach(cb => { cb.checked = false; });
+    updateBulkBtn();
+  };
 
   // ── Delete item ──
   window.deleteItem = async function(itemId) {

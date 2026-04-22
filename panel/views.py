@@ -534,6 +534,50 @@ def ajax_estimate_delete_item(request, pk, item_pk):
     })
 
 
+@login_required
+def ajax_estimate_list_other(request, pk):
+    """AJAX: list other estimates for move target picker."""
+    estimates = Estimate.objects.exclude(pk=pk).order_by("-created_at")[:20]
+    return JsonResponse({
+        "ok": True,
+        "estimates": [
+            {"id": e.id, "title": e.title, "number": e.estimate_number}
+            for e in estimates
+        ],
+    })
+
+
+@require_POST
+@login_required
+def ajax_estimate_move_items(request, pk):
+    """AJAX: move items from this estimate to another."""
+    import json
+    source = get_object_or_404(Estimate, pk=pk)
+    target_id = request.POST.get("target_id")
+    item_ids = request.POST.getlist("item_ids[]")
+
+    target = get_object_or_404(Estimate, pk=target_id)
+
+    items = EstimateItem.objects.filter(pk__in=item_ids, estimate=source)
+    moved = 0
+    for item in items:
+        item.estimate = target
+        item.order = target.items.count()
+        item.save()
+        moved += 1
+
+    source.recalc_totals()
+    target.recalc_totals()
+
+    return JsonResponse({
+        "ok": True,
+        "moved": moved,
+        "subtotal": str(source.subtotal),
+        "tax": str(source.tax),
+        "total": str(source.total),
+    })
+
+
 # ── Invoices ────────────────────────────────────────────────────────
 @login_required
 def invoice_list(request):
