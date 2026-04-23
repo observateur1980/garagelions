@@ -76,7 +76,7 @@ def gallery_detail(request, slug):
 
 
 def locations_list(request):
-    sales_points = SalesPoint.objects.filter(is_active=True).order_by("order", "name")
+    sales_points = SalesPoint.objects.filter(is_active=True).prefetch_related("cities").order_by("order", "name")
     return render(request, "home/locations.html", {"sales_points": sales_points})
 
 
