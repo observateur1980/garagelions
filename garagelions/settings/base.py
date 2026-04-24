@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "imagekit",
     "home.apps.HomeConfig",
     "panel",
+    "taskboard",
 
     "django.contrib.sitemaps",
 ]

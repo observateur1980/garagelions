@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Garage Lions - Task Board</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --soft: #f8f9fb;
+      --text: #151515;
+      --muted: #68707c;
+      --dark: #111318;
+      --charcoal: #23262d;
+      --orange: #f26522;
+      --orange-dark: #d84f13;
+      --orange-soft: #fff0e8;
+      --border: rgba(17, 19, 24, 0.11);
+      --shadow: 0 18px 45px rgba(17, 19, 24, 0.08);
+      --danger: #d83a34;
+      --done: #168447;
+      --done-soft: #eaf7ef;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(242, 101, 34, 0.15), transparent 32%),
+        linear-gradient(135deg, #ffffff 0%, var(--bg) 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.95);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand img {
+      width: 92px;
+      height: 70px;
+      object-fit: contain;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 7px;
+    }
+
+    .brand h1 {
+      font-size: 30px;
+      margin-bottom: 5px;
+      letter-spacing: -0.4px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .user-badge {
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--charcoal);
+      font-weight: 800;
+    }
+
+    .logout-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 10px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .logout-btn:hover {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+
+    .score {
+      background: #818489;
+      color: #fff;
+      border-radius: 18px;
+      padding: 14px 18px;
+      min-width: 160px;
+      text-align: right;
+      box-shadow: 0 12px 24px rgba(17, 19, 24, 0.16);
+    }
+
+    .score strong {
+      display: block;
+      color: var(--orange);
+      font-size: 30px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .score span {
+      color: rgba(255,255,255,0.72);
+      font-size: 12px;
+    }
+
+    .main-nav, .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .main-tab, .tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 11px 15px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      font-weight: 800;
+      box-shadow: 0 7px 18px rgba(17,19,24,0.04);
+      position: relative;
+    }
+
+    .main-tab.active,
+    .main-tab:hover,
+    .tab.active,
+    .tab:hover {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .tab.category-complete {
+      background: var(--done-soft);
+      border-color: rgba(22,132,71,0.35);
+      color: var(--done);
+    }
+
+    .tab.category-complete::after {
+      content: " \2713";
+      font-weight: 900;
+    }
+
+    .tab.category-complete.active,
+    .tab.category-complete:hover {
+      background: var(--done);
+      border-color: var(--done);
+      color: #fff;
+    }
+
+    .tab.category-pending {
+      border-color: rgba(242,101,34,0.34);
+      color: var(--orange-dark);
+      background: var(--orange-soft);
+    }
+
+    .tab.category-pending::after {
+      content: " !";
+      font-weight: 900;
+    }
+
+    .tab.category-pending.active,
+    .tab.category-pending:hover {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      font-size: 21px;
+      margin-bottom: 16px;
+      letter-spacing: -0.25px;
+    }
+
+    .panel h3 {
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    .add-box {
+      display: grid;
+      grid-template-columns: 1fr 150px 120px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .category-box {
+      display: grid;
+      grid-template-columns: 1fr 130px;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      background: var(--soft);
+      border-radius: 18px;
+    }
+
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .category-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .category-row.complete {
+      background: var(--done-soft);
+      border-color: rgba(22,132,71,0.28);
+    }
+
+    .category-row.pending {
+      background: var(--orange-soft);
+      border-color: rgba(242,101,34,0.28);
+    }
+
+    .category-name {
+      font-weight: 900;
+      color: var(--charcoal);
+    }
+
+    .category-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .category-complete-label {
+      color: var(--done);
+      font-weight: 900;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .category-pending-label {
+      color: var(--orange-dark);
+      font-weight: 900;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .tools {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .tool-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      box-shadow: 0 5px 14px rgba(17,19,24,0.03);
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(242,101,34,0.55);
+      box-shadow: 0 0 0 4px rgba(242,101,34,0.12);
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .add, .category-add {
+      border: none;
+      border-radius: 14px;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(242,101,34,0.22);
+    }
+
+    .add:hover, .category-add:hover {
+      background: var(--orange-dark);
+    }
+
+    .secondary-btn,
+    .clear-btn,
+    .small-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 9px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .clear-btn, .danger-btn {
+      border-color: rgba(216,58,52,0.25);
+      color: var(--danger);
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: 30px 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 18px;
+      box-shadow: 0 8px 20px rgba(17,19,24,0.035);
+    }
+
+    .task input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--orange);
+      box-shadow: none;
+      cursor: pointer;
+    }
+
+    .task.done {
+      background: #f1f3f5;
+    }
+
+    .task.done .task-title {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-title {
+      font-weight: 900;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .task-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--charcoal);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .remove {
+      border: none;
+      background: #ffe3da;
+      color: var(--danger);
+      border-radius: 11px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 900;
+      transition: 0.18s;
+    }
+
+    .remove:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .empty {
+      text-align: center;
+      border: 1px dashed rgba(17,19,24,0.2);
+      color: var(--muted);
+      padding: 24px;
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .side-card {
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 7px 18px rgba(17,19,24,0.035);
+    }
+
+    .side-card h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: var(--charcoal);
+    }
+
+    .progress-wrap {
+      background: rgba(17,19,24,0.09);
+      border-radius: 999px;
+      height: 14px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .side-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .side-list li {
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(17,19,24,0.07);
+      font-size: 14px;
+      color: var(--charcoal);
+    }
+
+    .side-list li:last-child {
+      border-bottom: none;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 28px;
+      padding-bottom: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard, .settings-grid {
+        grid-template-columns: 1fr;
+      }
+      .add-box {
+        grid-template-columns: 1fr;
+      }
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      .header-right {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div>
+          <h1>Garage Lions</h1>
+          <p>Internal Task Board</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="score">
+          <strong id="score">0%</strong>
+          <span>Completion Rate</span>
+        </div>
+        <div class="user-badge">{{ user.username }}</div>
+        <a href="{% url 'account:logout' %}" class="logout-btn">Logout</a>
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <button class="main-tab active" id="tasksMainTab" onclick="showMainView('tasks')">Tasks</button>
+      <button class="main-tab" id="settingsMainTab" onclick="showMainView('settings')">Settings</button>
+    </nav>
+
+    <!-- ═══════ TASKS VIEW ═══════ -->
+    <section class="view active" id="tasksView">
+      <div class="tabs" id="tabs"></div>
+      <main class="dashboard">
+        <section class="panel">
+          <h2>Task List</h2>
+          <form class="add-box" onsubmit="addTask(event)">
+            <input type="text" id="taskInput" placeholder="Add a new task..." />
+            <select id="categoryInput"></select>
+            <button class="add" type="submit">+ Add</button>
+          </form>
+          <div class="tools">
+            <p class="task-meta" id="taskCount">0 completed out of 0 tasks.</p>
+            <div class="tool-buttons">
+              <button class="clear-btn" onclick="clearCompleted()" type="button">Clear Completed</button>
+            </div>
+          </div>
+          <div id="saveStatus" style="color:var(--muted);font-size:13px;margin-bottom:12px;"></div>
+          <div class="task-list" id="taskList"></div>
+        </section>
+        <aside>
+          <div class="side-card">
+            <h3>Progress</h3>
+            <div class="progress-wrap">
+              <div class="progress-bar" id="progressBar" style="width:0%"></div>
+            </div>
+            <p style="color:var(--muted);font-size:13px;" id="progressText">0 of 0 tasks completed</p>
+          </div>
+          <div class="side-card">
+            <h3>Data Fields</h3>
+            <ul class="side-list">
+              <li>Task Title</li>
+              <li>Category</li>
+              <li>Priority</li>
+              <li>Status (Done / Not Done)</li>
+              <li>Created At</li>
+              <li>Updated At</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </section>
+
+    <!-- ═══════ SETTINGS VIEW ═══════ -->
+    <section class="view" id="settingsView">
+      <main class="settings-grid">
+        <section class="panel">
+          <h2>Settings</h2>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:18px;">
+            Manage your task categories here.
+          </p>
+          <h3>Add Category</h3>
+          <form class="category-box" onsubmit="addCategory(event)">
+            <input type="text" id="categoryNameInput" placeholder="Category name..." />
+            <button class="category-add" type="submit">+ Add</button>
+          </form>
+          <h3>Current Categories</h3>
+          <div class="category-list" id="categoryList"></div>
+        </section>
+        <aside>
+          <div class="side-card">
+            <h3>How It Works</h3>
+            <ul class="side-list">
+              <li>Add categories from Settings</li>
+              <li>Add tasks from the Tasks tab</li>
+              <li>Remove tasks from the Tasks tab</li>
+              <li>Remove completed tasks from the Tasks tab</li>
+              <li>Manage categories from Settings</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </section>
+
+    <p class="footer-note">Garage Lions Internal Task Board</p>
+  </div>
+
+  <script>
+    const CSRF_TOKEN = "{{ csrf_token }}";
+    let tasks = [];
+    let categories = [];
+    let currentFilter = "all";
+
+    function showMainView(view) {
+      document.getElementById("tasksView").classList.toggle("active", view === "tasks");
+      document.getElementById("settingsView").classList.toggle("active", view === "settings");
+      document.getElementById("tasksMainTab").classList.toggle("active", view === "tasks");
+      document.getElementById("settingsMainTab").classList.toggle("active", view === "settings");
+      renderAll();
+    }
+
+    function escapeHtml(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setStatus(message) {
+      document.getElementById("saveStatus").textContent = message;
+    }
+
+    /* ── API helpers ── */
+
+    async function apiFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      options.headers["X-CSRFToken"] = CSRF_TOKEN;
+      if (options.body && typeof options.body === "object") {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(options.body);
+      }
+      const resp = await fetch(url, options);
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(err);
+      }
+      return resp.json();
+    }
+
+    /* ── Load data ── */
+
+    async function loadAll() {
+      try {
+        const [catData, taskData] = await Promise.all([
+          apiFetch("{% url 'taskboard:api_categories' %}"),
+          apiFetch("{% url 'taskboard:api_tasks' %}"),
+        ]);
+        categories = catData.categories || [];
+        tasks = taskData.tasks || [];
+        renderAll();
+        setStatus("Loaded.");
+      } catch (e) {
+        setStatus("Error loading: " + e.message);
+      }
+    }
+
+    /* ── Task actions ── */
+
+    async function addTask(event) {
+      event.preventDefault();
+      const input = document.getElementById("taskInput");
+      const categorySelect = document.getElementById("categoryInput");
+      const title = input.value.trim();
+      const category = categorySelect.value;
+
+      if (!title) return;
+      if (!category) {
+        alert("Please add at least one category in Settings before creating a task.");
+        return;
+      }
+
+      try {
+        const task = await apiFetch("{% url 'taskboard:api_tasks' %}", {
+          method: "POST",
+          body: { title, category, priority: "New" },
+        });
+        tasks.unshift(task);
+        input.value = "";
+        renderAll();
+        setStatus("Task added.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    async function toggleDone(id) {
+      try {
+        const data = await apiFetch(`/taskboard/api/tasks/${id}/toggle/`, { method: "POST" });
+        const task = tasks.find(t => t.id === id);
+        if (task) task.done = data.done;
+        renderAll();
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    async function removeTask(id) {
+      try {
+        await apiFetch(`/taskboard/api/tasks/${id}/`, { method: "DELETE" });
+        tasks = tasks.filter(t => t.id !== id);
+        renderAll();
+        setStatus("Task removed.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    async function clearCompleted() {
+      const completedCount = tasks.filter(t => t.done).length;
+      if (!completedCount) return;
+      try {
+        await apiFetch("{% url 'taskboard:api_clear_completed' %}", { method: "POST" });
+        tasks = tasks.filter(t => !t.done);
+        renderAll();
+        setStatus("Completed tasks cleared.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    /* ── Category actions ── */
+
+    async function addCategory(event) {
+      event.preventDefault();
+      const input = document.getElementById("categoryNameInput");
+      const name = input.value.trim();
+      if (!name) return;
+
+      try {
+        const cat = await apiFetch("{% url 'taskboard:api_categories' %}", {
+          method: "POST",
+          body: { name },
+        });
+        categories.push(cat);
+        input.value = "";
+        renderAll();
+        setStatus("Category added.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    async function removeCategory(id) {
+      const cat = categories.find(c => c.id === id);
+      if (!cat) return;
+
+      const catTasks = tasks.filter(t => t.category === cat.slug);
+      if (catTasks.length > 0) {
+        if (!confirm(`"${cat.name}" has ${catTasks.length} task(s). Removing this category will also remove those tasks. Continue?`)) return;
+      }
+
+      try {
+        await apiFetch(`/taskboard/api/categories/${id}/`, { method: "DELETE" });
+        categories = categories.filter(c => c.id !== id);
+        tasks = tasks.filter(t => t.category !== cat.slug);
+        if (currentFilter === cat.slug) currentFilter = "all";
+        renderAll();
+        setStatus("Category removed.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+      }
+    }
+
+    /* ── Filter ── */
+
+    function filterTasks(category) {
+      currentFilter = category;
+      renderAll();
+    }
+
+    /* ── Status helpers ── */
+
+    function isCategoryComplete(slug) {
+      const ct = tasks.filter(t => t.category === slug);
+      return ct.length > 0 && ct.every(t => t.done);
+    }
+
+    function isCategoryPending(slug) {
+      return tasks.some(t => t.category === slug && !t.done);
+    }
+
+    function pendingCount(slug) {
+      return tasks.filter(t => t.category === slug && !t.done).length;
+    }
+
+    /* ── Render ── */
+
+    function renderAll() {
+      renderTabs();
+      renderCategorySelect();
+      renderCategoryList();
+      renderTasks();
+      updateProgress();
+    }
+
+    function renderTabs() {
+      const tabs = document.getElementById("tabs");
+      const allComplete = tasks.length > 0 && tasks.every(t => t.done) ? "category-complete" : "";
+      const allPending = tasks.some(t => !t.done) ? "category-pending" : "";
+
+      tabs.innerHTML = `<button class="tab ${currentFilter === 'all' ? 'active' : ''} ${allComplete || allPending}" onclick="filterTasks('all')">All Tasks (${tasks.filter(t => !t.done).length})</button>`;
+
+      categories.forEach(cat => {
+        const active = currentFilter === cat.slug ? "active" : "";
+        const complete = isCategoryComplete(cat.slug) ? "category-complete" : "";
+        const pending = isCategoryPending(cat.slug) ? "category-pending" : "";
+        const count = pendingCount(cat.slug);
+        const label = count > 0 ? `${escapeHtml(cat.name)} (${count})` : escapeHtml(cat.name);
+        tabs.innerHTML += `<button class="tab ${active} ${complete || pending}" onclick="filterTasks('${cat.slug}')">${label}</button>`;
+      });
+    }
+
+    function renderCategorySelect() {
+      const select = document.getElementById("categoryInput");
+      select.innerHTML = "";
+
+      categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat.slug;
+        option.textContent = cat.name;
+        select.appendChild(option);
+      });
+
+      if (categories.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Add a category in Settings first";
+        select.appendChild(option);
+      }
+    }
+
+    function renderCategoryList() {
+      const list = document.getElementById("categoryList");
+      list.innerHTML = "";
+
+      if (categories.length === 0) {
+        list.innerHTML = `<div class="empty">No categories yet. Add your first category above.</div>`;
+        return;
+      }
+
+      categories.forEach(cat => {
+        const total = tasks.filter(t => t.category === cat.slug).length;
+        const completed = tasks.filter(t => t.category === cat.slug && t.done).length;
+        const complete = isCategoryComplete(cat.slug);
+        const pending = pendingCount(cat.slug);
+
+        const row = document.createElement("div");
+        row.className = complete ? "category-row complete" : (pending > 0 ? "category-row pending" : "category-row");
+
+        const statusClass = complete ? "category-complete-label" : "category-pending-label";
+        const statusText = complete ? "Completed \u2713" : (pending > 0 ? `\u26A0 ${pending} Unfinished` : "No Tasks");
+
+        row.innerHTML = `
+          <div>
+            <div class="category-name">${escapeHtml(cat.name)}</div>
+            <div class="category-meta">${completed} completed out of ${total} task(s)</div>
+          </div>
+          <div class="${statusClass}">${statusText}</div>
+          <button class="small-btn danger-btn" onclick="removeCategory(${cat.id})" type="button">Remove</button>
+        `;
+
+        list.appendChild(row);
+      });
+    }
+
+    function renderTasks() {
+      const taskList = document.getElementById("taskList");
+      const visible = currentFilter === "all"
+        ? tasks
+        : tasks.filter(t => t.category === currentFilter);
+
+      taskList.innerHTML = "";
+
+      if (visible.length === 0) {
+        taskList.innerHTML = `<div class="empty">No tasks here yet. Add a new task above.</div>`;
+        return;
+      }
+
+      visible.forEach(task => {
+        const el = document.createElement("div");
+        el.className = task.done ? "task done" : "task";
+
+        const catName = task.categoryName || task.category;
+        const shortCat = catName.length > 12 ? catName.slice(0, 12) + "\u2026" : catName;
+
+        el.innerHTML = `
+          <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleDone(${task.id})" />
+          <div>
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-meta">Category: ${escapeHtml(catName)} &middot; Priority: ${escapeHtml(task.priority || 'New')}</div>
+          </div>
+          <span class="badge">${escapeHtml(shortCat)}</span>
+          <button class="remove" onclick="removeTask(${task.id})" title="Remove task">&times;</button>
+        `;
+
+        taskList.appendChild(el);
+      });
+    }
+
+    function updateProgress() {
+      const done = tasks.filter(t => t.done).length;
+      const total = tasks.length;
+      const percent = total ? Math.round((done / total) * 100) : 0;
+
+      document.getElementById("score").textContent = percent + "%";
+      document.getElementById("progressBar").style.width = percent + "%";
+      document.getElementById("taskCount").textContent = `${done} completed out of ${total} tasks.`;
+      document.getElementById("progressText").textContent = `${done} of ${total} tasks completed`;
+    }
+
+    /* ── Init ── */
+    loadAll();
+  </script>
+</body>
+</html>

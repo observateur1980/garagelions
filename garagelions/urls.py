@@ -27,6 +27,9 @@ urlpatterns = [
     # ── Panel (internal admin) ───────────────────────────────────────────
     path('panel/', include('panel.urls', namespace='panel')),
 
+    # ── Task Board (standalone) ──────────────────────────────────────────
+    path('taskboard/', include('taskboard.urls', namespace='taskboard')),
+
     # SEO sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap'),
