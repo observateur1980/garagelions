@@ -476,6 +476,56 @@ def notify_new_lead_to_location(lead, attachment_names=None):
 
 
 # ---------------------------------------------------------------------------
+# Unassigned lead alert
+# ---------------------------------------------------------------------------
+
+def notify_unassigned_lead(lead):
+    """
+    Alert ops when a lead comes in but no salespoint covers its ZIP code.
+    Fires only when lead.assigned_user is None after auto-routing — a signal
+    that ZIP/territory data is missing for that area.
+    """
+    recipient = getattr(settings, "LEADS_UNASSIGNED_ALERT_EMAIL", "leads@garagelions.com")
+    crm_url = f"{settings.SITE_URL}/sales/leads/{lead.pk}/"
+    services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
+
+    subject = f"ACTION REQUIRED: Unassigned lead — ZIP {lead.zip_code or '(blank)'}"
+    body = (
+        f"A new lead came in but could not be auto-assigned to a salespoint.\n"
+        f"No active ServiceCity/SalesPoint matches this ZIP code in the territory data.\n\n"
+        f"LEAD\n"
+        f"{'-'*40}\n"
+        f"Name:     {lead.first_name} {lead.last_name}\n"
+        f"Email:    {lead.email}\n"
+        f"Phone:    {lead.phone}\n"
+        f"ZIP:      {lead.zip_code}\n"
+        f"Services: {services_display}\n\n"
+        f"Message:\n{lead.message or '(none)'}\n\n"
+        f"NEXT STEPS\n"
+        f"{'-'*40}\n"
+        f"1. Open the lead in the CRM and assign it manually: {crm_url}\n"
+        f"2. Add this ZIP to the appropriate SalesPoint's territory so future leads\n"
+        f"   route automatically (admin → SalesPoint → Import territory CSV, or\n"
+        f"   edit the ServiceCity directly).\n"
+    )
+
+    try:
+        msg = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient],
+            reply_to=[lead.email] if lead.email else [],
+        )
+        msg.extra_headers = {
+            "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
+        }
+        msg.send(fail_silently=False)
+    except Exception as exc:
+        logger.error("Unassigned-lead alert failed for lead #%s: %s", lead.pk, exc)
+
+
+# ---------------------------------------------------------------------------
 # Reassignment notification
 # ---------------------------------------------------------------------------
 
