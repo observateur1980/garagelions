@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 
 from account.models import ProjectManager
-from home.models import LeadModel, LeadActivity, SalesPoint
+from home.models import LeadModel, LeadActivity, LeadTodo, SalesPoint
 from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
@@ -1333,13 +1333,44 @@ def lead_detail(request, pk):
         form = LeadUpdateForm(instance=lead)
 
     activities = lead.activities.select_related("user", "user__profile").order_by("-created_at")[:20]
+    todos = lead.todos.all()
 
     return render(request, "panel/leads/detail.html", {
         "lead": lead,
         "form": form,
         "project_manager": pm,
         "activities": activities,
+        "todos": todos,
     })
+
+
+@login_required
+@require_POST
+def lead_todo_create(request, lead_pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    title = (request.POST.get("title") or "").strip()
+    if title:
+        LeadTodo.objects.create(lead=lead, title=title, created_by=request.user)
+    return redirect("panel:lead_detail", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def lead_todo_toggle(request, lead_pk, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    todo = get_object_or_404(LeadTodo, pk=pk, lead=lead)
+    todo.is_completed = not todo.is_completed
+    todo.completed_at = timezone.now() if todo.is_completed else None
+    todo.save(update_fields=["is_completed", "completed_at"])
+    return redirect("panel:lead_detail", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def lead_todo_delete(request, lead_pk, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    LeadTodo.objects.filter(pk=pk, lead=lead).delete()
+    return redirect("panel:lead_detail", pk=lead.pk)
 
 
 @login_required

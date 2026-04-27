@@ -72,6 +72,11 @@ urlpatterns = [
     path("leads/new/", views.lead_create, name="lead_create"),
     path("leads/<int:pk>/", views.lead_detail, name="lead_detail"),
 
+    # Lead To-Dos (per-customer / per-lead)
+    path("leads/<int:lead_pk>/todos/add/", views.lead_todo_create, name="lead_todo_create"),
+    path("leads/<int:lead_pk>/todos/<int:pk>/toggle/", views.lead_todo_toggle, name="lead_todo_toggle"),
+    path("leads/<int:lead_pk>/todos/<int:pk>/delete/", views.lead_todo_delete, name="lead_todo_delete"),
+
     # Lead → Customer + Estimate
     path("lead/<int:lead_pk>/to-estimate/", views.lead_to_estimate, name="lead_to_estimate"),
 ]

@@ -787,6 +787,33 @@ class LeadActivity(models.Model):
         return f"[{self.get_action_display()}] Lead #{self.lead_id} by {actor}"
 
 
+class LeadTodo(models.Model):
+    lead = models.ForeignKey(
+        LeadModel,
+        on_delete=models.CASCADE,
+        related_name="todos",
+    )
+    title = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lead_todos_created",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["is_completed", "-created_at"]
+        verbose_name = "Lead To-Do"
+        verbose_name_plural = "Lead To-Dos"
+
+    def __str__(self):
+        return f"Lead #{self.lead_id} — {self.title}"
+
+
 class VideoReview(models.Model):
     title = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100, blank=True)

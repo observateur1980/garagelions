@@ -61,6 +61,50 @@
     <a href="{% url 'panel:lead_to_estimate' lead_pk=lead.pk %}" class="btn-panel" style="width:100%; text-align:center; padding:14px">
       Create Estimate in Panel
     </a>
+
+    <!-- Per-customer To-Do list -->
+    <div class="card dashboard-card" style="margin-top:16px">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">
+          To-Do for {{ lead.first_name }} {{ lead.last_name }}
+        </h6>
+
+        <form method="post" action="{% url 'panel:lead_todo_create' lead_pk=lead.pk %}" style="display:flex; gap:8px; margin-bottom:12px">
+          {% csrf_token %}
+          <input type="text" name="title" required maxlength="255" placeholder="Add a task for this customer…"
+                 style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+          <button type="submit" class="btn-panel" style="padding:8px 14px">Add</button>
+        </form>
+
+        {% if todos %}
+        <ul style="list-style:none; padding:0; margin:0">
+          {% for todo in todos %}
+          <li style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f3f4f6">
+            <form method="post" action="{% url 'panel:lead_todo_toggle' lead_pk=lead.pk pk=todo.pk %}" style="margin:0">
+              {% csrf_token %}
+              <button type="submit" title="Toggle complete"
+                      style="width:18px; height:18px; padding:0; border:1.5px solid {% if todo.is_completed %}#10b981{% else %}#9ca3af{% endif %}; border-radius:4px; background:{% if todo.is_completed %}#10b981{% else %}#fff{% endif %}; cursor:pointer; display:flex; align-items:center; justify-content:center">
+                {% if todo.is_completed %}<span style="color:#fff; font-size:12px; line-height:1">&#10003;</span>{% endif %}
+              </button>
+            </form>
+            <span style="flex:1; font-size:14px; color:#374151; {% if todo.is_completed %}text-decoration:line-through; color:#9ca3af;{% endif %}">
+              {{ todo.title }}
+            </span>
+            <span style="font-size:11px; color:#9ca3af">{{ todo.created_at|date:"M j" }}</span>
+            <form method="post" action="{% url 'panel:lead_todo_delete' lead_pk=lead.pk pk=todo.pk %}" style="margin:0"
+                  onsubmit="return confirm('Delete this task?');">
+              {% csrf_token %}
+              <button type="submit" title="Delete"
+                      style="border:none; background:none; color:#9ca3af; cursor:pointer; font-size:16px; line-height:1">&times;</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color:#9ca3af; margin:0; font-size:13px">No tasks yet for this customer.</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
   <!-- Right column -->
