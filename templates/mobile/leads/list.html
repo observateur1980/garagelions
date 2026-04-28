@@ -234,5 +234,17 @@
   // Prime CSRF cookie + paint UI
   fetch("/push/vapid-key/", { credentials: "same-origin" }).finally(refreshUI);
 })();
+
+// ── App icon badge (iOS home screen / desktop PWA) ──────────────────
+(function () {
+  const count = parseInt("{{ new_leads_count|default:0 }}", 10) || 0;
+  try {
+    if (count > 0 && navigator.setAppBadge) {
+      navigator.setAppBadge(count).catch(() => {});
+    } else if (count === 0 && navigator.clearAppBadge) {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  } catch (e) { /* unsupported */ }
+})();
 </script>
 {% endblock %}

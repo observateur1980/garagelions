@@ -23,6 +23,18 @@ COMPANY_ADDRESS = "Garage Lions LLC, 123 Main Street, Los Angeles, CA 90001"  # 
 # Web Push helper
 # ---------------------------------------------------------------------------
 
+def count_new_leads_for_user(user):
+    """Count of leads with status='new' visible to this user — same scoping as the panel sidebar badge."""
+    if not user:
+        return 0
+    try:
+        from panel.context_processors import _new_leads_qs_for
+        return _new_leads_qs_for(user).count()
+    except Exception:
+        logger.exception("Failed to compute new-leads count for user %s", user)
+        return 0
+
+
 def send_push_to_user(user, title: str, body: str, url: str = "/panel/m/leads/", tag: str = "gl-lead"):
     """Send a Web Push notification to all of a user's registered subscriptions.
 
@@ -46,7 +58,11 @@ def send_push_to_user(user, title: str, body: str, url: str = "/panel/m/leads/",
 
     from .models import PushSubscription
 
-    payload = json.dumps({"title": title, "body": body, "url": url, "tag": tag})
+    badge_count = count_new_leads_for_user(user)
+    payload = json.dumps({
+        "title": title, "body": body, "url": url, "tag": tag,
+        "badge_count": badge_count,
+    })
     vapid_claims = {"sub": f"mailto:{admin_email}"}
 
     sent = 0
