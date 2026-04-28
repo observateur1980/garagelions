@@ -1313,7 +1313,15 @@ def lead_list(request):
                 lead=OuterRef("pk"), is_sent=False
             ).order_by("remind_at").values("remind_at")[:1],
             output_field=DateTimeField(),
-        )
+        ),
+        pending_todos_count=Subquery(
+            LeadTodo.objects.filter(lead=OuterRef("pk"), is_completed=False)
+            .order_by()
+            .values("lead")
+            .annotate(c=Count("pk"))
+            .values("c")[:1],
+            output_field=IntegerField(),
+        ),
     )
 
     if sort in ("status_asc", "status_desc"):

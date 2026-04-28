@@ -85,6 +85,17 @@
     font-size:12px; color:#6b7280;
   }
   .lead-card-unassigned { color:#b91c1c; font-weight:500; }
+  .lead-card-todos {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top:8px;
+    padding:4px 10px;
+    background:#fffbeb;
+    color:#b45309;
+    border:1px solid #fde68a;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:500;
+  }
 </style>
 
 <!-- Quick status filters -->
@@ -153,6 +164,16 @@
         <svg class="lead-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         <span>{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}No location{% endif %}{% if lead.zip_code %} · {{ lead.zip_code }}{% endif %}</span>
       </div>
+
+      {% if lead.pending_todos_count %}
+      <div class="lead-card-todos">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 11 12 14 22 4"></polyline>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <span>{{ lead.pending_todos_count }} pending task{{ lead.pending_todos_count|pluralize }}</span>
+      </div>
+      {% endif %}
 
       <div class="lead-card-footer">
         <span>
