@@ -1373,6 +1373,98 @@ def lead_todo_delete(request, lead_pk, pk):
     return redirect("panel:lead_detail", pk=lead.pk)
 
 
+# ── Mobile (PWA) views — separate templates, same data ───────────────
+@login_required
+def m_lead_list(request):
+    qs = _lead_queryset(request.user)
+
+    q = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    if q:
+        qs = qs.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+            Q(email__icontains=q) | Q(phone__icontains=q) | Q(zip_code__icontains=q)
+        )
+    if status:
+        qs = qs.filter(status=status)
+
+    paginator = Paginator(qs, 30)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "mobile/leads/list.html", {
+        "page_obj": page_obj,
+        "q": q,
+        "status": status,
+        "status_choices": LeadModel.STATUS_CHOICES,
+    })
+
+
+@login_required
+def m_lead_detail(request, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=pk)
+
+    if request.method == "POST":
+        form = LeadUpdateForm(request.POST, instance=lead)
+        if form.is_valid():
+            old_status = lead.status
+            old_notes = lead.internal_notes
+            updated = form.save()
+
+            if updated.status != old_status:
+                LeadActivity.objects.create(
+                    lead=updated, user=request.user,
+                    action=LeadActivity.ACTION_STATUS,
+                    detail=f"Status changed to '{updated.get_status_display()}'.",
+                )
+            if updated.internal_notes != old_notes:
+                LeadActivity.objects.create(
+                    lead=updated, user=request.user,
+                    action=LeadActivity.ACTION_NOTES,
+                    detail="Internal notes updated.",
+                )
+            return redirect("panel:m_lead_detail", pk=pk)
+    else:
+        form = LeadUpdateForm(instance=lead)
+
+    todos = lead.todos.all()
+
+    return render(request, "mobile/leads/detail.html", {
+        "lead": lead,
+        "form": form,
+        "todos": todos,
+    })
+
+
+@login_required
+@require_POST
+def m_lead_todo_create(request, lead_pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    title = (request.POST.get("title") or "").strip()
+    if title:
+        LeadTodo.objects.create(lead=lead, title=title, created_by=request.user)
+    return redirect("panel:m_lead_detail", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def m_lead_todo_toggle(request, lead_pk, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    todo = get_object_or_404(LeadTodo, pk=pk, lead=lead)
+    todo.is_completed = not todo.is_completed
+    todo.completed_at = timezone.now() if todo.is_completed else None
+    todo.save(update_fields=["is_completed", "completed_at"])
+    return redirect("panel:m_lead_detail", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def m_lead_todo_delete(request, lead_pk, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    LeadTodo.objects.filter(pk=pk, lead=lead).delete()
+    return redirect("panel:m_lead_detail", pk=lead.pk)
+
+
 @login_required
 def lead_create(request):
     pm = _get_pm(request.user)

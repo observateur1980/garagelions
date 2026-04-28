@@ -79,4 +79,11 @@ urlpatterns = [
 
     # Lead → Customer + Estimate
     path("lead/<int:lead_pk>/to-estimate/", views.lead_to_estimate, name="lead_to_estimate"),
+
+    # ── Mobile / PWA (standalone shell at /panel/m/) ──────────────────
+    path("m/leads/", views.m_lead_list, name="m_lead_list"),
+    path("m/leads/<int:pk>/", views.m_lead_detail, name="m_lead_detail"),
+    path("m/leads/<int:lead_pk>/todos/add/", views.m_lead_todo_create, name="m_lead_todo_create"),
+    path("m/leads/<int:lead_pk>/todos/<int:pk>/toggle/", views.m_lead_todo_toggle, name="m_lead_todo_toggle"),
+    path("m/leads/<int:lead_pk>/todos/<int:pk>/delete/", views.m_lead_todo_delete, name="m_lead_todo_delete"),
 ]

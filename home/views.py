@@ -390,12 +390,12 @@ class CarLift(TemplateView):
 PWA_MANIFEST = {
     "name": "Garage Lions Leads",
     "short_name": "GL Leads",
-    "description": "Garage Lions internal leads panel",
-    "start_url": "/panel/leads/",
-    "scope": "/panel/",
+    "description": "Garage Lions mobile leads app",
+    "start_url": "/panel/m/leads/",
+    "scope": "/panel/m/",
     "display": "standalone",
     "orientation": "portrait",
-    "background_color": "#f9fafb",
+    "background_color": "#f3f4f6",
     "theme_color": "#374151",
     "icons": [
         {"src": "/static/icons/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},

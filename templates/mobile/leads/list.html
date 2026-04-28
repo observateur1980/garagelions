@@ -1,0 +1,75 @@
+{% extends "mobile/base.html" %}
+{% block title %}Leads — GL{% endblock %}
+
+{% block body %}
+<div class="m-header">
+  <h1>Leads</h1>
+  <a href="{% url 'logout_shortcut' %}" class="header-link">Logout</a>
+</div>
+
+<div class="m-content">
+
+  <form method="get" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px">
+    <input type="search" name="q" value="{{ q }}"
+           placeholder="Search name, email, phone, zip…"
+           class="input" autocomplete="off">
+    <select name="status" class="input" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% if q or status %}
+    <a href="{% url 'panel:m_lead_list' %}"
+       style="font-size:13px; color:#6b7280; text-align:center; padding:6px">Clear filters</a>
+    {% endif %}
+  </form>
+
+  <div style="display:flex; flex-direction:column; gap:10px">
+    {% for lead in page_obj %}
+    <a href="{% url 'panel:m_lead_detail' lead.pk %}" class="card"
+       style="display:flex; flex-direction:column; gap:6px; padding:14px">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+        <span style="font-weight:600; font-size:16px; color:#111827">
+          {{ lead.first_name }} {{ lead.last_name }}
+        </span>
+        <span class="badge badge-{{ lead.status }}">{{ lead.get_status_display }}</span>
+      </div>
+      <div style="color:#6b7280; font-size:13px; line-height:1.5">
+        {{ lead.phone }}{% if lead.sales_point %} &middot; {{ lead.sales_point.name }}{% endif %}<br>
+        <span style="color:#9ca3af">{{ lead.email }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:12px">
+        <span style="color:#9ca3af">{{ lead.created_at|date:"M j, Y" }}</span>
+        <span>
+          {% if lead.assigned_user %}
+            {{ lead.assigned_user.get_short_name|default:lead.assigned_user.get_full_name }}
+          {% else %}
+            <span style="color:#b91c1c">Unassigned</span>
+          {% endif %}
+        </span>
+      </div>
+    </a>
+    {% empty %}
+    <p style="color:#6b7280; text-align:center; padding:32px 0">No leads found.</p>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div style="display:flex; justify-content:center; gap:10px; margin-top:18px; align-items:center">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+       class="btn btn-outline" style="padding:10px 16px; min-height:40px">← Prev</a>
+    {% endif %}
+    <span style="font-size:13px; color:#6b7280">
+      Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+       class="btn btn-outline" style="padding:10px 16px; min-height:40px">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

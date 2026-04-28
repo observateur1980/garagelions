@@ -1,0 +1,143 @@
+{% extends "mobile/base.html" %}
+{% block title %}{{ lead.first_name }} {{ lead.last_name }} — GL{% endblock %}
+
+{% block body %}
+<div class="m-header">
+  <a href="{% url 'panel:m_lead_list' %}" class="back-btn" aria-label="Back">‹</a>
+  <h1>{{ lead.first_name }} {{ lead.last_name }}</h1>
+  <span class="badge badge-{{ lead.status }}" style="font-size:11px">
+    {{ lead.get_status_display }}
+  </span>
+</div>
+
+<div class="m-content">
+
+  <!-- Quick actions -->
+  <div style="display:flex; gap:10px; margin-bottom:14px">
+    <a href="tel:{{ lead.phone }}" class="btn btn-primary" style="flex:1">Call</a>
+    <a href="mailto:{{ lead.email }}" class="btn btn-outline" style="flex:1">Email</a>
+  </div>
+
+  <!-- Contact -->
+  <div class="card">
+    <h6 class="card-title">Contact</h6>
+    <div style="font-size:14px; color:#374151; line-height:1.8">
+      <div><a href="mailto:{{ lead.email }}" style="color:#1d4ed8">{{ lead.email }}</a></div>
+      <div><a href="tel:{{ lead.phone }}" style="color:#1d4ed8">{{ lead.phone }}</a></div>
+      {% if lead.address %}<div>{{ lead.address }}</div>{% endif %}
+      <div style="color:#6b7280">
+        ZIP {{ lead.zip_code }}{% if lead.service_city %} — {{ lead.service_city.name }}, {{ lead.service_city.state }}{% endif %}
+      </div>
+      {% if lead.sales_point %}
+        <div style="color:#6b7280; margin-top:6px; font-size:13px">
+          Location: {{ lead.sales_point.name }}
+        </div>
+      {% endif %}
+      {% if lead.assigned_user %}
+        <div style="color:#6b7280; font-size:13px">
+          Assigned: {{ lead.assigned_user.get_full_name }}
+        </div>
+      {% else %}
+        <div style="color:#b91c1c; font-size:13px">Unassigned</div>
+      {% endif %}
+      <div style="color:#9ca3af; font-size:12px; margin-top:6px">
+        Created {{ lead.created_at|date:"M j, Y g:i a" }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Services + message -->
+  {% if lead.consultation_types or lead.message %}
+  <div class="card">
+    <h6 class="card-title">Services Requested</h6>
+    {% if lead.consultation_types %}
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px">
+      {% for val, label in lead.CONSULTATION_CHOICES %}
+        {% if val in lead.consultation_types %}
+        <span style="padding:4px 10px; border:1px solid #e5e7eb; border-radius:14px; font-size:12px; background:#f9fafb">
+          {{ label }}
+        </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if lead.message %}
+    <p style="margin:0; font-size:14px; color:#374151; white-space:pre-line; line-height:1.5">
+      {{ lead.message }}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Update form -->
+  <div class="card">
+    <h6 class="card-title">Update Lead</h6>
+    <form method="post">
+      {% csrf_token %}
+      <label class="form-label">Status</label>
+      <select name="status" class="input">
+        {% for val, label in lead.STATUS_CHOICES %}
+        <option value="{{ val }}" {% if lead.status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <label class="form-label" style="margin-top:12px">Internal Notes</label>
+      <textarea name="internal_notes" class="input" rows="3">{{ lead.internal_notes }}</textarea>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:12px">
+        Save Changes
+      </button>
+    </form>
+  </div>
+
+  <!-- To-Do list (per-customer) -->
+  <div class="card">
+    <h6 class="card-title">To-Do for {{ lead.first_name }} {{ lead.last_name }}</h6>
+
+    <form method="post" action="{% url 'panel:m_lead_todo_create' lead_pk=lead.pk %}"
+          style="display:flex; gap:8px; margin-bottom:12px">
+      {% csrf_token %}
+      <input type="text" name="title" required maxlength="255"
+             placeholder="Add a task…" class="input"
+             style="flex:1">
+      <button type="submit" class="btn btn-primary" style="padding:10px 16px">Add</button>
+    </form>
+
+    {% if todos %}
+    <ul style="list-style:none; padding:0; margin:0">
+      {% for todo in todos %}
+      <li style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f3f4f6">
+        <form method="post" action="{% url 'panel:m_lead_todo_toggle' lead_pk=lead.pk pk=todo.pk %}" style="margin:0">
+          {% csrf_token %}
+          <button type="submit"
+                  style="width:24px; height:24px; padding:0;
+                         border:1.5px solid {% if todo.is_completed %}#10b981{% else %}#9ca3af{% endif %};
+                         border-radius:5px;
+                         background:{% if todo.is_completed %}#10b981{% else %}#fff{% endif %};
+                         cursor:pointer; display:flex; align-items:center; justify-content:center"
+                  aria-label="Toggle complete">
+            {% if todo.is_completed %}<span style="color:#fff; font-size:14px; line-height:1">✓</span>{% endif %}
+          </button>
+        </form>
+        <span style="flex:1; font-size:14px; color:#374151;
+                     {% if todo.is_completed %}text-decoration:line-through; color:#9ca3af;{% endif %}">
+          {{ todo.title }}
+        </span>
+        <form method="post" action="{% url 'panel:m_lead_todo_delete' lead_pk=lead.pk pk=todo.pk %}"
+              style="margin:0" onsubmit="return confirm('Delete this task?');">
+          {% csrf_token %}
+          <button type="submit"
+                  style="border:none; background:none; color:#9ca3af;
+                         font-size:20px; padding:0 6px; line-height:1; cursor:pointer"
+                  aria-label="Delete">×</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:#9ca3af; margin:0; font-size:13px; text-align:center; padding:8px 0">
+      No tasks yet.
+    </p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
