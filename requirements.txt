@@ -21,3 +21,6 @@ sendgrid==6.11.0
 
 # Twilio SMS
 twilio==9.3.7
+
+# Web Push (PWA notifications)
+pywebpush==2.3.0

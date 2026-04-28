@@ -104,6 +104,11 @@ TWILIO_ACCOUNT_SID = ""
 TWILIO_AUTH_TOKEN = ""
 TWILIO_FROM_NUMBER = ""           # e.g. "+18005551234"
 
+# Web Push / VAPID (optional — push is silently skipped if these are blank)
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_ADMIN_EMAIL = os.environ.get("VAPID_ADMIN_EMAIL", "leads@garagelions.com")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SITE_URL = "https://garagelions.com"

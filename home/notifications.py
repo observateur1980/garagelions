@@ -6,6 +6,7 @@ Functions are safe to call even if SendGrid / Twilio is not configured —
 they catch exceptions and log rather than raising.
 """
 
+import json
 import logging
 
 from django.conf import settings
@@ -16,6 +17,67 @@ logger = logging.getLogger(__name__)
 
 # Physical mailing address — required by CAN-SPAM / Google guidelines
 COMPANY_ADDRESS = "Garage Lions LLC, 123 Main Street, Los Angeles, CA 90001"  # ← update with real address
+
+
+# ---------------------------------------------------------------------------
+# Web Push helper
+# ---------------------------------------------------------------------------
+
+def send_push_to_user(user, title: str, body: str, url: str = "/panel/m/leads/", tag: str = "gl-lead"):
+    """Send a Web Push notification to all of a user's registered subscriptions.
+
+    Returns (sent_count, failed_count). Silently skipped if VAPID keys are not set.
+    """
+    if not user:
+        return (0, 0)
+
+    public_key = getattr(settings, "VAPID_PUBLIC_KEY", "")
+    private_key = getattr(settings, "VAPID_PRIVATE_KEY", "")
+    admin_email = getattr(settings, "VAPID_ADMIN_EMAIL", "leads@garagelions.com")
+    if not (public_key and private_key):
+        logger.debug("VAPID keys not set — skipping push for user %s", user)
+        return (0, 0)
+
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        logger.warning("pywebpush not installed — push skipped")
+        return (0, 0)
+
+    from .models import PushSubscription
+
+    payload = json.dumps({"title": title, "body": body, "url": url, "tag": tag})
+    vapid_claims = {"sub": f"mailto:{admin_email}"}
+
+    sent = 0
+    failed = 0
+    dead_endpoints = []
+    for sub in user.push_subscriptions.all():
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                },
+                data=payload,
+                vapid_private_key=private_key,
+                vapid_claims=dict(vapid_claims),
+            )
+            sent += 1
+        except WebPushException as exc:
+            failed += 1
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if status in (404, 410):
+                dead_endpoints.append(sub.endpoint)
+            logger.warning("Push failed for user %s (status=%s): %s", user, status, exc)
+        except Exception as exc:
+            failed += 1
+            logger.error("Push error for user %s: %s", user, exc)
+
+    if dead_endpoints:
+        PushSubscription.objects.filter(endpoint__in=dead_endpoints).delete()
+
+    return (sent, failed)
 
 
 # ---------------------------------------------------------------------------
@@ -309,6 +371,15 @@ def notify_new_lead_to_project_manager(lead):
         )
         _send_sms(pm_phone, sms_body)
 
+    # ── Push (PWA) ──
+    send_push_to_user(
+        assigned,
+        title=f"New lead: {lead.first_name} {lead.last_name}",
+        body=f"{location_text} • {lead.phone or 'no phone'} • {services_display}",
+        url=f"/panel/m/leads/{lead.pk}/",
+        tag=f"gl-lead-{lead.pk}",
+    )
+
     # ── Notify location managers at this sales point who weren't already emailed ──
     if lead.sales_point:
         try:
@@ -585,3 +656,12 @@ def notify_lead_reassigned(lead, new_user):
             f"{lead.phone} | {lead.zip_code} | CRM: {crm_url}"
         )
         _send_sms(pm_phone, sms_body)
+
+    # ── Push (PWA) ──
+    send_push_to_user(
+        new_user,
+        title=f"Lead reassigned: {lead.first_name} {lead.last_name}",
+        body=f"{lead.phone or ''} • {services_display}",
+        url=f"/panel/m/leads/{lead.pk}/",
+        tag=f"gl-lead-{lead.pk}",
+    )

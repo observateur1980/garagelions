@@ -9,6 +9,20 @@
 
 <div class="m-content">
 
+  <div id="push-banner" class="card" style="display:none; margin-bottom:12px">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+      <div style="flex:1; min-width:160px">
+        <div style="font-weight:600; font-size:14px; color:#111827">🔔 Lead notifications</div>
+        <div id="push-status" style="font-size:12px; color:#6b7280; margin-top:2px">Checking…</div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap">
+        <button type="button" id="push-enable" class="btn btn-primary" style="padding:8px 12px; font-size:13px; min-height:36px; display:none">Enable</button>
+        <button type="button" id="push-test" class="btn btn-outline" style="padding:8px 12px; font-size:13px; min-height:36px; display:none">Test</button>
+        <button type="button" id="push-disable" class="btn btn-outline" style="padding:8px 12px; font-size:13px; min-height:36px; display:none">Disable</button>
+      </div>
+    </div>
+  </div>
+
   <form method="get" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px">
     <input type="search" name="q" value="{{ q }}"
            placeholder="Search name, email, phone, zip…"
@@ -72,4 +86,146 @@
   {% endif %}
 
 </div>
+
+<script>
+(function() {
+  const banner = document.getElementById("push-banner");
+  const status = document.getElementById("push-status");
+  const enableBtn = document.getElementById("push-enable");
+  const testBtn = document.getElementById("push-test");
+  const disableBtn = document.getElementById("push-disable");
+
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    banner.style.display = "block";
+    status.textContent = "Not supported on this browser. iPhone? Use Safari → Add to Home Screen, then open the app.";
+    return;
+  }
+
+  banner.style.display = "block";
+
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]+)"));
+    return m ? decodeURIComponent(m[2]) : "";
+  }
+
+  function urlB64ToUint8Array(base64) {
+    const pad = "=".repeat((4 - base64.length % 4) % 4);
+    const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  async function getReg() {
+    return await navigator.serviceWorker.ready;
+  }
+
+  async function refreshUI() {
+    try {
+      const reg = await getReg();
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && Notification.permission === "granted") {
+        status.textContent = "Notifications are ON for this device.";
+        enableBtn.style.display = "none";
+        testBtn.style.display = "inline-flex";
+        disableBtn.style.display = "inline-flex";
+      } else if (Notification.permission === "denied") {
+        status.textContent = "Permission blocked. Enable it in Settings → Notifications for this app.";
+        enableBtn.style.display = "none";
+        testBtn.style.display = "none";
+        disableBtn.style.display = "none";
+      } else {
+        status.textContent = "Get a sound + popup on your phone when a new lead is assigned.";
+        enableBtn.style.display = "inline-flex";
+        testBtn.style.display = "none";
+        disableBtn.style.display = "none";
+      }
+    } catch (e) {
+      status.textContent = "Notifications unavailable: " + e.message;
+    }
+  }
+
+  enableBtn.addEventListener("click", async () => {
+    enableBtn.disabled = true;
+    status.textContent = "Requesting permission…";
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        status.textContent = "Permission denied.";
+        enableBtn.disabled = false;
+        return;
+      }
+      const keyRes = await fetch("/push/vapid-key/", { credentials: "same-origin" });
+      const keyData = await keyRes.json();
+      if (!keyData.public_key) {
+        status.textContent = "Server missing VAPID key. Ask the admin.";
+        enableBtn.disabled = false;
+        return;
+      }
+      const reg = await getReg();
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(keyData.public_key),
+      });
+      const res = await fetch("/push/subscribe/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      if (!res.ok) throw new Error("subscribe failed: " + res.status);
+      status.textContent = "Enabled ✓";
+    } catch (e) {
+      status.textContent = "Failed: " + e.message;
+    } finally {
+      enableBtn.disabled = false;
+      refreshUI();
+    }
+  });
+
+  testBtn.addEventListener("click", async () => {
+    testBtn.disabled = true;
+    try {
+      const res = await fetch("/push/test/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+      });
+      const data = await res.json();
+      status.textContent = `Test sent (${data.sent} delivered, ${data.failed} failed).`;
+    } catch (e) {
+      status.textContent = "Test failed: " + e.message;
+    } finally {
+      testBtn.disabled = false;
+    }
+  });
+
+  disableBtn.addEventListener("click", async () => {
+    disableBtn.disabled = true;
+    try {
+      const reg = await getReg();
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/push/unsubscribe/", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      status.textContent = "Disabled.";
+    } catch (e) {
+      status.textContent = "Failed: " + e.message;
+    } finally {
+      disableBtn.disabled = false;
+      refreshUI();
+    }
+  });
+
+  // Prime CSRF cookie + paint UI
+  fetch("/push/vapid-key/", { credentials: "same-origin" }).finally(refreshUI);
+})();
+</script>
 {% endblock %}

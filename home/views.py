@@ -22,6 +22,7 @@ from .models import (
     ServiceCity,
     ZipCode,
     LeadModel,
+    PushSubscription,
 )
 from .notifications import (
     notify_new_lead_to_customer,
@@ -451,6 +452,40 @@ self.addEventListener("fetch", (event) => {
     fetch(req).catch(() => caches.match("/panel/leads/") || new Response("Offline", { status: 503 }))
   );
 });
+
+// ── Web Push ────────────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: "Garage Lions", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "Garage Lions";
+  const options = {
+    body: data.body || "",
+    icon: "/static/icons/pwa-icon-192.png",
+    badge: "/static/icons/pwa-icon-192.png",
+    tag: data.tag || "gl-lead",
+    renotify: true,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+    data: { url: data.url || "/panel/m/leads/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/panel/m/leads/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if ("focus" in w) {
+          w.navigate ? w.navigate(targetUrl) : null;
+          return w.focus();
+        }
+      }
+      return clients.openWindow ? clients.openWindow(targetUrl) : null;
+    })
+  );
+});
 """
 
 
@@ -463,3 +498,71 @@ def pwa_service_worker(request):
     response["Service-Worker-Allowed"] = "/"
     response["Cache-Control"] = "no-cache"
     return response
+
+
+# ── Web Push subscription endpoints ─────────────────────────────────
+
+import json as _json
+from django.conf import settings as _settings
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+
+@ensure_csrf_cookie
+def push_vapid_public_key(request):
+    """Returns the VAPID public key so the browser can subscribe."""
+    return JsonResponse({"public_key": _settings.VAPID_PUBLIC_KEY or ""})
+
+
+@login_required
+@require_POST
+def push_subscribe(request):
+    try:
+        body = _json.loads(request.body or b"{}")
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "invalid json"}, status=400)
+
+    endpoint = body.get("endpoint") or ""
+    keys = body.get("keys") or {}
+    p256dh = keys.get("p256dh") or ""
+    auth = keys.get("auth") or ""
+    if not (endpoint and p256dh and auth):
+        return JsonResponse({"ok": False, "error": "missing fields"}, status=400)
+
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            "user": request.user,
+            "p256dh": p256dh,
+            "auth": auth,
+            "user_agent": request.META.get("HTTP_USER_AGENT", "")[:300],
+        },
+    )
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_unsubscribe(request):
+    try:
+        body = _json.loads(request.body or b"{}")
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "invalid json"}, status=400)
+    endpoint = body.get("endpoint") or ""
+    if endpoint:
+        PushSubscription.objects.filter(endpoint=endpoint, user=request.user).delete()
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_test(request):
+    """Sends a test push to the current user's subscriptions."""
+    from .notifications import send_push_to_user
+    sent, failed = send_push_to_user(
+        request.user,
+        title="Garage Lions test",
+        body="Push notifications are working ✓",
+        url="/panel/m/leads/",
+    )
+    return JsonResponse({"ok": True, "sent": sent, "failed": failed})

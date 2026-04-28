@@ -871,6 +871,27 @@ class LeadActivity(models.Model):
         return f"[{self.get_action_display()}] Lead #{self.lead_id} by {actor}"
 
 
+class PushSubscription(models.Model):
+    """Web Push subscription for the PWA — one row per device per user."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions",
+    )
+    endpoint = models.URLField(max_length=500, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-last_used_at"]
+
+    def __str__(self):
+        return f"Push for {self.user} ({self.endpoint[:40]}…)"
+
+
 class LeadTodo(models.Model):
     lead = models.ForeignKey(
         LeadModel,

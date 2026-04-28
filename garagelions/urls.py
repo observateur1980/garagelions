@@ -39,6 +39,12 @@ urlpatterns = [
     path('manifest.webmanifest', home_views.pwa_manifest, name='pwa_manifest'),
     path('sw.js', home_views.pwa_service_worker, name='pwa_service_worker'),
 
+    # ── Web Push subscription endpoints ──────────────────────────────────
+    path('push/vapid-key/', home_views.push_vapid_public_key, name='push_vapid_key'),
+    path('push/subscribe/', home_views.push_subscribe, name='push_subscribe'),
+    path('push/unsubscribe/', home_views.push_unsubscribe, name='push_unsubscribe'),
+    path('push/test/', home_views.push_test, name='push_test'),
+
 ]
 
 if settings.DEBUG:
