@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Case, When, IntegerField, Value
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation as DecimalInvalid
 from django.http import JsonResponse
@@ -1285,7 +1285,14 @@ def lead_list(request):
     if sales_point_id and can_filter_location:
         qs = qs.filter(sales_point_id=sales_point_id)
 
-    qs = qs.order_by("-created_at")
+    qs = qs.annotate(
+        _status_priority=Case(
+            When(status="new", then=Value(0)),
+            When(status="in_operation", then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField(),
+        )
+    ).order_by("_status_priority", "-created_at")
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -1463,6 +1470,15 @@ def m_lead_list(request):
         )
     if status:
         qs = qs.filter(status=status)
+
+    qs = qs.annotate(
+        _status_priority=Case(
+            When(status="new", then=Value(0)),
+            When(status="in_operation", then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField(),
+        )
+    ).order_by("_status_priority", "-created_at")
 
     paginator = Paginator(qs, 30)
     page_obj = paginator.get_page(request.GET.get("page"))
