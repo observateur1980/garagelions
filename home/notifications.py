@@ -734,3 +734,104 @@ def notify_lead_reassigned(lead, new_user):
         url=f"/panel/m/leads/{lead.pk}/",
         tag=f"gl-lead-{lead.pk}",
     )
+
+
+# ---------------------------------------------------------------------------
+# Follow-up reminder
+# ---------------------------------------------------------------------------
+
+def notify_followup_reminder(followup):
+    """Deliver a scheduled follow-up reminder for a lead via push + email + SMS.
+
+    Recipients: assigned salesperson if any, plus the user who created the
+    reminder (if different). Falls back to admins when no one is assigned.
+    """
+    from django.contrib.auth import get_user_model
+    from django.core.mail import EmailMessage
+    User = get_user_model()
+
+    lead = followup.lead
+    crm_url = f"{settings.SITE_URL}/panel/leads/{lead.pk}/"
+    when_local = followup.remind_at.astimezone()
+    when_text = when_local.strftime("%a %b %d, %Y %I:%M %p").lstrip("0").replace(" 0", " ")
+
+    recipients = []
+    if lead.assigned_user_id:
+        recipients.append(lead.assigned_user)
+    if followup.created_by_id and followup.created_by_id != lead.assigned_user_id:
+        recipients.append(followup.created_by)
+
+    if not recipients:
+        recipients = list(User.objects.filter(is_active=True, is_superuser=True))
+
+    title = f"Follow-up: {lead.first_name} {lead.last_name}"
+    body_short = f"Time to follow up • {lead.phone or 'no phone'}"
+    if followup.note:
+        body_short = f"{followup.note} • {lead.phone or 'no phone'}"
+
+    seen = set()
+    for user in recipients:
+        if user is None or user.pk in seen:
+            continue
+        seen.add(user.pk)
+
+        # Push (PWA)
+        send_push_to_user(
+            user,
+            title=title,
+            body=body_short,
+            url=f"/panel/m/leads/{lead.pk}/",
+            tag=f"gl-followup-{lead.pk}",
+        )
+
+        # Email
+        try:
+            profile = user.profile
+        except Exception:
+            profile = None
+        send_email = getattr(profile, "notify_new_lead_email", True) if profile else True
+        pm_email = (
+            getattr(profile, "display_email", None) if profile else None
+        ) or user.email
+
+        if send_email and pm_email:
+            email_body = (
+                f"Hi {user.get_short_name() or user.username},\n\n"
+                f"This is your scheduled reminder to follow up with the customer below.\n\n"
+                f"Reminder time: {when_text}\n"
+                f"Note:          {followup.note or '(none)'}\n\n"
+                f"LEAD\n"
+                f"{'-'*40}\n"
+                f"Name:     {lead.first_name} {lead.last_name}\n"
+                f"Phone:    {lead.phone}\n"
+                f"Email:    {lead.email}\n"
+                f"ZIP:      {lead.zip_code}\n"
+                f"Status:   {lead.status_label}\n\n"
+                f"View in CRM: {crm_url}\n\n"
+                f"— Garage Lions CRM\n"
+            )
+            try:
+                msg = EmailMessage(
+                    subject=f"FOLLOW-UP REMINDER: {lead.first_name} {lead.last_name}",
+                    body=email_body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[pm_email],
+                    reply_to=[lead.email] if lead.email else [],
+                )
+                msg.extra_headers = {
+                    "X-SMTPAPI": '{"tracking_settings":{"click_tracking":{"enable":false,"enable_text":false}}}',
+                }
+                msg.send(fail_silently=False)
+            except Exception as exc:
+                logger.error("Follow-up email failed for lead #%s to %s: %s", lead.pk, pm_email, exc)
+
+        # SMS
+        send_sms = getattr(profile, "notify_new_lead_sms", False) if profile else False
+        pm_phone = getattr(profile, "display_phone", None) if profile else None
+        if send_sms and pm_phone:
+            sms_body = (
+                f"GL FOLLOW-UP: {lead.first_name} {lead.last_name} | "
+                f"{lead.phone} | {followup.note or 'time to follow up'} | "
+                f"CRM: {crm_url}"
+            )
+            _send_sms(pm_phone, sms_body)

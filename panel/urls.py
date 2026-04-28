@@ -79,6 +79,11 @@ urlpatterns = [
     path("leads/<int:lead_pk>/todos/<int:pk>/toggle/", views.lead_todo_toggle, name="lead_todo_toggle"),
     path("leads/<int:lead_pk>/todos/<int:pk>/delete/", views.lead_todo_delete, name="lead_todo_delete"),
 
+    # Lead Follow-Up reminders (AJAX)
+    path("leads/<int:lead_pk>/followup/", views.ajax_lead_followup_get, name="ajax_lead_followup_get"),
+    path("leads/<int:lead_pk>/followup/set/", views.ajax_lead_followup_set, name="ajax_lead_followup_set"),
+    path("leads/<int:lead_pk>/followup/clear/", views.ajax_lead_followup_clear, name="ajax_lead_followup_clear"),
+
     # Lead → Customer + Estimate
     path("lead/<int:lead_pk>/to-estimate/", views.lead_to_estimate, name="lead_to_estimate"),
 

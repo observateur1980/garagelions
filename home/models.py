@@ -892,6 +892,42 @@ class PushSubscription(models.Model):
         return f"Push for {self.user} ({self.endpoint[:40]}…)"
 
 
+class LeadFollowUp(models.Model):
+    """A scheduled follow-up reminder for a lead.
+
+    The user picks a date/time on the lead list; when the time arrives a
+    reminder (push + email + SMS) is delivered to the assigned salesperson.
+    A lead can have multiple records but typically only one un-sent reminder
+    at a time — saving a new datetime replaces the unsent one.
+    """
+
+    lead = models.ForeignKey(
+        LeadModel,
+        on_delete=models.CASCADE,
+        related_name="follow_ups",
+    )
+    remind_at = models.DateTimeField()
+    note = models.CharField(max_length=255, blank=True)
+    is_sent = models.BooleanField(default=False)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lead_followups_created",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["remind_at"]
+        verbose_name = "Lead Follow-Up"
+        verbose_name_plural = "Lead Follow-Ups"
+
+    def __str__(self):
+        return f"Lead #{self.lead_id} — remind at {self.remind_at:%Y-%m-%d %H:%M}"
+
+
 class LeadTodo(models.Model):
     lead = models.ForeignKey(
         LeadModel,

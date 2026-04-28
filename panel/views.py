@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 
 from account.models import ProjectManager
-from home.models import LeadModel, LeadActivity, LeadTodo, SalesPoint, LeadStatus
+from home.models import LeadModel, LeadActivity, LeadTodo, LeadFollowUp, SalesPoint, LeadStatus
 from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
@@ -1286,6 +1286,16 @@ def lead_list(request):
     if sales_point_id and can_filter_location:
         qs = qs.filter(sales_point_id=sales_point_id)
 
+    from django.db.models import DateTimeField
+    qs = qs.annotate(
+        pending_followup_at=Subquery(
+            LeadFollowUp.objects.filter(
+                lead=OuterRef("pk"), is_sent=False
+            ).order_by("remind_at").values("remind_at")[:1],
+            output_field=DateTimeField(),
+        )
+    )
+
     if sort in ("status_asc", "status_desc"):
         qs = qs.annotate(
             _status_label=Subquery(
@@ -1400,6 +1410,96 @@ def lead_todo_delete(request, lead_pk, pk):
     lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
     LeadTodo.objects.filter(pk=pk, lead=lead).delete()
     return redirect("panel:lead_detail", pk=lead.pk)
+
+
+# ── Lead Follow-Up Reminders ─────────────────────────────────────────
+
+@require_GET
+@login_required
+def ajax_lead_followup_get(request, lead_pk):
+    """Return the current pending (unsent) follow-up reminder for a lead."""
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    fu = lead.follow_ups.filter(is_sent=False).order_by("remind_at").first()
+    if not fu:
+        return JsonResponse({"ok": True, "followup": None})
+    local_dt = timezone.localtime(fu.remind_at)
+    return JsonResponse({
+        "ok": True,
+        "followup": {
+            "id": fu.pk,
+            "remind_at": local_dt.strftime("%Y-%m-%dT%H:%M"),
+            "remind_at_display": local_dt.strftime("%b %d, %Y · %I:%M %p"),
+            "note": fu.note or "",
+        },
+    })
+
+
+@require_POST
+@login_required
+def ajax_lead_followup_set(request, lead_pk):
+    """Create or replace the pending follow-up reminder for a lead.
+
+    Expects POST with `remind_at` (datetime-local string, e.g. 2026-05-01T14:30)
+    and optional `note`. Replaces any existing unsent reminder.
+    """
+    from datetime import datetime
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    raw = (request.POST.get("remind_at") or "").strip()
+    note = (request.POST.get("note") or "").strip()[:255]
+
+    if not raw:
+        return JsonResponse({"ok": False, "error": "Date and time are required."}, status=400)
+
+    try:
+        naive = datetime.strptime(raw, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        try:
+            naive = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            return JsonResponse({"ok": False, "error": "Invalid date/time format."}, status=400)
+
+    aware = timezone.make_aware(naive, timezone.get_current_timezone())
+    if aware <= timezone.now():
+        return JsonResponse({"ok": False, "error": "Reminder must be in the future."}, status=400)
+
+    lead.follow_ups.filter(is_sent=False).delete()
+    fu = LeadFollowUp.objects.create(
+        lead=lead,
+        remind_at=aware,
+        note=note,
+        created_by=request.user,
+    )
+    LeadActivity.objects.create(
+        lead=lead, user=request.user,
+        action=LeadActivity.ACTION_NOTES,
+        detail=f"Follow-up reminder scheduled for {timezone.localtime(aware).strftime('%b %d, %Y %I:%M %p')}.",
+    )
+
+    local_dt = timezone.localtime(fu.remind_at)
+    return JsonResponse({
+        "ok": True,
+        "followup": {
+            "id": fu.pk,
+            "remind_at": local_dt.strftime("%Y-%m-%dT%H:%M"),
+            "remind_at_display": local_dt.strftime("%b %d, %Y · %I:%M %p"),
+            "note": fu.note or "",
+        },
+    })
+
+
+@require_POST
+@login_required
+def ajax_lead_followup_clear(request, lead_pk):
+    """Clear the pending follow-up reminder for a lead."""
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+    deleted, _ = lead.follow_ups.filter(is_sent=False).delete()
+    if deleted:
+        LeadActivity.objects.create(
+            lead=lead, user=request.user,
+            action=LeadActivity.ACTION_NOTES,
+            detail="Follow-up reminder cleared.",
+        )
+    return JsonResponse({"ok": True})
 
 
 # ── Lead Status Settings (admin-only) ────────────────────────────────
