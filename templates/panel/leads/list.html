@@ -4,7 +4,12 @@
 {% block content %}
 <div class="page-header">
   <h2>Leads</h2>
-  <a href="{% url 'panel:lead_create' %}" class="btn-panel">+ New Lead</a>
+  <div style="display:flex; gap:8px">
+    {% if can_manage_statuses %}
+    <a href="{% url 'panel:lead_status_settings' %}" class="btn-panel-outline">⚙ Settings</a>
+    {% endif %}
+    <a href="{% url 'panel:lead_create' %}" class="btn-panel">+ New Lead</a>
+  </div>
 </div>
 
 <!-- Filters -->

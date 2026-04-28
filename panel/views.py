@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 
 from account.models import ProjectManager
-from home.models import LeadModel, LeadActivity, LeadTodo, SalesPoint
+from home.models import LeadModel, LeadActivity, LeadTodo, SalesPoint, LeadStatus
 from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
@@ -1299,8 +1299,9 @@ def lead_list(request):
         "status": status,
         "sales_point_id": sales_point_id,
         "sales_points": sales_points,
-        "status_choices": LeadModel.STATUS_CHOICES,
+        "status_choices": LeadStatus.as_choices(),
         "can_filter_location": can_filter_location,
+        "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
     })
 
 
@@ -1373,6 +1374,57 @@ def lead_todo_delete(request, lead_pk, pk):
     return redirect("panel:lead_detail", pk=lead.pk)
 
 
+# ── Lead Status Settings (admin-only) ────────────────────────────────
+
+def _can_manage_lead_statuses(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def _slugify_code(label):
+    import re
+    code = re.sub(r"[^a-z0-9]+", "_", (label or "").strip().lower()).strip("_")
+    return code[:30]
+
+
+@login_required
+def lead_status_settings(request):
+    if not _can_manage_lead_statuses(request.user):
+        return redirect("panel:lead_list")
+
+    error = None
+    if request.method == "POST" and request.POST.get("action") == "create":
+        label = (request.POST.get("label") or "").strip()
+        code = (request.POST.get("code") or "").strip().lower() or _slugify_code(label)
+
+        if not label:
+            error = "Label is required."
+        elif not code:
+            error = "Could not derive a code from that label — please provide one."
+        elif LeadStatus.objects.filter(code=code).exists():
+            error = f"A status with code '{code}' already exists."
+        else:
+            max_order = LeadStatus.objects.order_by("-order").values_list("order", flat=True).first() or 0
+            LeadStatus.objects.create(code=code, label=label, order=max_order + 10, is_protected=False)
+            return redirect("panel:lead_status_settings")
+
+    statuses = LeadStatus.objects.all()
+    return render(request, "panel/leads/status_settings.html", {
+        "statuses": statuses,
+        "error": error,
+    })
+
+
+@login_required
+@require_POST
+def lead_status_delete(request, pk):
+    if not _can_manage_lead_statuses(request.user):
+        return redirect("panel:lead_list")
+    status = get_object_or_404(LeadStatus, pk=pk)
+    if not status.is_protected:
+        status.delete()
+    return redirect("panel:lead_status_settings")
+
+
 # ── Mobile (PWA) views — separate templates, same data ───────────────
 @login_required
 def m_lead_list(request):
@@ -1396,7 +1448,7 @@ def m_lead_list(request):
         "page_obj": page_obj,
         "q": q,
         "status": status,
-        "status_choices": LeadModel.STATUS_CHOICES,
+        "status_choices": LeadStatus.as_choices(),
     })
 
 

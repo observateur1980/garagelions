@@ -1,6 +1,20 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import LeadModel
+from .models import LeadModel, LeadStatus
+
+
+def _db_status_choices(current_code=None):
+    """
+    Return the status choices currently allowed by the LeadStatus table.
+
+    If `current_code` is provided and isn't already in the table (e.g. an
+    existing lead carries an old status that was later removed), it is
+    appended so the ModelForm doesn't reject the bound value.
+    """
+    choices = list(LeadStatus.objects.values_list("code", "label"))
+    if current_code and not any(c == current_code for c, _ in choices):
+        choices.append((current_code, current_code.replace("_", " ").title()))
+    return choices
 
 LEAD_MAX_FILES = 10
 LEAD_MAX_FILE_SIZE_MB = 2048
@@ -135,6 +149,11 @@ class LeadUpdateForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        current = self.instance.status if self.instance and self.instance.pk else None
+        self.fields['status'].choices = _db_status_choices(current_code=current)
+
 
 
 
@@ -182,6 +201,10 @@ class ManualLeadForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Status choices come from the DB-managed LeadStatus table
+        current = self.instance.status if self.instance and self.instance.pk else None
+        self.fields['status'].choices = _db_status_choices(current_code=current)
 
         # Make assignment fields optional
         self.fields['sales_point'].required = False

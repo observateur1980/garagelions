@@ -115,10 +115,21 @@
         <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#9ca3af; margin-bottom:12px">Update Lead</h6>
         <form method="post" class="panel-form">
           {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:8px 12px; border-radius:6px; font-size:13px; margin-bottom:10px">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
           <label>Status</label>
           {{ form.status }}
+          {% if form.status.errors %}
+            <div style="color:#b91c1c; font-size:12px; margin-top:4px">{{ form.status.errors|join:", " }}</div>
+          {% endif %}
           <label style="margin-top:12px">Internal Notes</label>
           {{ form.internal_notes }}
+          {% if form.internal_notes.errors %}
+            <div style="color:#b91c1c; font-size:12px; margin-top:4px">{{ form.internal_notes.errors|join:", " }}</div>
+          {% endif %}
           <button type="submit" class="btn-panel" style="width:100%; margin-top:12px">Save Changes</button>
         </form>
       </div>

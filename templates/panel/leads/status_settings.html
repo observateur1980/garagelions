@@ -1,0 +1,87 @@
+{% extends "panel/base.html" %}
+{% block title %}Lead Status Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Lead Statuses</h2>
+  <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">← Back to Leads</a>
+</div>
+
+<p style="color:#6b7280; margin-top:-8px; margin-bottom:20px; font-size:14px">
+  Add or remove statuses available in the leads dropdown. Protected statuses are referenced by other parts of the system and cannot be removed.
+</p>
+
+{% if error %}
+<div style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px">
+  {{ error }}
+</div>
+{% endif %}
+
+<div class="card dashboard-card" style="margin-bottom:24px">
+  <div class="card-body">
+    <h3 style="margin-top:0; font-size:16px">Add a status</h3>
+    <form method="post" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create">
+      <div style="flex:1; min-width:200px">
+        <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Label *</label>
+        <input type="text" name="label" required maxlength="80" placeholder="e.g. Sent To Manager"
+               style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+      </div>
+      <div style="flex:1; min-width:200px">
+        <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Code (optional — auto-generated)</label>
+        <input type="text" name="code" maxlength="30" placeholder="auto"
+               style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+      </div>
+      <button type="submit" class="btn-panel">+ Add status</button>
+    </form>
+  </div>
+</div>
+
+<div class="card dashboard-card">
+  <div class="card-body" style="padding:0; overflow-x:auto">
+    <table class="panel-table" style="margin:0">
+      <thead>
+        <tr>
+          <th style="width:60px">Order</th>
+          <th>Label</th>
+          <th>Code</th>
+          <th style="width:120px">Protected</th>
+          <th style="width:120px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in statuses %}
+        <tr>
+          <td>{{ s.order }}</td>
+          <td>{{ s.label }}</td>
+          <td><code style="font-size:12px; color:#6b7280">{{ s.code }}</code></td>
+          <td>
+            {% if s.is_protected %}
+              <span class="badge-status badge-sent">Yes</span>
+            {% else %}
+              <span style="color:#9ca3af">No</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right">
+            {% if s.is_protected %}
+              <span style="color:#9ca3af; font-size:13px">—</span>
+            {% else %}
+              <form method="post" action="{% url 'panel:lead_status_delete' s.pk %}" style="display:inline"
+                    onsubmit="return confirm('Remove status &quot;{{ s.label|escapejs }}&quot;? Leads currently using this status will keep their value but it will no longer appear in the dropdown.');">
+                {% csrf_token %}
+                <button type="submit" class="btn-panel-outline" style="padding:4px 10px; font-size:13px; color:#b91c1c; border-color:#fecaca">
+                  Remove
+                </button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="color:#6b7280; padding:24px; text-align:center">No statuses defined.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -70,6 +70,8 @@ urlpatterns = [
     # Leads
     path("leads/", views.lead_list, name="lead_list"),
     path("leads/new/", views.lead_create, name="lead_create"),
+    path("leads/statuses/", views.lead_status_settings, name="lead_status_settings"),
+    path("leads/statuses/<int:pk>/delete/", views.lead_status_delete, name="lead_status_delete"),
     path("leads/<int:pk>/", views.lead_detail, name="lead_detail"),
 
     # Lead To-Dos (per-customer / per-lead)

@@ -723,6 +723,44 @@ class LeadModel(models.Model):
     def __str__(self):
         return f"Lead #{self.id} - {self.first_name} {self.last_name}"
 
+    @property
+    def status_label(self):
+        """Human label for the current status code, including custom (DB-managed) ones."""
+        try:
+            return LeadStatus.objects.get(code=self.status).label
+        except LeadStatus.DoesNotExist:
+            return self.get_status_display()
+
+
+class LeadStatus(models.Model):
+    """
+    Admin-managed list of lead statuses. Seeded with the original 8 codes;
+    extra rows can be added/removed from the panel Settings page.
+
+    The underlying LeadModel.status is a free CharField — this table simply
+    governs which codes the UI offers as options.
+    """
+
+    code = models.CharField(max_length=30, unique=True)
+    label = models.CharField(max_length=80)
+    order = models.PositiveIntegerField(default=100)
+    is_protected = models.BooleanField(
+        default=False,
+        help_text="Protected statuses are referenced by code elsewhere in the app and cannot be removed.",
+    )
+
+    class Meta:
+        ordering = ["order", "label"]
+        verbose_name = "Lead status"
+        verbose_name_plural = "Lead statuses"
+
+    def __str__(self):
+        return self.label
+
+    @classmethod
+    def as_choices(cls):
+        return list(cls.objects.values_list("code", "label"))
+
 
 class LeadAttachment(models.Model):
     lead = models.ForeignKey(
