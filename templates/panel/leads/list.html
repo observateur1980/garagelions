@@ -12,6 +12,18 @@
   </div>
 </div>
 
+<!-- Quick status filters -->
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px">
+  <a href="?{% if q %}q={{ q }}&{% endif %}{% if sales_point_id %}sales_point={{ sales_point_id }}&{% endif %}"
+     class="btn-panel-outline"
+     style="{% if not status %}background:#374151; color:#fff; border-color:#374151{% endif %}">All</a>
+  {% for f in quick_filters %}
+  <a href="?status={{ f.code }}{% if q %}&q={{ q }}{% endif %}{% if sales_point_id %}&sales_point={{ sales_point_id }}{% endif %}"
+     class="btn-panel-outline"
+     style="background:{{ f.bg }}; color:{{ f.fg }}; border-color:{{ f.fg }}{% if status == f.code %}; box-shadow:0 0 0 2px {{ f.fg }}33; font-weight:600{% endif %}">{{ f.label }}</a>
+  {% endfor %}
+</div>
+
 <!-- Filters -->
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px">
   <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:end">

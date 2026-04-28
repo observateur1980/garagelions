@@ -1300,6 +1300,14 @@ def lead_list(request):
     if can_filter_location:
         sales_points = SalesPoint.objects.filter(is_active=True).order_by("name")
 
+    quick_codes = ["new", "in_operation", "follow_up"]
+    quick_filter_map = {s.code: s for s in LeadStatus.objects.filter(code__in=quick_codes)}
+    quick_filters = [
+        {"code": code, "label": quick_filter_map[code].label,
+         "bg": quick_filter_map[code].bg_hex, "fg": quick_filter_map[code].fg_hex}
+        for code in quick_codes if code in quick_filter_map
+    ]
+
     return render(request, "panel/leads/list.html", {
         "page_obj": page_obj,
         "q": q,
@@ -1307,6 +1315,7 @@ def lead_list(request):
         "sales_point_id": sales_point_id,
         "sales_points": sales_points,
         "status_choices": LeadStatus.as_choices(),
+        "quick_filters": quick_filters,
         "can_filter_location": can_filter_location,
         "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
     })
