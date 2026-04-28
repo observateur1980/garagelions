@@ -406,7 +406,7 @@ PWA_MANIFEST = {
 
 PWA_SERVICE_WORKER_JS = """\
 // Garage Lions Leads PWA service worker
-const CACHE = "gl-leads-v2";
+const CACHE = "gl-leads-v3";
 const SHELL = ["/static/icons/apple-touch-icon.png",
                "/static/icons/pwa-icon-192.png",
                "/static/icons/pwa-icon-512.png"];
@@ -468,7 +468,19 @@ self.addEventListener("push", (event) => {
     vibrate: [200, 100, 200],
     data: { url: data.url || "/panel/m/leads/" },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  const work = [self.registration.showNotification(title, options)];
+
+  // iOS / desktop home-screen icon badge — number of new leads.
+  if (typeof data.badge_count === "number" && self.navigator) {
+    if (data.badge_count > 0 && self.navigator.setAppBadge) {
+      work.push(self.navigator.setAppBadge(data.badge_count).catch(() => {}));
+    } else if (data.badge_count === 0 && self.navigator.clearAppBadge) {
+      work.push(self.navigator.clearAppBadge().catch(() => {}));
+    }
+  }
+
+  event.waitUntil(Promise.all(work));
 });
 
 self.addEventListener("notificationclick", (event) => {
