@@ -149,6 +149,47 @@
         navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
       });
     }
+
+    // PWA: manual update — wipe caches, drop the service worker, reload fresh.
+    window.glUpdate = async function () {
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (e) { /* ignore — reload anyway */ }
+      // Cache-bust query string so HTTP cache also revalidates.
+      const u = new URL(window.location.href);
+      u.searchParams.set("_glu", Date.now().toString());
+      window.location.replace(u.toString());
+    };
+
+    // Inject an "Update" button into the mobile header on every page.
+    document.addEventListener("DOMContentLoaded", () => {
+      const header = document.querySelector(".m-header");
+      if (!header) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "header-link";
+      btn.title = "Update app to latest version";
+      btn.setAttribute("aria-label", "Update app");
+      btn.style.cssText = "background:none; border:none; cursor:pointer; font-size:20px; line-height:1; padding:6px 8px; color:#d1d5db;";
+      btn.textContent = "↻";
+      btn.addEventListener("click", async () => {
+        if (btn.dataset.busy) return;
+        btn.dataset.busy = "1";
+        btn.textContent = "…";
+        try { await window.glUpdate(); }
+        catch (e) { btn.textContent = "↻"; delete btn.dataset.busy; }
+      });
+      const trailing = header.querySelector(".header-link");
+      if (trailing) header.insertBefore(btn, trailing);
+      else header.appendChild(btn);
+    });
   </script>
 </body>
 </html>
