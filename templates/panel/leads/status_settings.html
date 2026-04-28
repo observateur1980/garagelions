@@ -2,13 +2,54 @@
 {% block title %}Lead Status Settings{% endblock %}
 
 {% block content %}
+<style>
+  .status-swatch {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .color-chip {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s, border-color 0.1s;
+  }
+  .color-chip:hover { transform: scale(1.1); }
+  .color-chip.selected { border-color: #111827; transform: scale(1.1); }
+  .color-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .color-popover {
+    position: absolute;
+    z-index: 30;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: none;
+  }
+  .color-popover.open { display: block; }
+  .color-popover .color-row { gap: 6px; }
+  .color-cell { position: relative; }
+</style>
+
 <div class="page-header">
   <h2>Lead Statuses</h2>
   <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">← Back to Leads</a>
 </div>
 
 <p style="color:#6b7280; margin-top:-8px; margin-bottom:20px; font-size:14px">
-  Add or remove statuses available in the leads dropdown. Protected statuses are referenced by other parts of the system and cannot be removed.
+  Add or remove statuses available in the leads dropdown. Click the color swatch on any row to change its badge color. Protected statuses are referenced by other parts of the system and cannot be removed.
 </p>
 
 {% if error %}
@@ -20,20 +61,37 @@
 <div class="card dashboard-card" style="margin-bottom:24px">
   <div class="card-body">
     <h3 style="margin-top:0; font-size:16px">Add a status</h3>
-    <form method="post" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+    <form method="post" id="create-status-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="create">
-      <div style="flex:1; min-width:200px">
-        <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Label *</label>
-        <input type="text" name="label" required maxlength="80" placeholder="e.g. Sent To Manager"
-               style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+      <input type="hidden" name="color" id="create-color" value="gray">
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:14px">
+        <div style="flex:1; min-width:200px">
+          <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Label *</label>
+          <input type="text" name="label" required maxlength="80" placeholder="e.g. Sent To Manager"
+                 style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+        </div>
+        <div style="flex:1; min-width:200px">
+          <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Code (optional — auto-generated)</label>
+          <input type="text" name="code" maxlength="30" placeholder="auto"
+                 style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+        </div>
+        <button type="submit" class="btn-panel">+ Add status</button>
       </div>
-      <div style="flex:1; min-width:200px">
-        <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px">Code (optional — auto-generated)</label>
-        <input type="text" name="code" maxlength="30" placeholder="auto"
-               style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
+
+      <div>
+        <label style="display:block; font-size:12px; color:#6b7280; margin-bottom:6px">Color</label>
+        <div class="color-row" id="create-color-chips">
+          {% for c in color_presets %}
+          <button type="button"
+                  class="color-chip{% if c.key == 'gray' %} selected{% endif %}"
+                  data-color="{{ c.key }}"
+                  title="{{ c.key|title }}"
+                  style="background:{{ c.bg }}; box-shadow: inset 0 0 0 6px {{ c.fg }}"></button>
+          {% endfor %}
+        </div>
       </div>
-      <button type="submit" class="btn-panel">+ Add status</button>
     </form>
   </div>
 </div>
@@ -46,6 +104,7 @@
           <th style="width:60px">Order</th>
           <th>Label</th>
           <th>Code</th>
+          <th style="width:160px">Badge</th>
           <th style="width:120px">Protected</th>
           <th style="width:120px"></th>
         </tr>
@@ -56,6 +115,30 @@
           <td>{{ s.order }}</td>
           <td>{{ s.label }}</td>
           <td><code style="font-size:12px; color:#6b7280">{{ s.code }}</code></td>
+          <td>
+            <div class="color-cell">
+              <span class="status-swatch js-toggle-color" data-target="popover-{{ s.pk }}"
+                    style="background:{{ s.bg_hex }}; color:{{ s.fg_hex }}; cursor:pointer">
+                {{ s.label }}
+              </span>
+              <div class="color-popover" id="popover-{{ s.pk }}">
+                <div class="color-row">
+                  {% for c in color_presets %}
+                  <form method="post" style="display:inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_color">
+                    <input type="hidden" name="pk" value="{{ s.pk }}">
+                    <input type="hidden" name="color" value="{{ c.key }}">
+                    <button type="submit"
+                            class="color-chip{% if s.color == c.key %} selected{% endif %}"
+                            title="{{ c.key|title }}"
+                            style="background:{{ c.bg }}; box-shadow: inset 0 0 0 6px {{ c.fg }}"></button>
+                  </form>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </td>
           <td>
             {% if s.is_protected %}
               <span class="badge-status badge-sent">Yes</span>
@@ -78,10 +161,42 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" style="color:#6b7280; padding:24px; text-align:center">No statuses defined.</td></tr>
+        <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No statuses defined.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+  // Create-form color picker
+  (function () {
+    var hidden = document.getElementById('create-color');
+    var chips = document.querySelectorAll('#create-color-chips .color-chip');
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        chips.forEach(function (c) { c.classList.remove('selected'); });
+        chip.classList.add('selected');
+        hidden.value = chip.dataset.color;
+      });
+    });
+  })();
+
+  // Per-row color popover toggle
+  (function () {
+    var open = null;
+    document.querySelectorAll('.js-toggle-color').forEach(function (badge) {
+      badge.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var pop = document.getElementById(badge.dataset.target);
+        if (open && open !== pop) open.classList.remove('open');
+        pop.classList.toggle('open');
+        open = pop.classList.contains('open') ? pop : null;
+      });
+    });
+    document.addEventListener('click', function () {
+      if (open) { open.classList.remove('open'); open = null; }
+    });
+  })();
+</script>
 {% endblock %}

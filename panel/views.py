@@ -1391,25 +1391,48 @@ def lead_status_settings(request):
     if not _can_manage_lead_statuses(request.user):
         return redirect("panel:lead_list")
 
+    valid_colors = set(LeadStatus.COLOR_PRESETS.keys())
     error = None
-    if request.method == "POST" and request.POST.get("action") == "create":
-        label = (request.POST.get("label") or "").strip()
-        code = (request.POST.get("code") or "").strip().lower() or _slugify_code(label)
 
-        if not label:
-            error = "Label is required."
-        elif not code:
-            error = "Could not derive a code from that label — please provide one."
-        elif LeadStatus.objects.filter(code=code).exists():
-            error = f"A status with code '{code}' already exists."
-        else:
-            max_order = LeadStatus.objects.order_by("-order").values_list("order", flat=True).first() or 0
-            LeadStatus.objects.create(code=code, label=label, order=max_order + 10, is_protected=False)
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "create":
+            label = (request.POST.get("label") or "").strip()
+            code = (request.POST.get("code") or "").strip().lower() or _slugify_code(label)
+            color = (request.POST.get("color") or "gray").strip().lower()
+            if color not in valid_colors:
+                color = "gray"
+
+            if not label:
+                error = "Label is required."
+            elif not code:
+                error = "Could not derive a code from that label — please provide one."
+            elif LeadStatus.objects.filter(code=code).exists():
+                error = f"A status with code '{code}' already exists."
+            else:
+                max_order = LeadStatus.objects.order_by("-order").values_list("order", flat=True).first() or 0
+                LeadStatus.objects.create(
+                    code=code, label=label, order=max_order + 10,
+                    color=color, is_protected=False,
+                )
+                return redirect("panel:lead_status_settings")
+
+        elif action == "update_color":
+            pk = request.POST.get("pk")
+            color = (request.POST.get("color") or "gray").strip().lower()
+            if color not in valid_colors:
+                color = "gray"
+            LeadStatus.objects.filter(pk=pk).update(color=color)
             return redirect("panel:lead_status_settings")
 
     statuses = LeadStatus.objects.all()
     return render(request, "panel/leads/status_settings.html", {
         "statuses": statuses,
+        "color_presets": [
+            {"key": k, "bg": bg, "fg": fg}
+            for k, (bg, fg) in LeadStatus.COLOR_PRESETS.items()
+        ],
         "error": error,
     })
 

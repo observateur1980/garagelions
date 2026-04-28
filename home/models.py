@@ -731,6 +731,23 @@ class LeadModel(models.Model):
         except LeadStatus.DoesNotExist:
             return self.get_status_display()
 
+    @property
+    def status_obj(self):
+        try:
+            return LeadStatus.objects.get(code=self.status)
+        except LeadStatus.DoesNotExist:
+            return None
+
+    @property
+    def status_bg(self):
+        s = self.status_obj
+        return s.bg_hex if s else "#f3f4f6"
+
+    @property
+    def status_fg(self):
+        s = self.status_obj
+        return s.fg_hex if s else "#374151"
+
 
 class LeadStatus(models.Model):
     """
@@ -741,9 +758,30 @@ class LeadStatus(models.Model):
     governs which codes the UI offers as options.
     """
 
+    # Preset colors that match the existing panel badge palette
+    # (soft pastel background + readable accent text).
+    COLOR_PRESETS = {
+        "gray":   ("#f3f4f6", "#374151"),
+        "blue":   ("#eff6ff", "#1d4ed8"),
+        "green":  ("#ecfdf5", "#047857"),
+        "red":    ("#fef2f2", "#b91c1c"),
+        "amber":  ("#fffbeb", "#b45309"),
+        "violet": ("#f5f3ff", "#6d28d9"),
+        "orange": ("#fff7ed", "#c2410c"),
+        "teal":   ("#f0fdfa", "#0f766e"),
+        "pink":   ("#fdf2f8", "#be185d"),
+    }
+    COLOR_CHOICES = [(k, k.title()) for k in COLOR_PRESETS]
+
     code = models.CharField(max_length=30, unique=True)
     label = models.CharField(max_length=80)
     order = models.PositiveIntegerField(default=100)
+    color = models.CharField(
+        max_length=20,
+        choices=COLOR_CHOICES,
+        default="gray",
+        help_text="Display color used for the status badge throughout the panel.",
+    )
     is_protected = models.BooleanField(
         default=False,
         help_text="Protected statuses are referenced by code elsewhere in the app and cannot be removed.",
@@ -760,6 +798,14 @@ class LeadStatus(models.Model):
     @classmethod
     def as_choices(cls):
         return list(cls.objects.values_list("code", "label"))
+
+    @property
+    def bg_hex(self):
+        return self.COLOR_PRESETS.get(self.color, self.COLOR_PRESETS["gray"])[0]
+
+    @property
+    def fg_hex(self):
+        return self.COLOR_PRESETS.get(self.color, self.COLOR_PRESETS["gray"])[1]
 
 
 class LeadAttachment(models.Model):
