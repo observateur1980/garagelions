@@ -81,6 +81,62 @@ def send_push_to_user(user, title: str, body: str, url: str = "/panel/m/leads/",
 
 
 # ---------------------------------------------------------------------------
+# Push audience — assigned salesperson + location managers + superusers
+# ---------------------------------------------------------------------------
+
+def push_new_lead_to_audience(lead):
+    """Push a 'new lead' notification to everyone who should be alerted:
+    the assigned salesperson, location managers for the sales point, and
+    every active superuser. Deduplicates so each user gets at most one push.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    services_display = ", ".join(lead.consultation_types) if lead.consultation_types else "Not specified"
+    location_text = str(lead.sales_point) if lead.sales_point else "No location"
+    title = f"New lead: {lead.first_name} {lead.last_name}"
+    body = f"{location_text} • {lead.phone or 'no phone'} • {services_display}"
+    url = f"/panel/m/leads/{lead.pk}/"
+    tag = f"gl-lead-{lead.pk}"
+
+    recipient_ids = set()
+
+    if lead.assigned_user_id:
+        recipient_ids.add(lead.assigned_user_id)
+
+    if lead.sales_point_id:
+        try:
+            from account.models import ProjectManager as PM
+            mgr_qs = PM.objects.filter(
+                role=PM.LOCATION_MANAGER, status=PM.ACTIVE,
+            ).filter(
+                models_q_sales_point_or_extra(lead.sales_point_id)
+            ).values_list("user_id", flat=True)
+            recipient_ids.update(mgr_qs)
+        except Exception as exc:
+            logger.warning("Push: could not resolve location managers for lead #%s: %s", lead.pk, exc)
+
+    try:
+        admin_ids = User.objects.filter(is_active=True, is_superuser=True).values_list("id", flat=True)
+        recipient_ids.update(admin_ids)
+    except Exception as exc:
+        logger.warning("Push: could not resolve superusers: %s", exc)
+
+    for uid in recipient_ids:
+        try:
+            user = User.objects.get(pk=uid)
+        except User.DoesNotExist:
+            continue
+        send_push_to_user(user, title=title, body=body, url=url, tag=tag)
+
+
+def models_q_sales_point_or_extra(sp_id):
+    """Q object: ProjectManager.sales_point == sp_id OR sp_id in extra_sales_points."""
+    from django.db.models import Q
+    return Q(sales_point_id=sp_id) | Q(extra_sales_points=sp_id)
+
+
+# ---------------------------------------------------------------------------
 # SMS helper
 # ---------------------------------------------------------------------------
 
@@ -198,6 +254,10 @@ def notify_new_lead_to_project_manager(lead):
     Respects their notify_new_lead_email / notify_new_lead_sms preferences.
     Also CC's the location manager when the assigned user is a project manager.
     """
+    # Push to the broad audience first (assigned + location managers + admins).
+    # This fires even when the lead is unassigned so admins still get alerted.
+    push_new_lead_to_audience(lead)
+
     assigned = lead.assigned_user
     if not assigned:
         return
@@ -371,14 +431,7 @@ def notify_new_lead_to_project_manager(lead):
         )
         _send_sms(pm_phone, sms_body)
 
-    # ── Push (PWA) ──
-    send_push_to_user(
-        assigned,
-        title=f"New lead: {lead.first_name} {lead.last_name}",
-        body=f"{location_text} • {lead.phone or 'no phone'} • {services_display}",
-        url=f"/panel/m/leads/{lead.pk}/",
-        tag=f"gl-lead-{lead.pk}",
-    )
+    # ── Push handled by push_new_lead_to_audience() at the top of this function ──
 
     # ── Notify location managers at this sales point who weren't already emailed ──
     if lead.sales_point:
