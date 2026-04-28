@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Sum, Q, Case, When, IntegerField, Value
+from django.db.models import Sum, Q, Case, When, IntegerField, Value, Subquery, OuterRef, CharField
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation as DecimalInvalid
 from django.http import JsonResponse
@@ -1269,6 +1269,7 @@ def lead_list(request):
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
     sales_point_id = request.GET.get("sales_point", "").strip()
+    sort = request.GET.get("sort", "").strip()
 
     if q:
         qs = qs.filter(
@@ -1285,14 +1286,24 @@ def lead_list(request):
     if sales_point_id and can_filter_location:
         qs = qs.filter(sales_point_id=sales_point_id)
 
-    qs = qs.annotate(
-        _status_priority=Case(
-            When(status="new", then=Value(0)),
-            When(status="in_operation", then=Value(1)),
-            default=Value(2),
-            output_field=IntegerField(),
+    if sort in ("status_asc", "status_desc"):
+        qs = qs.annotate(
+            _status_label=Subquery(
+                LeadStatus.objects.filter(code=OuterRef("status")).values("label")[:1],
+                output_field=CharField(),
+            )
         )
-    ).order_by("_status_priority", "-created_at")
+        order_field = "_status_label" if sort == "status_asc" else "-_status_label"
+        qs = qs.order_by(order_field, "-created_at")
+    else:
+        qs = qs.annotate(
+            _status_priority=Case(
+                When(status="new", then=Value(0)),
+                When(status="in_operation", then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField(),
+            )
+        ).order_by("_status_priority", "-created_at")
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -1318,6 +1329,7 @@ def lead_list(request):
         "quick_filters": quick_filters,
         "can_filter_location": can_filter_location,
         "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
+        "sort": sort,
     })
 
 
