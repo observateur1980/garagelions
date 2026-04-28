@@ -110,6 +110,12 @@
       box-shadow: 0 0 0 2px #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+    .nav-badge-amber {
+      top: auto;
+      right: -8px;
+      bottom: -6px;
+      background: #f59e0b;
+    }
 
     /* ── Main content ── */
     .main-content {
@@ -303,12 +309,16 @@
       <a href="{% url 'panel:task_list' %}" class="{% if 'task' in request.resolver_match.url_name %}active{% endif %}">
         <span class="icon">&#9989;</span><span class="text">Tasks</span>
       </a>
-      <a href="{% url 'panel:lead_list' %}" class="{% if 'lead' in request.resolver_match.url_name %}active{% endif %}">
+      <a href="{% url 'panel:lead_list' %}" class="{% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_create' %}active{% endif %}">
         <span class="icon">
           &#128203;
           {% if new_leads_count %}<span class="nav-badge">{{ new_leads_count }}</span>{% endif %}
+          {% if followup_attention_count %}<span class="nav-badge nav-badge-amber" title="Follow-up reminders waiting">{{ followup_attention_count }}</span>{% endif %}
         </span>
         <span class="text">Leads</span>
+      </a>
+      <a href="{% url 'panel:closed_lost_list' %}" class="{% if request.resolver_match.url_name == 'closed_lost_list' %}active{% endif %}">
+        <span class="icon">&#128465;</span><span class="text">Closed Lost</span>
       </a>
     </nav>
   </aside>

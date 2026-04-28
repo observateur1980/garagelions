@@ -100,6 +100,21 @@ def dashboard(request):
     leads = _lead_queryset(request.user)
     lead_counts = _lead_counts(leads)
 
+    # Follow-up reminders for the dashboard widget
+    visible_lead_ids = leads.values_list("pk", flat=True)
+    upcoming_followups = (
+        LeadFollowUp.objects
+        .filter(lead_id__in=visible_lead_ids, is_sent=False)
+        .select_related("lead", "lead__assigned_user")
+        .order_by("remind_at")[:10]
+    )
+    needs_attention_followups = (
+        LeadFollowUp.objects
+        .filter(lead_id__in=visible_lead_ids, is_sent=True, acknowledged_at__isnull=True)
+        .select_related("lead", "lead__assigned_user")
+        .order_by("-sent_at")[:10]
+    )
+
     context = {
         "total_projects": projects.count(),
         "total_customers": customers.count(),
@@ -110,7 +125,9 @@ def dashboard(request):
         "total_tasks": tasks.count(),
         "project_manager": pm,
         "lead_counts": lead_counts,
-        "recent_leads": leads.order_by("-created_at")[:10],
+        "recent_leads": leads.exclude(status="closed_lost").order_by("-created_at")[:10],
+        "upcoming_followups": upcoming_followups,
+        "needs_attention_followups": needs_attention_followups,
     }
     return render(request, "panel/dashboard.html", context)
 
@@ -1278,6 +1295,9 @@ def lead_list(request):
         )
     if status:
         qs = qs.filter(status=status)
+    else:
+        # Closed Lost lives on its own archive page — keep the active list focused.
+        qs = qs.exclude(status="closed_lost")
 
     can_filter_location = (
         request.user.is_staff or request.user.is_superuser
@@ -1371,6 +1391,14 @@ def lead_detail(request, pk):
     else:
         form = LeadUpdateForm(instance=lead)
 
+    # Mark any fired-but-unacknowledged reminders for this lead as acknowledged
+    # — viewing the lead is what counts as acting on the reminder.
+    lead.follow_ups.filter(is_sent=True, acknowledged_at__isnull=True).update(
+        acknowledged_at=timezone.now()
+    )
+
+    pending_followup = lead.follow_ups.filter(is_sent=False).order_by("remind_at").first()
+
     activities = lead.activities.select_related("user", "user__profile").order_by("-created_at")[:20]
     todos = lead.todos.all()
 
@@ -1380,6 +1408,7 @@ def lead_detail(request, pk):
         "project_manager": pm,
         "activities": activities,
         "todos": todos,
+        "pending_followup": pending_followup,
     })
 
 
@@ -1502,6 +1531,56 @@ def ajax_lead_followup_clear(request, lead_pk):
     return JsonResponse({"ok": True})
 
 
+# ── Closed Lost archive ──────────────────────────────────────────────
+
+@login_required
+def closed_lost_list(request):
+    """Archive page for leads with status='closed_lost'.
+
+    Kept separate from the main leads list so the active pipeline stays
+    uncluttered. Same scoping rules as the main list — users only see
+    leads they're allowed to see.
+    """
+    qs = _lead_queryset(request.user).filter(status="closed_lost")
+    pm = _get_pm(request.user)
+
+    q = request.GET.get("q", "").strip()
+    sales_point_id = request.GET.get("sales_point", "").strip()
+
+    if q:
+        qs = qs.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+            Q(email__icontains=q) | Q(phone__icontains=q) | Q(zip_code__icontains=q)
+        )
+
+    can_filter_location = (
+        request.user.is_staff or request.user.is_superuser
+        or (pm and pm.role in (ProjectManager.LOCATION_MANAGER, ProjectManager.TERRITORY_MANAGER))
+    )
+    if sales_point_id and can_filter_location:
+        qs = qs.filter(sales_point_id=sales_point_id)
+
+    # Order by most recently lost — uses the latest status-change activity
+    # if available, falling back to the lead's created_at.
+    qs = qs.order_by("-created_at")
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    sales_points = []
+    if can_filter_location:
+        sales_points = SalesPoint.objects.filter(is_active=True).order_by("name")
+
+    return render(request, "panel/leads/closed_lost.html", {
+        "page_obj": page_obj,
+        "q": q,
+        "sales_point_id": sales_point_id,
+        "sales_points": sales_points,
+        "can_filter_location": can_filter_location,
+        "total_lost": qs.count(),
+    })
+
+
 # ── Lead Status Settings (admin-only) ────────────────────────────────
 
 def _can_manage_lead_statuses(user):
@@ -1615,6 +1694,10 @@ def m_lead_list(request):
 @login_required
 def m_lead_detail(request, pk):
     lead = get_object_or_404(_lead_queryset(request.user), pk=pk)
+
+    lead.follow_ups.filter(is_sent=True, acknowledged_at__isnull=True).update(
+        acknowledged_at=timezone.now()
+    )
 
     if request.method == "POST":
         form = LeadUpdateForm(request.POST, instance=lead)

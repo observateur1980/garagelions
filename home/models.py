@@ -910,6 +910,10 @@ class LeadFollowUp(models.Model):
     note = models.CharField(max_length=255, blank=True)
     is_sent = models.BooleanField(default=False)
     sent_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Set when the user opens the lead detail page after the reminder fires.",
+    )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

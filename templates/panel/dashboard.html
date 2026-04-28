@@ -127,6 +127,55 @@
   </div>
 </div>
 
+<!-- Follow-up reminders widget -->
+{% if needs_attention_followups or upcoming_followups %}
+<h4 style="margin:28px 0 16px">Follow-Up Reminders</h4>
+<div class="row g-3">
+  {% if needs_attention_followups %}
+  <div class="col-md-6">
+    <div class="card dashboard-card h-100" style="border-left:4px solid #f59e0b">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#b45309; margin-bottom:12px">
+          Needs Attention <span style="background:#fffbeb; color:#b45309; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; margin-left:6px">{{ needs_attention_followups|length }}</span>
+        </h6>
+        <ul style="list-style:none; padding:0; margin:0">
+          {% for fu in needs_attention_followups %}
+          <li style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px">
+            <a href="{% url 'panel:lead_detail' fu.lead.pk %}" style="color:#111827; text-decoration:none; font-weight:500">{{ fu.lead.first_name }} {{ fu.lead.last_name }}</a>
+            <div style="color:#6b7280; font-size:12px; margin-top:2px">
+              Reminder fired {{ fu.sent_at|timesince }} ago{% if fu.note %} · {{ fu.note }}{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if upcoming_followups %}
+  <div class="col-md-6">
+    <div class="card dashboard-card h-100" style="border-left:4px solid #10b981">
+      <div class="card-body">
+        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#047857; margin-bottom:12px">
+          Upcoming <span style="background:#ecfdf5; color:#047857; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; margin-left:6px">{{ upcoming_followups|length }}</span>
+        </h6>
+        <ul style="list-style:none; padding:0; margin:0">
+          {% for fu in upcoming_followups %}
+          <li style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px">
+            <a href="{% url 'panel:lead_detail' fu.lead.pk %}" style="color:#111827; text-decoration:none; font-weight:500">{{ fu.lead.first_name }} {{ fu.lead.last_name }}</a>
+            <div style="color:#6b7280; font-size:12px; margin-top:2px">
+              {{ fu.remind_at|date:"M j, g:i A" }}{% if fu.note %} · {{ fu.note }}{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <!-- Recent leads -->
 <h4 style="margin:28px 0 16px">Recent Leads</h4>
 <div class="card dashboard-card">
