@@ -1,6 +1,44 @@
 {% extends "panel/base.html" %}
 {% block title %}Leads{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Mobile lead cards (hidden on desktop) */
+  .lead-cards { display: none; }
+  @media (max-width: 768px) {
+    .lead-table-wrap { display: none; }
+    .lead-cards { display: flex; flex-direction: column; gap: 10px; }
+    .lead-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 14px; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .lead-card:active { background: #f3f4f6; }
+    .lead-card .top-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .lead-card .name { font-weight: 600; font-size: 16px; color: #111827; }
+    .lead-card .meta { color: #6b7280; font-size: 13px; line-height: 1.5; }
+    .lead-card .meta a { color: #374151; text-decoration: none; }
+    .lead-card .row-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; margin-top: 4px;
+    }
+    .lead-card .date { font-size: 12px; color: #9ca3af; }
+
+    /* Mobile filter bar */
+    .filter-bar form {
+      display: flex; flex-direction: column; gap: 8px; width: 100%;
+    }
+    .filter-bar input,
+    .filter-bar select { width: 100% !important; font-size: 16px; padding: 10px 12px; }
+    .filter-bar .row-inline { display: flex; gap: 8px; }
+    .filter-bar .row-inline > * { flex: 1; }
+    .filter-bar .search-btn { display: none; }   /* selects auto-submit */
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <h2>Leads</h2>
@@ -8,36 +46,34 @@
 </div>
 
 <!-- Filters -->
-<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px">
+<div class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px">
   <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:end">
-    <div>
-      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, phone, zip..."
+    <div style="flex:1; min-width:200px">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, phone, zip…"
              style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:260px">
     </div>
-    <div>
+    <div class="row-inline">
       <select name="status" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px" onchange="this.form.submit()">
         <option value="">All statuses</option>
         {% for val, label in status_choices %}
         <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
-    </div>
-    {% if can_filter_location %}
-    <div>
+      {% if can_filter_location %}
       <select name="sales_point" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px" onchange="this.form.submit()">
         <option value="">All locations</option>
         {% for sp in sales_points %}
         <option value="{{ sp.pk }}" {% if sales_point_id == sp.pk|stringformat:"d" %}selected{% endif %}>{{ sp.name }}</option>
         {% endfor %}
       </select>
+      {% endif %}
     </div>
-    {% endif %}
-    <button type="submit" class="btn-panel-outline">Search</button>
+    <button type="submit" class="btn-panel-outline search-btn">Search</button>
   </form>
 </div>
 
-<!-- Table -->
-<div class="card dashboard-card">
+<!-- Desktop table -->
+<div class="card dashboard-card lead-table-wrap">
   <div class="card-body" style="padding:0; overflow-x:auto">
     <table class="panel-table" style="margin:0">
       <thead>
@@ -68,6 +104,30 @@
       </tbody>
     </table>
   </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="lead-cards">
+  {% for lead in page_obj %}
+  <a href="{% url 'panel:lead_detail' lead.pk %}" class="lead-card">
+    <div class="top-row">
+      <span class="name">{{ lead.first_name }} {{ lead.last_name }}</span>
+      <span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}">{{ lead.get_status_display }}</span>
+    </div>
+    <div class="meta">
+      {{ lead.phone }}{% if lead.sales_point %} &middot; {{ lead.sales_point.name }}{% endif %}<br>
+      <span style="color:#9ca3af">{{ lead.email }}</span>
+    </div>
+    <div class="row-bottom">
+      <span class="date">{{ lead.created_at|date:"M j, Y" }}</span>
+      <span style="font-size:12px">
+        {% if lead.assigned_user %}{{ lead.assigned_user.get_short_name|default:lead.assigned_user.get_full_name }}{% else %}<span style="color:#b91c1c">Unassigned</span>{% endif %}
+      </span>
+    </div>
+  </a>
+  {% empty %}
+  <p style="color:#6b7280; text-align:center; padding:24px">No leads found.</p>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->

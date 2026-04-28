@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from account import views as account_views
+from home import views as home_views
 from home.sitemaps import StaticViewSitemap, LocationSitemap, GallerySitemap
 
 sitemaps = {
@@ -34,6 +35,9 @@ urlpatterns = [
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap'),
 
+    # ── PWA (iPhone "Add to Home Screen") ────────────────────────────────
+    path('manifest.webmanifest', home_views.pwa_manifest, name='pwa_manifest'),
+    path('sw.js', home_views.pwa_service_worker, name='pwa_service_worker'),
 
 ]
 

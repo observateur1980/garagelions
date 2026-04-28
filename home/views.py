@@ -5,7 +5,7 @@ import math
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
@@ -384,3 +384,82 @@ class GarageConversion(TemplateView):
 
 class CarLift(TemplateView):
     template_name = "home/car_lift.html"
+
+
+# ── PWA: manifest + service worker ──────────────────────────────────────
+PWA_MANIFEST = {
+    "name": "Garage Lions Leads",
+    "short_name": "GL Leads",
+    "description": "Garage Lions internal leads panel",
+    "start_url": "/panel/leads/",
+    "scope": "/panel/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f9fafb",
+    "theme_color": "#374151",
+    "icons": [
+        {"src": "/static/icons/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+        {"src": "/static/icons/pwa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+    ],
+}
+
+PWA_SERVICE_WORKER_JS = """\
+// Garage Lions Leads PWA service worker
+const CACHE = "gl-leads-v1";
+const SHELL = ["/static/icons/apple-touch-icon.png",
+               "/static/icons/pwa-icon-192.png",
+               "/static/icons/pwa-icon-512.png"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Network-first for HTML/JSON, cache-first for static assets.
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  const isStatic = url.pathname.startsWith("/static/") || url.pathname.startsWith("/media/");
+
+  if (isStatic) {
+    event.respondWith(
+      caches.match(req).then((cached) =>
+        cached ||
+        fetch(req).then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+      )
+    );
+    return;
+  }
+
+  // For navigations, fall back to the leads list when offline.
+  event.respondWith(
+    fetch(req).catch(() => caches.match("/panel/leads/") || new Response("Offline", { status: 503 }))
+  );
+});
+"""
+
+
+def pwa_manifest(request):
+    return JsonResponse(PWA_MANIFEST, json_dumps_params={"indent": 2})
+
+
+def pwa_service_worker(request):
+    response = HttpResponse(PWA_SERVICE_WORKER_JS, content_type="application/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    response["Cache-Control"] = "no-cache"
+    return response
