@@ -21,10 +21,11 @@ set -euo pipefail
 PROJECT_DIR="/var/www/garagelions"
 
 # Path to the Python interpreter inside your virtualenv on the server
-VENV_PYTHON="${PROJECT_DIR}/.venv/bin/python"
+VENV_PYTHON="${PROJECT_DIR}/venv/bin/python"
 
-# Django settings module used in production
-DJANGO_SETTINGS_MODULE="garagelions.settings.production"
+# Django settings module — settings/__init__.py auto-loads production
+# when local.py is absent, so the plain top-level package works on prod.
+DJANGO_SETTINGS_MODULE="garagelions.settings"
 
 # Command that restarts your app server — pick ONE matching your stack:
 #   systemd:     "sudo systemctl restart gunicorn"
@@ -32,7 +33,7 @@ DJANGO_SETTINGS_MODULE="garagelions.settings.production"
 #   uwsgi touch: "touch ${PROJECT_DIR}/uwsgi.reload"
 #   passenger:   "touch ${PROJECT_DIR}/tmp/restart.txt"
 #   docker:      "docker compose -f /path/to/docker-compose.yml restart web"
-RESTART_CMD="sudo systemctl restart gunicorn"
+RESTART_CMD="sudo systemctl restart gunicorn_garagelions"
 
 # Where cron should write its log
 LOG_DIR="${PROJECT_DIR}/logs"
