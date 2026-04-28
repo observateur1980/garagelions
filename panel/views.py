@@ -1349,6 +1349,8 @@ def lead_list(request):
         for code in quick_codes if code in quick_filter_map
     ]
 
+    view_mode = "grid" if request.GET.get("view", "").strip() == "grid" else "table"
+
     return render(request, "panel/leads/list.html", {
         "page_obj": page_obj,
         "q": q,
@@ -1360,6 +1362,7 @@ def lead_list(request):
         "can_filter_location": can_filter_location,
         "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
         "sort": sort,
+        "view_mode": view_mode,
     })
 
 

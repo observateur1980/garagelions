@@ -4,7 +4,29 @@
 {% block content %}
 <div class="page-header">
   <h2>Leads</h2>
-  <div style="display:flex; gap:8px">
+  <div style="display:flex; gap:8px; align-items:center">
+    <!-- View toggle -->
+    <div class="view-toggle" role="group" aria-label="Switch view">
+      <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if sales_point_id %}sales_point={{ sales_point_id }}&{% endif %}{% if sort %}sort={{ sort }}{% endif %}"
+         class="view-toggle-btn {% if view_mode == 'table' %}active{% endif %}"
+         title="Table view" aria-label="Table view">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </a>
+      <a href="?view=grid{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if sales_point_id %}&sales_point={{ sales_point_id }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+         class="view-toggle-btn {% if view_mode == 'grid' %}active{% endif %}"
+         title="Grid view" aria-label="Grid view">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
+      </a>
+    </div>
     {% if can_manage_statuses %}
     <a href="{% url 'panel:lead_status_settings' %}" class="btn-panel-outline">⚙ Settings</a>
     {% endif %}
@@ -12,13 +34,66 @@
   </div>
 </div>
 
+<style>
+  .view-toggle { display:inline-flex; border:1px solid #d1d5db; border-radius:6px; overflow:hidden; }
+  .view-toggle-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:7px 10px; background:#fff; color:#6b7280;
+    text-decoration:none; border:0; cursor:pointer;
+    border-right:1px solid #e5e7eb;
+  }
+  .view-toggle-btn:last-child { border-right:0; }
+  .view-toggle-btn:hover { background:#f9fafb; color:#111827; }
+  .view-toggle-btn.active { background:#374151; color:#fff; }
+
+  /* Lead grid card */
+  .lead-card {
+    display:block;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:16px 18px;
+    text-decoration:none;
+    color:inherit;
+    transition: box-shadow .15s, transform .15s, border-color .15s;
+    height:100%;
+  }
+  .lead-card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+    border-color:#d1d5db;
+    color:inherit;
+    text-decoration:none;
+    transform: translateY(-1px);
+  }
+  .lead-card-header {
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:8px; margin-bottom:10px;
+  }
+  .lead-card-name {
+    font-size:15px; font-weight:600; color:#111827;
+    line-height:1.2;
+  }
+  .lead-card-row {
+    font-size:13px; color:#374151;
+    display:flex; align-items:center; gap:6px;
+    margin:4px 0;
+  }
+  .lead-card-row .lead-icon { color:#9ca3af; flex-shrink:0; }
+  .lead-card-footer {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:12px; padding-top:10px; border-top:1px solid #f3f4f6;
+    font-size:12px; color:#6b7280;
+  }
+  .lead-card-unassigned { color:#b91c1c; font-weight:500; }
+</style>
+
 <!-- Quick status filters -->
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px">
-  <a href="?{% if q %}q={{ q }}&{% endif %}{% if sales_point_id %}sales_point={{ sales_point_id }}&{% endif %}"
+  <a href="?{% if q %}q={{ q }}&{% endif %}{% if sales_point_id %}sales_point={{ sales_point_id }}&{% endif %}{% if view_mode == 'grid' %}view=grid{% endif %}"
      class="btn-panel-outline"
      style="{% if not status %}background:#374151; color:#fff; border-color:#374151{% endif %}">All</a>
   {% for f in quick_filters %}
-  <a href="?status={{ f.code }}{% if q %}&q={{ q }}{% endif %}{% if sales_point_id %}&sales_point={{ sales_point_id }}{% endif %}"
+  <a href="?status={{ f.code }}{% if q %}&q={{ q }}{% endif %}{% if sales_point_id %}&sales_point={{ sales_point_id }}{% endif %}{% if view_mode == 'grid' %}&view=grid{% endif %}"
      class="btn-panel-outline"
      style="background:{{ f.bg }}; color:{{ f.fg }}; border-color:{{ f.fg }}{% if status == f.code %}; box-shadow:0 0 0 2px {{ f.fg }}33; font-weight:600{% endif %}">{{ f.label }}</a>
   {% endfor %}
@@ -28,6 +103,7 @@
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px">
   <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:end">
     {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    {% if view_mode == "grid" %}<input type="hidden" name="view" value="grid">{% endif %}
     <div>
       <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, phone, zip..."
              style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:260px">
@@ -54,6 +130,63 @@
   </form>
 </div>
 
+{% if view_mode == "grid" %}
+<!-- Grid -->
+<div class="row g-3">
+  {% for lead in page_obj %}
+  <div class="col-md-6 col-lg-4 col-xl-3" style="position:relative">
+    <a href="{% url 'panel:lead_detail' lead.pk %}" class="lead-card">
+      <div class="lead-card-header">
+        <div class="lead-card-name">{{ lead.first_name }} {{ lead.last_name }}</div>
+        <span class="badge-status" style="background:{{ lead.status_bg }}; color:{{ lead.status_fg }}; font-size:11px; padding:3px 9px; flex-shrink:0">{{ lead.status_label }}</span>
+      </div>
+
+      <div class="lead-card-row">
+        <svg class="lead-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        <span>{{ lead.phone|default:"—" }}</span>
+      </div>
+      <div class="lead-card-row">
+        <svg class="lead-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ lead.email|default:"—" }}</span>
+      </div>
+      <div class="lead-card-row">
+        <svg class="lead-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span>{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}No location{% endif %}{% if lead.zip_code %} · {{ lead.zip_code }}{% endif %}</span>
+      </div>
+
+      <div class="lead-card-footer">
+        <span>
+          {% if lead.assigned_user %}{{ lead.assigned_user.get_full_name }}{% else %}<span class="lead-card-unassigned">Unassigned</span>{% endif %}
+        </span>
+        <span>{{ lead.created_at|date:"M j, Y" }}</span>
+      </div>
+    </a>
+    {% if lead.status == "follow_up" %}
+    <div style="position:absolute; top:10px; right:18px;">
+      <button type="button" class="fu-btn"
+              data-lead-id="{{ lead.pk }}"
+              data-lead-name="{{ lead.first_name }} {{ lead.last_name }}"
+              {% if lead.pending_followup_at %}data-has-reminder="1"{% endif %}
+              title="{% if lead.pending_followup_at %}Reminder set for {{ lead.pending_followup_at|date:'M d, Y · g:i A' }} — click to change{% else %}Schedule a follow-up reminder{% endif %}"
+              aria-label="Schedule follow-up reminder"
+              style="background:#fff">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div style="color:#6b7280; padding:32px; text-align:center; background:#f9fafb; border-radius:10px">No leads found.</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
 <!-- Table -->
 <div class="card dashboard-card">
   <div class="card-body" style="padding:0; overflow-x:auto">
@@ -124,16 +257,17 @@
     </table>
   </div>
 </div>
+{% endif %}
 
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
 <div style="display:flex; justify-content:center; gap:8px; margin-top:16px">
   {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}&sort={{ sort }}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Previous</a>
+  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}&sort={{ sort }}{% if view_mode == 'grid' %}&view=grid{% endif %}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Previous</a>
   {% endif %}
   <span style="padding:6px 12px; font-size:13px; color:#6b7280">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
   {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}&sort={{ sort }}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Next</a>
+  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&sales_point={{ sales_point_id }}&sort={{ sort }}{% if view_mode == 'grid' %}&view=grid{% endif %}" class="btn-panel-outline" style="padding:6px 12px; font-size:13px">Next</a>
   {% endif %}
 </div>
 {% endif %}
