@@ -183,14 +183,13 @@
       </div>
     </a>
     {% if lead.status == "follow_up" %}
-    <div style="position:absolute; top:10px; right:18px;">
-      <button type="button" class="fu-btn"
+    <div style="position:absolute; top:14px; right:108px;">
+      <button type="button" class="fu-btn fu-btn--icon"
               data-lead-id="{{ lead.pk }}"
               data-lead-name="{{ lead.first_name }} {{ lead.last_name }}"
               {% if lead.pending_followup_at %}data-has-reminder="1"{% endif %}
               title="{% if lead.pending_followup_at %}Reminder set for {{ lead.pending_followup_at|date:'M d, Y · g:i A' }} — click to change{% else %}Schedule a follow-up reminder{% endif %}"
-              aria-label="Schedule follow-up reminder"
-              style="background:#fff">
+              aria-label="Schedule follow-up reminder">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="4" width="18" height="17" rx="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
