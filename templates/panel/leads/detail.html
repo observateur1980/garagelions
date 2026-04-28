@@ -5,7 +5,7 @@
 <div class="page-header">
   <h2>{{ lead.first_name }} {{ lead.last_name }}</h2>
   <div style="display:flex; gap:8px; align-items:center">
-    <span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}" style="padding:6px 14px">{{ lead.get_status_display }}</span>
+    <span class="badge-status badge-{% if lead.status == 'closed_won' %}completed{% elif lead.status == 'closed_lost' %}canceled{% elif lead.status == 'new' %}draft{% else %}sent{% endif %}" style="padding:6px 14px">{{ lead.status_label }}</span>
     <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">All Leads</a>
   </div>
 </div>

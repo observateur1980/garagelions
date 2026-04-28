@@ -560,7 +560,7 @@ def notify_lead_reassigned(lead, new_user):
             f"Phone:    {lead.phone}\n"
             f"ZIP:      {lead.zip_code}\n"
             f"Services: {services_display}\n"
-            f"Status:   {lead.get_status_display()}\n\n"
+            f"Status:   {lead.status_label}\n\n"
             f"View in CRM: {crm_url}\n\n"
             f"— Garage Lions CRM\n"
         )

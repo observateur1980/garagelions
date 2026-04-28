@@ -6,7 +6,7 @@
   <a href="{% url 'panel:m_lead_list' %}" class="back-btn" aria-label="Back">‹</a>
   <h1>{{ lead.first_name }} {{ lead.last_name }}</h1>
   <span class="badge badge-{{ lead.status }}" style="font-size:11px">
-    {{ lead.get_status_display }}
+    {{ lead.status_label }}
   </span>
 </div>
 
@@ -76,7 +76,7 @@
       {% csrf_token %}
       <label class="form-label">Status</label>
       <select name="status" class="input">
-        {% for val, label in lead.STATUS_CHOICES %}
+        {% for val, label in form.status.field.choices %}
         <option value="{{ val }}" {% if lead.status == val %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>

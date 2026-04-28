@@ -154,6 +154,15 @@ class LeadUpdateForm(forms.ModelForm):
         current = self.instance.status if self.instance and self.instance.pk else None
         self.fields['status'].choices = _db_status_choices(current_code=current)
 
+    def _get_validation_exclusions(self):
+        # The model field hardcodes the original STATUS_CHOICES, but the real
+        # allowed list lives in the LeadStatus table and is already enforced
+        # by self.fields['status'].choices. Skip model-level choice validation
+        # so admin-added codes like "in_operation" are accepted.
+        exclude = super()._get_validation_exclusions()
+        exclude.add('status')
+        return exclude
+
 
 
 
@@ -237,3 +246,10 @@ class ManualLeadForm(forms.ModelForm):
                         )
             except Exception:
                 pass
+
+    def _get_validation_exclusions(self):
+        # See LeadUpdateForm: skip model-level status-choice validation so
+        # admin-added codes (LeadStatus rows) aren't rejected.
+        exclude = super()._get_validation_exclusions()
+        exclude.add('status')
+        return exclude

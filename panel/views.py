@@ -1321,7 +1321,7 @@ def lead_detail(request, pk):
                 LeadActivity.objects.create(
                     lead=updated, user=request.user,
                     action=LeadActivity.ACTION_STATUS,
-                    detail=f"Status changed to '{updated.get_status_display()}'.",
+                    detail=f"Status changed to '{updated.status_label}'.",
                 )
             if updated.internal_notes != old_notes:
                 LeadActivity.objects.create(
@@ -1467,7 +1467,7 @@ def m_lead_detail(request, pk):
                 LeadActivity.objects.create(
                     lead=updated, user=request.user,
                     action=LeadActivity.ACTION_STATUS,
-                    detail=f"Status changed to '{updated.get_status_display()}'.",
+                    detail=f"Status changed to '{updated.status_label}'.",
                 )
             if updated.internal_notes != old_notes:
                 LeadActivity.objects.create(
