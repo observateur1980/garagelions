@@ -405,7 +405,7 @@ PWA_MANIFEST = {
 
 PWA_SERVICE_WORKER_JS = """\
 // Garage Lions Leads PWA service worker
-const CACHE = "gl-leads-v1";
+const CACHE = "gl-leads-v2";
 const SHELL = ["/static/icons/apple-touch-icon.png",
                "/static/icons/pwa-icon-192.png",
                "/static/icons/pwa-icon-512.png"];
