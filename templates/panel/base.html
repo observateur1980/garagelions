@@ -82,8 +82,34 @@
     }
     .sidebar-nav a:hover { background: #f3f4f6; }
     .sidebar-nav a.active { background: #f3f4f6; font-weight: 600; }
-    .sidebar .icon { font-size: 18px; }
+    .sidebar-nav a { position: relative; }
+    .sidebar .icon {
+      font-size: 18px;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
     .sidebar.collapsed .text { display: none; }
+    .nav-badge {
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
 
     /* ── Main content ── */
     .main-content {
@@ -278,7 +304,11 @@
         <span class="icon">&#9989;</span><span class="text">Tasks</span>
       </a>
       <a href="{% url 'panel:lead_list' %}" class="{% if 'lead' in request.resolver_match.url_name %}active{% endif %}">
-        <span class="icon">&#128203;</span><span class="text">Leads</span>
+        <span class="icon">
+          &#128203;
+          {% if new_leads_count %}<span class="nav-badge">{{ new_leads_count }}</span>{% endif %}
+        </span>
+        <span class="text">Leads</span>
       </a>
     </nav>
   </aside>

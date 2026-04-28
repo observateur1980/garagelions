@@ -54,6 +54,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "home.context_processors.footer_video_reviews",
                 "home.context_processors.selected_city",
+                "panel.context_processors.new_leads_badge",
             ],
         },
     },
