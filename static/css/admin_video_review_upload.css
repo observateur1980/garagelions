@@ -1,0 +1,97 @@
+.vr-upload-overlay {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 99999;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.vr-upload-card {
+  background: #ffffff;
+  border: 1px solid #e2e6ea;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(28, 53, 84, 0.18);
+  padding: 16px 18px;
+  color: #1C3554;
+}
+
+.vr-upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.vr-upload-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.vr-upload-pct {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1C3554;
+  font-variant-numeric: tabular-nums;
+}
+
+.vr-upload-file {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vr-upload-bar {
+  height: 8px;
+  background: #eef1f5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vr-upload-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #1C3554 0%, #2a5081 100%);
+  transition: width 0.18s ease;
+  border-radius: 999px;
+}
+
+.vr-upload-stats {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+.vr-upload-stats .vr-sep {
+  opacity: 0.5;
+}
+
+.vr-upload-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #1C3554;
+  font-weight: 600;
+}
+
+.vr-upload-overlay.is-error .vr-upload-card {
+  border-color: #e5b4b4;
+}
+
+.vr-upload-overlay.is-error .vr-upload-status {
+  color: #b42318;
+}
+
+.vr-upload-overlay.is-error .vr-upload-fill {
+  background: #b42318;
+}

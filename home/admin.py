@@ -638,3 +638,7 @@ class VideoReviewAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "is_featured")
     search_fields = ("title", "customer_name")
     ordering = ("order", "-created_at")
+
+    class Media:
+        css = {"all": ("css/admin_video_review_upload.css",)}
+        js = ("js/admin_video_review_upload.js",)
