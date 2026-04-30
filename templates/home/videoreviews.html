@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
 
-<section class="our-clients-2 white-bg page-section-ptb" style="margin-top: 115px">
+<section class="video-reviews-page" style="margin-top: 115px">
   <div class="container">
 
     <div class="row">
@@ -21,44 +21,39 @@
         </div>
       </div>
 
-      <!-- Featured masonry -->
-      <div class="video-masonry" id="featuredMasonry">
+      <div class="video-grid" id="featuredGrid">
         {% for v in featured %}
-          <div class="video-item" data-video-wrap>
-            <div class="video-card">
-              <div class="video-media video-watermark-wrap">
-                <video
-                  class="video-el"
-                  preload="metadata"
-                  playsinline
-                  controls
-                  {% if v.thumbnail %}poster="{{ v.thumbnail.url }}"{% endif %}
-                >
-                  <source src="{{ v.video.url }}">
-                  Your browser does not support the video tag.
-                </video>
+          <div class="video-item is-landscape js-video-item" data-video-wrap>
+            <div class="video-media video-watermark-wrap">
+              <video
+                class="video-el"
+                preload="metadata"
+                playsinline
+                controls
+                {% if v.thumbnail %}poster="{{ v.thumbnail.url }}"{% endif %}
+              >
+                <source src="{{ v.video.url }}">
+                Your browser does not support the video tag.
+              </video>
 
-                <button type="button" class="play-overlay" data-play-btn aria-label="Play video">
-                  <span class="play-triangle"></span>
-                </button>
-              </div>
-
-              <div class="video-meta">
-                <h5 class="mb-1">{{ v.title }}</h5>
-                {% if v.customer_name %}
-                  <div class="text-muted">{{ v.customer_name }}</div>
-                {% endif %}
-              </div>
+              <button type="button" class="play-overlay" data-play-btn aria-label="Play video">
+                <span class="play-triangle"></span>
+              </button>
             </div>
+
+            {% if v.title or v.customer_name %}
+              <div class="video-meta">
+                {% if v.title %}<div class="video-caption">{{ v.title }}</div>{% endif %}
+                {% if v.customer_name %}<div class="video-customer">{{ v.customer_name }}</div>{% endif %}
+              </div>
+            {% endif %}
           </div>
         {% endfor %}
       </div>
     {% endif %}
 
-
-
-    <!-- Main masonry (paginated) -->
-    <div class="video-masonry" id="videoGrid">
+    <!-- Main grid (paginated) -->
+    <div class="video-grid" id="videoGrid">
       {% include "home/partials/_video_cards.html" with page_obj=page_obj %}
     </div>
 
@@ -92,141 +87,200 @@
 </section>
 
 <style>
-/* ===== VIDEO WATERMARK (show only while playing) ===== */
-.video-watermark-wrap{ position: relative; }
+.video-reviews-page {
+  padding: 35px 0 70px;
+}
 
-/* watermark hidden by default */
-.video-watermark-wrap::after{
+/* Two-column grid; landscape spans both columns, portrait takes one */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+.video-item {
+  overflow: hidden;
+}
+
+.video-item.is-landscape {
+  grid-column: 1 / -1;
+}
+
+.video-item.is-portrait {
+  grid-column: auto;
+}
+
+.video-media {
+  position: relative;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.video-el {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #000;
+}
+
+.video-meta {
+  padding: 14px 0 4px;
+  position: relative;
+}
+
+.video-meta::before {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 2px;
+  background: #1C3554;
+  margin-bottom: 10px;
+  border-radius: 2px;
+}
+
+.video-caption {
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #1C3554;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.video-customer {
+  font-size: 14px;
+  line-height: 1.4;
+  font-style: italic;
+  color: #7a7a7a;
+  margin-top: 6px;
+  letter-spacing: 0.01em;
+}
+
+.video-customer::before {
+  content: "— ";
+  color: #1C3554;
+  font-style: normal;
+  margin-right: 2px;
+}
+
+@media (max-width: 767px) {
+  .video-meta {
+    padding-top: 12px;
+  }
+  .video-caption { font-size: 15px; }
+  .video-customer { font-size: 13px; }
+}
+
+/* Play overlay */
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0,0,0,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s ease;
+  z-index: 4;
+}
+.play-overlay:hover { background: rgba(0,0,0,.35); }
+
+.play-triangle {
+  width: 0; height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-left: 28px solid #fff;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+  transform: translateX(2px);
+}
+
+[data-video-wrap].is-playing .play-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Watermark (only while playing) */
+.video-watermark-wrap::after {
   content: "";
   position: absolute;
   bottom: 10px;
   right: 10px;
-
   width: 90px;
-  height: 36px;  /* ✅ REQUIRED (otherwise it can be 0 height) */
-
+  height: 36px;
   background: url("{% static 'images/watermark.png' %}") no-repeat center center;
   background-size: contain;
-
   opacity: 0;
   transform: translateY(2px);
   transition: opacity .2s ease, transform .2s ease;
-
   pointer-events: none;
   z-index: 5;
 }
 
-/* show watermark only when playing */
-[data-video-wrap].is-playing .video-watermark-wrap::after{
+[data-video-wrap].is-playing .video-watermark-wrap::after {
   opacity: 0.28 !important;
   transform: translateY(0);
 }
 
-@media (max-width: 768px){
-  .video-watermark-wrap::after{
+@media (max-width: 768px) {
+  .video-watermark-wrap::after {
     width: 70px;
     height: 28px;
     bottom: 8px;
     right: 8px;
   }
 }
-@media (max-width: 480px){
-  .video-watermark-wrap::after{
+
+@media (max-width: 767px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .video-item.is-landscape,
+  .video-item.is-portrait {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .video-watermark-wrap::after {
     width: 55px;
     height: 22px;
   }
 }
-  /* Masonry layout that preserves original video aspect ratio */
-  .video-masonry{
-    column-gap: 18px;
-    column-count: 3;
-  }
-  @media (max-width: 991px){
-    .video-masonry{ column-count: 2; }
-  }
-  @media (max-width: 575px){
-    .video-masonry{ column-count: 1; }
-  }
-
-  .video-item{
-    break-inside: avoid;
-    margin: 0 0 18px;
-    width: 100%;
-    display: inline-block;
-  }
-
-.video-card{
-  border-radius: 16px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 10px 25px rgba(0,0,0,.08);
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-
-.video-card:hover{
-  transform: translateY(-3px);
-  box-shadow: 0 16px 35px rgba(0,0,0,.12);
-}
-
-  /* Thumbnail container */
-.video-media{
-  position: relative;
-  background: #000;
-  padding: 10px;                 /* breathing room */
-}
-
-/* Actual video / poster */
-.video-el{
-  width: 100%;
-  height: auto;                  /* keep original ratio */
-  max-height: 260px;             /* 🔥 makes thumbnails smaller */
-  object-fit: contain;           /* never crop */
-  background: #000;
-  border-radius: 10px;
-  display: block;
-  margin: 0 auto;                /* center smaller videos */
-}
-
-  .video-meta{
-    padding:14px 16px;
-  }
-
-  /* Play overlay */
-  .play-overlay{
-    position:absolute;
-    inset:0;
-    border:0;
-    background:rgba(0,0,0,.25);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    transition: background .2s ease;
-    z-index: 4;
-  }
-  .play-overlay:hover{ background:rgba(0,0,0,.35); }
-
-  .play-triangle{
-    width:0;height:0;
-    border-top:18px solid transparent;
-    border-bottom:18px solid transparent;
-    border-left:28px solid #fff;
-    filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
-    transform: translateX(2px);
-  }
-
-  /* Hide overlay once playing */
-  [data-video-wrap].is-playing .play-overlay{
-    opacity:0;
-    pointer-events:none;
-  }
-
-
-
 </style>
 
 <script>
   (function(){
+    function setLayout(item, width, height) {
+      if (!width || !height) return;
+      var isPortraitOrSquare = height >= width;
+      item.classList.remove('is-landscape', 'is-portrait');
+      item.classList.add(isPortraitOrSquare ? 'is-portrait' : 'is-landscape');
+    }
+
+    function applyLayoutTo(items) {
+      items.forEach(function(item) {
+        if (item.dataset.layoutBound === "1") return;
+        item.dataset.layoutBound = "1";
+
+        var video = item.querySelector('video');
+        if (!video) return;
+
+        if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
+          setLayout(item, video.videoWidth, video.videoHeight);
+        } else {
+          video.addEventListener('loadedmetadata', function() {
+            setLayout(item, video.videoWidth, video.videoHeight);
+          });
+        }
+      });
+    }
+
     function initVideoOverlays(root){
       const wraps = (root || document).querySelectorAll("[data-video-wrap]");
       wraps.forEach(wrap => {
@@ -238,7 +292,6 @@
         wrap.dataset.bound = "1";
 
         function play(){
-          // pause other videos
           document.querySelectorAll("video.video-el").forEach(v => {
             if (v !== video) {
               v.pause();
@@ -246,13 +299,11 @@
               if (w) w.classList.remove("is-playing");
             }
           });
-
           wrap.classList.add("is-playing");
           video.play().catch(()=>{});
         }
 
         btn.addEventListener("click", play);
-
         video.addEventListener("play", () => wrap.classList.add("is-playing"));
         video.addEventListener("pause", () => wrap.classList.remove("is-playing"));
         video.addEventListener("ended", () => wrap.classList.remove("is-playing"));
@@ -278,16 +329,17 @@
         const temp = document.createElement("div");
         temp.innerHTML = html;
 
-        // read marker BEFORE moving nodes out
         const marker = temp.querySelector("[data-has-next]");
         const hasNext = marker && marker.getAttribute("data-has-next") === "1";
         const next = marker ? marker.getAttribute("data-next-page") : null;
         if (marker) marker.remove();
 
-        // append new items
+        const newItems = Array.from(temp.querySelectorAll('.js-video-item'));
+
         while (temp.firstChild) grid.appendChild(temp.firstChild);
 
         initVideoOverlays(grid);
+        applyLayoutTo(newItems);
 
         if (hasNext && next) {
           btn.setAttribute("data-next-page", next);
@@ -304,6 +356,7 @@
 
     document.addEventListener("DOMContentLoaded", function(){
       initVideoOverlays(document);
+      applyLayoutTo(Array.from(document.querySelectorAll('.js-video-item')));
       const btn = document.getElementById("loadMoreBtn");
       if (btn) btn.addEventListener("click", loadMore);
     });

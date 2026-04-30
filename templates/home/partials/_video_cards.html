@@ -1,30 +1,28 @@
 {% for v in page_obj %}
-  <div class="video-item" data-video-wrap>
-    <div class="video-card">
-      <div class="video-media video-watermark-wrap">
-        <video
-          class="video-el"
-          preload="metadata"
-          playsinline
-          controls
-          {% if v.thumbnail %}poster="{{ v.thumbnail.url }}"{% endif %}
-        >
-          <source src="{{ v.video.url }}">
-          Your browser does not support the video tag.
-        </video>
+  <div class="video-item is-landscape js-video-item" data-video-wrap>
+    <div class="video-media video-watermark-wrap">
+      <video
+        class="video-el"
+        preload="metadata"
+        playsinline
+        controls
+        {% if v.thumbnail %}poster="{{ v.thumbnail.url }}"{% endif %}
+      >
+        <source src="{{ v.video.url }}">
+        Your browser does not support the video tag.
+      </video>
 
-        <button type="button" class="play-overlay" data-play-btn aria-label="Play video">
-          <span class="play-triangle"></span>
-        </button>
-      </div>
-
-      <div class="video-meta">
-        <h5 class="mb-1">{{ v.title }}</h5>
-        {% if v.customer_name %}
-          <div class="text-muted">{{ v.customer_name }}</div>
-        {% endif %}
-      </div>
+      <button type="button" class="play-overlay" data-play-btn aria-label="Play video">
+        <span class="play-triangle"></span>
+      </button>
     </div>
+
+    {% if v.title or v.customer_name %}
+      <div class="video-meta">
+        {% if v.title %}<div class="video-caption">{{ v.title }}</div>{% endif %}
+        {% if v.customer_name %}<div class="video-customer">{{ v.customer_name }}</div>{% endif %}
+      </div>
+    {% endif %}
   </div>
 {% endfor %}
 
