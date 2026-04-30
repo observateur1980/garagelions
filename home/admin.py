@@ -2,8 +2,11 @@
 
 import csv
 import io
+import os
 import re
 
+from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.db import models
 from django.shortcuts import redirect, render
@@ -632,12 +635,88 @@ class LeadModelAdmin(admin.ModelAdmin):
 
 # ── VideoReview ───────────────────────────────────────────────────────────
 
+VIDEO_EXTS = {".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv"}
+
+
+def _scan_video_review_files():
+    """Return list of (relative_path, label) for video files in media/video_reviews/.
+
+    Sorted by mtime descending so the most recently SFTP'd file is at the top.
+    """
+    target_dir = os.path.join(settings.MEDIA_ROOT, "video_reviews")
+    if not os.path.isdir(target_dir):
+        return []
+    entries = []
+    for name in os.listdir(target_dir):
+        full = os.path.join(target_dir, name)
+        if not os.path.isfile(full):
+            continue
+        if os.path.splitext(name)[1].lower() not in VIDEO_EXTS:
+            continue
+        size_mb = os.path.getsize(full) / (1024 * 1024)
+        entries.append((os.path.getmtime(full), f"video_reviews/{name}", f"{name} ({size_mb:.1f} MB)"))
+    entries.sort(key=lambda x: x[0], reverse=True)
+    return [(rel, label) for _, rel, label in entries]
+
+
+class VideoReviewAdminForm(forms.ModelForm):
+    existing_video = forms.ChoiceField(
+        required=False,
+        label="Or pick existing file from server",
+        help_text="Drop large files into media/video_reviews/ via SFTP and select them here. "
+                  "Bypasses the browser upload entirely.",
+    )
+
+    class Meta:
+        model = VideoReview
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Either the upload field OR the picker can satisfy the requirement
+        self.fields["video"].required = False
+        choices = [("", "— Use upload field above —")] + _scan_video_review_files()
+        self.fields["existing_video"].choices = choices
+
+    def clean(self):
+        cleaned = super().clean()
+        existing = cleaned.get("existing_video")
+        uploaded = cleaned.get("video")
+        if not self.instance.pk and not uploaded and not existing:
+            raise forms.ValidationError(
+                "Upload a video or pick an existing file from the server."
+            )
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        existing = self.cleaned_data.get("existing_video")
+        if existing:
+            # Point the FileField at the file already on disk; no copy/upload happens.
+            instance.video.name = existing
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
+
+
 @admin.register(VideoReview)
 class VideoReviewAdmin(admin.ModelAdmin):
+    form = VideoReviewAdminForm
     list_display = ("order", "title", "customer_name", "is_active", "is_featured", "created_at")
     list_filter = ("is_active", "is_featured")
     search_fields = ("title", "customer_name")
     ordering = ("order", "-created_at")
+    fields = (
+        "title",
+        "customer_name",
+        "video",
+        "existing_video",
+        "thumbnail",
+        "is_active",
+        "is_featured",
+        "order",
+    )
 
     class Media:
         css = {"all": ("css/admin_video_review_upload.css",)}
