@@ -1354,6 +1354,14 @@ def lead_list(request):
         for s in LeadStatus.objects.filter(is_quick_filter=True)
     ]
 
+    bottom_codes = ["closed_lost", "disqualified"]
+    bottom_filter_map = {s.code: s for s in LeadStatus.objects.filter(code__in=bottom_codes)}
+    bottom_filters = [
+        {"code": code, "label": bottom_filter_map[code].label,
+         "bg": bottom_filter_map[code].bg_hex, "fg": bottom_filter_map[code].fg_hex}
+        for code in bottom_codes if code in bottom_filter_map
+    ]
+
     view_mode = "grid" if request.GET.get("view", "").strip() == "grid" else "table"
 
     return render(request, "panel/leads/list.html", {
@@ -1364,6 +1372,7 @@ def lead_list(request):
         "sales_points": sales_points,
         "status_choices": LeadStatus.as_choices(),
         "quick_filters": quick_filters,
+        "bottom_filters": bottom_filters,
         "can_filter_location": can_filter_location,
         "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
         "sort": sort,
