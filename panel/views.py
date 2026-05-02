@@ -1349,12 +1349,9 @@ def lead_list(request):
     if can_filter_location:
         sales_points = SalesPoint.objects.filter(is_active=True).order_by("name")
 
-    quick_codes = ["new", "in_operation", "follow_up"]
-    quick_filter_map = {s.code: s for s in LeadStatus.objects.filter(code__in=quick_codes)}
     quick_filters = [
-        {"code": code, "label": quick_filter_map[code].label,
-         "bg": quick_filter_map[code].bg_hex, "fg": quick_filter_map[code].fg_hex}
-        for code in quick_codes if code in quick_filter_map
+        {"code": s.code, "label": s.label, "bg": s.bg_hex, "fg": s.fg_hex}
+        for s in LeadStatus.objects.filter(is_quick_filter=True)
     ]
 
     view_mode = "grid" if request.GET.get("view", "").strip() == "grid" else "table"
@@ -1642,6 +1639,14 @@ def lead_status_settings(request):
             if color not in valid_colors:
                 color = "gray"
             LeadStatus.objects.filter(pk=pk).update(color=color)
+            return redirect("panel:lead_status_settings")
+
+        elif action == "toggle_quick_filter":
+            pk = request.POST.get("pk")
+            status = LeadStatus.objects.filter(pk=pk).first()
+            if status is not None:
+                status.is_quick_filter = not status.is_quick_filter
+                status.save(update_fields=["is_quick_filter"])
             return redirect("panel:lead_status_settings")
 
     statuses = LeadStatus.objects.all()

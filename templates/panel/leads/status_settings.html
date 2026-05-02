@@ -41,6 +41,30 @@
   .color-popover.open { display: block; }
   .color-popover .color-row { gap: 6px; }
   .color-cell { position: relative; }
+  .qf-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .qf-toggle .qf-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    transition: left 0.15s;
+  }
+  .qf-toggle.on { background: #047857; border-color: #047857; }
+  .qf-toggle.on .qf-knob { left: 22px; }
 </style>
 
 <div class="page-header">
@@ -49,7 +73,7 @@
 </div>
 
 <p style="color:#6b7280; margin-top:-8px; margin-bottom:20px; font-size:14px">
-  Add or remove statuses available in the leads dropdown. Click the color swatch on any row to change its badge color. Protected statuses are referenced by other parts of the system and cannot be removed.
+  Add or remove statuses available in the leads dropdown. Click the color swatch on any row to change its badge color. Toggle <strong>Quick filter</strong> to show a status as a one-click filter button at the top of the leads list page. Protected statuses are referenced by other parts of the system and cannot be removed.
 </p>
 
 {% if error %}
@@ -105,6 +129,7 @@
           <th>Label</th>
           <th>Code</th>
           <th style="width:160px">Badge</th>
+          <th style="width:130px">Quick filter</th>
           <th style="width:120px">Protected</th>
           <th style="width:120px"></th>
         </tr>
@@ -140,6 +165,17 @@
             </div>
           </td>
           <td>
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_quick_filter">
+              <input type="hidden" name="pk" value="{{ s.pk }}">
+              <button type="submit" class="qf-toggle{% if s.is_quick_filter %} on{% endif %}"
+                      title="{% if s.is_quick_filter %}Remove from quick filters{% else %}Show as quick filter on leads list{% endif %}">
+                <span class="qf-knob"></span>
+              </button>
+            </form>
+          </td>
+          <td>
             {% if s.is_protected %}
               <span class="badge-status badge-sent">Yes</span>
             {% else %}
@@ -161,7 +197,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No statuses defined.</td></tr>
+        <tr><td colspan="7" style="color:#6b7280; padding:24px; text-align:center">No statuses defined.</td></tr>
         {% endfor %}
       </tbody>
     </table>

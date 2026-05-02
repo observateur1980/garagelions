@@ -786,6 +786,10 @@ class LeadStatus(models.Model):
         default=False,
         help_text="Protected statuses are referenced by code elsewhere in the app and cannot be removed.",
     )
+    is_quick_filter = models.BooleanField(
+        default=False,
+        help_text="When enabled, this status appears as a quick filter button on the leads list page.",
+    )
 
     class Meta:
         ordering = ["order", "label"]
