@@ -1,0 +1,297 @@
+{% extends "panel/base.html" %}
+{% block title %}Edit Template — {{ template.name }}{% endblock %}
+
+{% block content %}
+<style>
+  .tpl-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .tpl-name-input {
+    font-size: 22px; font-weight: 600; color: #111827;
+    border: 1px solid transparent; padding: 4px 8px; border-radius: 6px;
+    width: 100%; max-width: 520px; background: transparent;
+  }
+  .tpl-name-input:hover { border-color: #e5e7eb; }
+  .tpl-name-input:focus { border-color: #6b7280; background: #fff; outline: none; }
+  .tpl-desc-input {
+    border: 1px solid transparent; padding: 4px 8px; border-radius: 6px;
+    width: 100%; max-width: 520px; background: transparent; color: #6b7280;
+    font-size: 14px; margin-top: 4px;
+  }
+  .tpl-desc-input:hover { border-color: #e5e7eb; }
+  .tpl-desc-input:focus { border-color: #6b7280; background: #fff; outline: none; color: #374151; }
+
+  .tpl-add-bar { position: relative; margin-bottom: 16px; }
+  .tpl-add-bar input {
+    width: 100%; padding: 12px 16px 12px 40px;
+    border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;
+  }
+  .tpl-add-bar input:focus { outline: none; border-color: #6b7280; }
+  .tpl-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #9ca3af; font-size: 16px;
+  }
+  .tpl-dropdown {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    background: #fff; border: 1px solid #d1d5db; border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100;
+    max-height: 320px; overflow-y: auto;
+  }
+  .tpl-dropdown.show { display: block; }
+  .tpl-dropdown-item {
+    padding: 10px 14px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .tpl-dropdown-item:hover { background: #f9fafb; }
+  .tpl-dropdown-item:last-child { border-bottom: none; }
+  .tpl-dropdown-custom {
+    padding: 10px 14px; background: #f9fafb; cursor: pointer;
+    color: #374151; font-weight: 500;
+  }
+  .tpl-dropdown-custom:hover { background: #f3f4f6; }
+
+  .tpl-summary {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 10px; margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 14px;
+  }
+  .tpl-summary strong { font-size: 18px; color: #111827; }
+
+  .tpl-items-table { width: 100%; border-collapse: collapse; }
+  .tpl-items-table th {
+    text-align: left; padding: 10px 12px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #6b7280; border-bottom: 1px solid #e5e7eb;
+  }
+  .tpl-items-table td {
+    padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px;
+  }
+  .tpl-items-table input.tpl-cell {
+    width: 80px; padding: 5px 8px; border: 1px solid transparent;
+    border-radius: 4px; font-size: 13px; background: transparent;
+  }
+  .tpl-items-table input.tpl-cell:hover { border-color: #e5e7eb; }
+  .tpl-items-table input.tpl-cell:focus { border-color: #6b7280; background: #fff; outline: none; }
+  .tpl-del-btn {
+    background: transparent; border: 0; cursor: pointer;
+    color: #b91c1c; font-size: 16px; padding: 4px 8px;
+  }
+  .tpl-del-btn:hover { background: #fef2f2; border-radius: 4px; }
+</style>
+
+<div class="page-header">
+  <a href="{% url 'panel:part_list' %}" class="btn-panel-outline" style="margin-bottom:8px">← Back to Parts</a>
+</div>
+
+<form method="post" id="tpl-meta-form" style="margin-bottom:14px">
+  {% csrf_token %}
+  <div class="tpl-head">
+    <div style="flex:1; min-width:0">
+      <input class="tpl-name-input" name="name" value="{{ template.name }}" placeholder="Template name">
+      <input class="tpl-desc-input" name="description" value="{{ template.description }}" placeholder="Optional description">
+      <div style="font-size:12px; color:#9ca3af; margin-top:6px; padding-left:8px">
+        {% if template.sales_point %}Local to {{ template.sales_point.name }}{% else %}Global · available to all locations{% endif %}
+      </div>
+    </div>
+    <button type="submit" class="btn-panel" style="margin-left:12px; flex-shrink:0">Save</button>
+  </div>
+</form>
+
+<!-- Add item bar -->
+<div class="tpl-add-bar">
+  <span class="tpl-search-icon">&#128269;</span>
+  <input type="text" id="tpl-add-search" placeholder="Add item (search parts or type custom)" autocomplete="off">
+  <div class="tpl-dropdown" id="tpl-add-dropdown"></div>
+</div>
+
+<div class="card dashboard-card">
+  <div class="card-body" style="padding:0">
+    <table class="tpl-items-table">
+      <thead>
+        <tr>
+          <th style="width:40%">Item</th>
+          <th style="width:15%">Category</th>
+          <th style="width:12%">Unit</th>
+          <th style="width:10%">Qty</th>
+          <th style="width:11%; text-align:right">Unit Price</th>
+          <th style="width:10%; text-align:right">Total</th>
+          <th style="width:50px"></th>
+        </tr>
+      </thead>
+      <tbody id="tpl-items-body">
+        {% for item in items %}
+        <tr data-item-id="{{ item.id }}">
+          <td style="font-weight:500">{{ item.name }}</td>
+          <td style="color:#6b7280; font-size:13px">{{ item.category_label|default:"—" }}</td>
+          <td style="color:#6b7280; font-size:13px">{{ item.unit_label|default:"—" }}</td>
+          <td><input type="text" class="tpl-cell" data-field="quantity" value="{{ item.quantity }}"></td>
+          <td style="text-align:right"><input type="text" class="tpl-cell" data-field="unit_price" value="{{ item.unit_price }}" style="text-align:right; width:90px"></td>
+          <td style="text-align:right; font-weight:500" class="tpl-line-total">${{ item.line_total|default:0|floatformat:2 }}</td>
+          <td style="text-align:right"><button type="button" class="tpl-del-btn" title="Remove">&#128465;</button></td>
+        </tr>
+        {% empty %}
+        <tr id="tpl-empty-row">
+          <td colspan="7" style="color:#9ca3af; padding:32px; text-align:center">No items yet. Search and add parts above.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:14px 24px; background:#f9fafb; border-top:1px solid #e5e7eb">
+    <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px">
+      <span style="color:#6b7280">Template Total</span>
+      <strong id="tpl-total" style="font-size:18px; color:#111827">${{ total|floatformat:2 }}</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const TPL_ID = {{ template.id }};
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+            || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(data).toString(),
+    });
+    return res.json();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function setTotal(t) {
+    document.getElementById("tpl-total").textContent = "$" + parseFloat(t).toFixed(2);
+  }
+
+  function addItemRow(item) {
+    const empty = document.getElementById("tpl-empty-row");
+    if (empty) empty.remove();
+    const tbody = document.getElementById("tpl-items-body");
+    const tr = document.createElement("tr");
+    tr.dataset.itemId = item.id;
+    tr.innerHTML = `
+      <td style="font-weight:500">${escapeHtml(item.name)}</td>
+      <td style="color:#6b7280; font-size:13px">${escapeHtml(item.category_label || "—")}</td>
+      <td style="color:#6b7280; font-size:13px">${escapeHtml(item.unit_label || "—")}</td>
+      <td><input type="text" class="tpl-cell" data-field="quantity" value="${item.quantity}"></td>
+      <td style="text-align:right"><input type="text" class="tpl-cell" data-field="unit_price" value="${item.unit_price}" style="text-align:right; width:90px"></td>
+      <td style="text-align:right; font-weight:500" class="tpl-line-total">$${parseFloat(item.line_total).toFixed(2)}</td>
+      <td style="text-align:right"><button type="button" class="tpl-del-btn" title="Remove">&#128465;</button></td>
+    `;
+    tbody.appendChild(tr);
+    bindRow(tr);
+  }
+
+  function bindRow(tr) {
+    const id = tr.dataset.itemId;
+    tr.querySelectorAll(".tpl-cell").forEach(input => {
+      input.addEventListener("blur", async () => {
+        const r = await postJSON(`/panel/parts/ajax/templates/${TPL_ID}/update-item/${id}/`, {
+          [input.dataset.field]: input.value,
+        });
+        if (r.ok) {
+          tr.querySelector(".tpl-line-total").textContent = "$" + parseFloat(r.item.line_total).toFixed(2);
+          setTotal(r.total);
+        }
+      });
+    });
+    tr.querySelector(".tpl-del-btn").addEventListener("click", async () => {
+      if (!confirm("Remove this item?")) return;
+      const r = await postJSON(`/panel/parts/ajax/templates/${TPL_ID}/delete-item/${id}/`, {});
+      if (r.ok) {
+        tr.remove();
+        setTotal(r.total);
+        const tbody = document.getElementById("tpl-items-body");
+        if (!tbody.querySelector("tr")) {
+          tbody.innerHTML = `<tr id="tpl-empty-row"><td colspan="7" style="color:#9ca3af; padding:32px; text-align:center">No items yet. Search and add parts above.</td></tr>`;
+        }
+      }
+    });
+  }
+  document.querySelectorAll("#tpl-items-body tr[data-item-id]").forEach(bindRow);
+
+  // ── Add bar search ──
+  const search = document.getElementById("tpl-add-search");
+  const dropdown = document.getElementById("tpl-add-dropdown");
+  let searchTimer = null;
+
+  search.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    const q = search.value.trim();
+    if (!q) { dropdown.classList.remove("show"); return; }
+    searchTimer = setTimeout(async () => {
+      const res = await fetch(`/panel/parts/ajax/search/?q=${encodeURIComponent(q)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      const data = await res.json();
+      const parts = data.parts || [];
+
+      let html = "";
+      parts.forEach(p => {
+        html += `<div class="tpl-dropdown-item" data-part='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+          <span>${escapeHtml(p.name)}${p.sku ? ' <span style="color:#9ca3af">(' + escapeHtml(p.sku) + ')</span>' : ''}</span>
+          <span style="font-weight:600">$${parseFloat(p.unit_price || 0).toFixed(2)}</span>
+        </div>`;
+      });
+      html += `<div class="tpl-dropdown-custom" id="tpl-add-custom">+ Add "${escapeHtml(q)}" as custom item</div>`;
+      dropdown.innerHTML = html;
+      dropdown.classList.add("show");
+
+      dropdown.querySelectorAll(".tpl-dropdown-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const p = JSON.parse(el.dataset.part.replace(/&#39;/g, "'"));
+          addPart(p);
+        });
+      });
+      dropdown.querySelector("#tpl-add-custom").addEventListener("click", addCustom);
+    }, 250);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".tpl-add-bar")) dropdown.classList.remove("show");
+  });
+
+  async function addPart(part) {
+    dropdown.classList.remove("show");
+    search.value = "";
+    const r = await postJSON(`/panel/parts/ajax/templates/${TPL_ID}/add-item/`, {
+      part_id: part.id,
+      name: part.name,
+      quantity: "1",
+      unit_price: part.unit_price || "0",
+      unit_label: part.unit || "",
+      category_label: part.category || "",
+    });
+    if (r.ok) {
+      addItemRow(r.item);
+      setTotal(r.total);
+    }
+  }
+
+  async function addCustom() {
+    const name = search.value.trim();
+    dropdown.classList.remove("show");
+    search.value = "";
+    const r = await postJSON(`/panel/parts/ajax/templates/${TPL_ID}/add-item/`, {
+      name, quantity: "1", unit_price: "0",
+    });
+    if (r.ok) {
+      addItemRow(r.item);
+      setTotal(r.total);
+    } else if (r.error) {
+      alert(r.error);
+    }
+  }
+})();
+</script>
+{% endblock %}

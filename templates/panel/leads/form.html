@@ -1,9 +1,75 @@
 {% extends "panel/base.html" %}
-{% block title %}New Lead{% endblock %}
+{% block title %}{% if is_edit %}Edit Lead{% else %}New Lead{% endif %}{% endblock %}
 
 {% block content %}
+<style>
+  .service-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .service-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    user-select: none;
+    margin: 0;
+    font-size: 13.5px;
+    color: #374151;
+  }
+  .service-chip:hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+  }
+  .service-chip input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    margin: 0;
+  }
+  .service-chip input[type="checkbox"]:checked {
+    background: #111827;
+    border-color: #111827;
+  }
+  .service-chip input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .service-chip:has(input[type="checkbox"]:checked) {
+    border-color: #111827;
+    background: #f3f4f6;
+    box-shadow: inset 0 0 0 1px #111827;
+    color: #111827;
+    font-weight: 500;
+  }
+  .service-chip-label { line-height: 1.2; }
+</style>
+
 <div class="page-header">
-  <h2>New Lead</h2>
+  <h2>{% if is_edit %}Edit Lead — {{ lead.first_name }} {{ lead.last_name }}{% else %}New Lead{% endif %}</h2>
 </div>
 
 <div class="card dashboard-card" style="max-width:700px">
@@ -45,8 +111,13 @@
       </div>
 
       <label>Services</label>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px">
-        {{ form.consultation_types }}
+      <div class="service-chips" role="group" aria-label="Services">
+        {% for choice in form.consultation_types %}
+          <label class="service-chip">
+            {{ choice.tag }}
+            <span class="service-chip-label">{{ choice.choice_label }}</span>
+          </label>
+        {% endfor %}
       </div>
 
       <label>Message</label>
@@ -55,15 +126,22 @@
       <hr style="border-color:#e5e7eb; margin:20px 0">
 
       <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label>Location</label>
           {{ form.sales_point }}
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
+          <label>City</label>
+          {{ form.service_city }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
           <label>Assigned To</label>
           {{ form.assigned_user }}
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label>Status</label>
           {{ form.status }}
         </div>
@@ -76,8 +154,8 @@
       {{ form.internal_notes }}
 
       <div style="margin-top:20px">
-        <button type="submit" class="btn-panel">Create Lead</button>
-        <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+        <button type="submit" class="btn-panel">{% if is_edit %}Save Changes{% else %}Create Lead{% endif %}</button>
+        <a href="{% if is_edit %}{% url 'panel:lead_detail' lead.pk %}{% else %}{% url 'panel:lead_list' %}{% endif %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
       </div>
     </form>
   </div>

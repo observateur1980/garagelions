@@ -26,8 +26,13 @@ urlpatterns = [
     path("estimates/new/", views.estimate_create, name="estimate_create"),
     path("estimates/<int:pk>/", views.estimate_detail, name="estimate_detail"),
     path("estimates/<int:pk>/edit/", views.estimate_edit, name="estimate_edit"),
+    path("estimates/<int:pk>/send/", views.ajax_estimate_send, name="ajax_estimate_send"),
     path("estimates/<int:pk>/ajax/search-parts/", views.ajax_estimate_search_parts, name="ajax_estimate_search_parts"),
     path("estimates/<int:pk>/ajax/add-item/", views.ajax_estimate_add_item, name="ajax_estimate_add_item"),
+    path("estimates/<int:pk>/ajax/templates/", views.ajax_estimate_templates_list, name="ajax_estimate_templates_list"),
+    path("estimates/<int:pk>/ajax/templates/save/", views.ajax_estimate_template_save, name="ajax_estimate_template_save"),
+    path("estimates/<int:pk>/ajax/templates/<int:template_pk>/apply/", views.ajax_estimate_template_apply, name="ajax_estimate_template_apply"),
+    path("estimates/<int:pk>/ajax/templates/<int:template_pk>/delete/", views.ajax_estimate_template_delete, name="ajax_estimate_template_delete"),
     path("estimates/<int:pk>/ajax/update-item/<int:item_pk>/", views.ajax_estimate_update_item, name="ajax_estimate_update_item"),
     path("estimates/<int:pk>/ajax/delete-item/<int:item_pk>/", views.ajax_estimate_delete_item, name="ajax_estimate_delete_item"),
     path("estimates/<int:pk>/ajax/update-header/", views.ajax_estimate_update_header, name="ajax_estimate_update_header"),
@@ -46,6 +51,18 @@ urlpatterns = [
     # Parts
     path("parts/", views.part_list, name="part_list"),
     path("parts/<int:pk>/edit/", views.part_edit, name="part_edit"),
+
+    # Parts search (JSON, used by template editor)
+    path("parts/ajax/search/", views.ajax_parts_search_json, name="ajax_parts_search_json"),
+
+    # Estimate templates (managed from the Parts page)
+    path("parts/templates/<int:pk>/edit/", views.template_edit, name="template_edit"),
+    path("parts/ajax/templates/", views.ajax_templates_list, name="ajax_templates_list"),
+    path("parts/ajax/templates/create/", views.ajax_template_create, name="ajax_template_create"),
+    path("parts/ajax/templates/<int:pk>/delete/", views.ajax_template_delete, name="ajax_template_delete"),
+    path("parts/ajax/templates/<int:pk>/add-item/", views.ajax_template_add_item, name="ajax_template_add_item"),
+    path("parts/ajax/templates/<int:pk>/update-item/<int:item_pk>/", views.ajax_template_update_item, name="ajax_template_update_item"),
+    path("parts/ajax/templates/<int:pk>/delete-item/<int:item_pk>/", views.ajax_template_delete_item, name="ajax_template_delete_item"),
     path("parts/ajax/delete/", views.ajax_parts_delete, name="ajax_parts_delete"),
     path("parts/ajax/global-list/", views.ajax_global_parts_list, name="ajax_global_parts_list"),
     path("parts/ajax/add-global/", views.ajax_parts_add_global, name="ajax_parts_add_global"),
@@ -74,6 +91,7 @@ urlpatterns = [
     path("leads/statuses/", views.lead_status_settings, name="lead_status_settings"),
     path("leads/statuses/<int:pk>/delete/", views.lead_status_delete, name="lead_status_delete"),
     path("leads/<int:pk>/", views.lead_detail, name="lead_detail"),
+    path("leads/<int:pk>/edit/", views.lead_edit, name="lead_edit"),
 
     # Lead To-Dos (per-customer / per-lead)
     path("leads/<int:lead_pk>/todos/add/", views.lead_todo_create, name="lead_todo_create"),

@@ -70,8 +70,112 @@
 /* ── Add bar ── */
 .add-bar {
   position: relative;
+  margin-bottom: 12px;
+}
+.quick-add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 24px;
 }
+.quick-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.quick-add-btn:hover {
+  border-color: #111827;
+  background: #f9fafb;
+  color: #111827;
+}
+.quick-add-btn svg { flex-shrink: 0; }
+
+/* ── Modal ── */
+.qa-overlay {
+  position: fixed; inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.qa-overlay.show { display: flex; }
+.qa-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+.qa-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.qa-modal-head h3 { margin: 0; font-size: 16px; font-weight: 600; color: #111827; }
+.qa-close {
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 22px; line-height: 1; color: #6b7280; padding: 4px 8px;
+}
+.qa-close:hover { color: #111827; }
+.qa-modal-body {
+  padding: 16px 20px; overflow-y: auto; flex: 1;
+}
+.qa-modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.qa-search {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; margin-bottom: 12px;
+  background: #fff;
+}
+.qa-search:focus { outline: none; border-color: #6b7280; }
+select.qa-search { padding-right: 30px; }
+.qa-part-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+.qa-part-row:hover { border-color: #111827; background: #f9fafb; }
+.qa-part-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.qa-part-price { font-weight: 600; color: #111827; }
+.qa-cat-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #6b7280; margin: 14px 0 6px; font-weight: 600;
+}
+.qa-cat-label:first-child { margin-top: 0; }
+.qa-empty { color: #9ca3af; padding: 30px; text-align: center; font-size: 14px; }
+.qa-form-row { margin-bottom: 12px; }
+.qa-form-row label {
+  display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500;
+}
+.qa-form-row input, .qa-form-row textarea, .qa-form-row select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+}
+.qa-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .add-bar input {
   width: 100%;
   padding: 12px 16px 12px 40px;
@@ -286,6 +390,10 @@
         <span class="est-action-icon">&#128065;</span>
         View
       </a>
+      <button type="button" class="est-action-btn" id="btn-send-customer" style="background:transparent; cursor:pointer">
+        <span class="est-action-icon">&#9993;</span>
+        Send to Customer
+      </button>
       <a href="{% url 'panel:estimate_list' %}" class="est-action-btn">
         <span class="est-action-icon">&#128203;</span>
         All Estimates
@@ -299,6 +407,196 @@
   <span class="search-icon">&#128269;</span>
   <input type="text" id="add-search" placeholder="Add item (search parts or type custom)" autocomplete="off">
   <div class="add-dropdown" id="add-dropdown"></div>
+</div>
+
+<!-- Quick add actions -->
+<div class="quick-add-row">
+  <button type="button" class="quick-add-btn" id="btn-browse-library">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+    </svg>
+    Browse Part Library
+  </button>
+  <button type="button" class="quick-add-btn" id="btn-create-custom">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    Create Custom Part
+  </button>
+  <button type="button" class="quick-add-btn" id="btn-add-template">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+    </svg>
+    Add Template
+  </button>
+</div>
+
+<!-- Modals -->
+<div class="qa-overlay" id="modal-library" onclick="if(event.target===this)closeModal('modal-library')">
+  <div class="qa-modal">
+    <div class="qa-modal-head">
+      <h3 id="lib-modal-title">Browse Part Library</h3>
+      <button class="qa-close" onclick="closeModal('modal-library')" aria-label="Close">×</button>
+    </div>
+
+    <!-- ── Browse view ── -->
+    <div class="qa-modal-body" id="lib-browse-view">
+      <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap">
+        <input type="text" id="lib-search" class="qa-search" style="margin:0; flex:1; min-width:200px"
+               placeholder="Filter by name or SKU…" autocomplete="off">
+        <select id="lib-category" class="qa-search" style="margin:0; flex:0 0 200px">
+          <option value="">All categories</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="lib-list"><div class="qa-empty">Loading parts…</div></div>
+    </div>
+
+    <!-- ── Edit-before-add view ── -->
+    <div class="qa-modal-body" id="lib-edit-view" style="display:none">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px">
+        <button class="quick-add-btn" id="lib-edit-back" style="padding:6px 12px; font-size:13px">← Back</button>
+        <span style="color:#6b7280; font-size:13px">Adjust details before adding to the estimate</span>
+      </div>
+
+      <div class="qa-form-row">
+        <label>Item Name *</label>
+        <input type="text" id="lib-edit-name" required>
+      </div>
+      <div class="qa-form-row">
+        <label>Description</label>
+        <textarea id="lib-edit-desc" rows="2"></textarea>
+      </div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row">
+          <label>Quantity</label>
+          <input type="number" id="lib-edit-qty" value="1" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Price ($)</label>
+          <input type="number" id="lib-edit-price" value="0" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Label</label>
+          <input type="text" id="lib-edit-unit" placeholder="ea, sq ft, hr">
+        </div>
+      </div>
+      <div class="qa-form-row">
+        <label>Category *</label>
+        <select id="lib-edit-category" required>
+          <option value="">— Select a category —</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="qa-modal-foot" id="lib-edit-foot" style="display:none">
+      <button class="quick-add-btn" id="lib-edit-cancel">Cancel</button>
+      <button class="quick-add-btn" id="lib-edit-add" style="background:#111827; color:#fff; border-color:#111827">Add to Estimate</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-custom" onclick="if(event.target===this)closeModal('modal-custom')">
+  <div class="qa-modal" style="max-width:480px">
+    <div class="qa-modal-head">
+      <h3>Create Custom Part</h3>
+      <button class="qa-close" onclick="closeModal('modal-custom')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body">
+      <div class="qa-form-row">
+        <label>Name *</label>
+        <input type="text" id="custom-name" placeholder="e.g. Custom installation work" required>
+      </div>
+      <div class="qa-form-row">
+        <label>Description</label>
+        <textarea id="custom-desc" rows="2" placeholder="Optional details about this item"></textarea>
+      </div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row">
+          <label>Quantity</label>
+          <input type="number" id="custom-qty" value="1" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Price ($)</label>
+          <input type="number" id="custom-price" value="0" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Label</label>
+          <input type="text" id="custom-unit" placeholder="ea, sq ft, hr">
+        </div>
+      </div>
+      <div class="qa-form-row">
+        <label>Category *</label>
+        <select id="custom-category" required>
+          <option value="">— Select a category —</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        {% if not categories %}
+        <p style="color:#9ca3af; font-size:12px; margin-top:6px">
+          No categories available. Add some on the <a href="{% url 'panel:part_list' %}" target="_blank" style="color:#374151">Parts</a> page.
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-custom')">Cancel</button>
+      <button class="quick-add-btn" style="background:#111827; color:#fff; border-color:#111827" onclick="submitCustomPart()">Add to Estimate</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-send" onclick="if(event.target===this)closeModal('modal-send')">
+  <div class="qa-modal" style="max-width:460px">
+    <div class="qa-modal-head">
+      <h3>Send Estimate to Customer</h3>
+      <button class="qa-close" onclick="closeModal('modal-send')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body">
+      <div id="send-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:14px"></div>
+      <p style="margin:0 0 8px; color:#374151; font-size:14px">This will email the estimate to:</p>
+      <div style="padding:10px 12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; font-weight:500; color:#111827">
+        {{ estimate.customer.full_name }} &lt;{{ estimate.customer.email|default:"no email on file" }}&gt;
+      </div>
+      <p style="margin:14px 0 0; color:#6b7280; font-size:13px">
+        The estimate will be marked as <strong>Sent</strong>. You can edit it again afterwards if needed.
+      </p>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-send')">Cancel</button>
+      <button class="quick-add-btn" id="btn-send-confirm" style="background:#111827; color:#fff; border-color:#111827">Send Email</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-template" onclick="if(event.target===this)closeModal('modal-template')">
+  <div class="qa-modal" style="max-width:560px">
+    <div class="qa-modal-head">
+      <h3>Add from Template</h3>
+      <button class="qa-close" onclick="closeModal('modal-template')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body">
+      <div style="font-size:13px; color:#6b7280; margin-bottom:12px">
+        Pick a template below to add all its items to this estimate. Manage templates from the
+        <a href="{% url 'panel:part_list' %}" style="color:#374151; font-weight:500">Parts</a> page.
+      </div>
+      <div id="tpl-list"><div class="qa-empty">Loading templates…</div></div>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-template')">Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- Items section -->
@@ -682,6 +980,241 @@
             <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items yet. Search and add parts above.</td>
           </tr>`;
       }
+    }
+  };
+
+  // ── Quick-add modals ──
+  function openModal(id) { document.getElementById(id).classList.add("show"); }
+  window.closeModal = function(id) { document.getElementById(id).classList.remove("show"); };
+
+  document.getElementById("btn-browse-library").addEventListener("click", openLibrary);
+  document.getElementById("btn-create-custom").addEventListener("click", () => {
+    document.getElementById("custom-name").value = "";
+    document.getElementById("custom-desc").value = "";
+    document.getElementById("custom-qty").value = "1";
+    document.getElementById("custom-price").value = "0";
+    document.getElementById("custom-unit").value = "";
+    const catSel = document.getElementById("custom-category");
+    if (catSel) catSel.selectedIndex = 0;
+    openModal("modal-custom");
+    setTimeout(() => document.getElementById("custom-name").focus(), 50);
+  });
+  document.getElementById("btn-add-template").addEventListener("click", openTemplates);
+
+  // Send to customer
+  document.getElementById("btn-send-customer").addEventListener("click", () => {
+    document.getElementById("send-error").style.display = "none";
+    openModal("modal-send");
+  });
+  document.getElementById("btn-send-confirm").addEventListener("click", async () => {
+    const btn = document.getElementById("btn-send-confirm");
+    const err = document.getElementById("send-error");
+    err.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    try {
+      const data = await postJSON(`/panel/estimates/${EST_ID}/send/`, {});
+      if (data.ok) {
+        closeModal("modal-send");
+        alert(`Estimate sent to ${data.sent_to}.`);
+        location.reload();
+      } else {
+        err.textContent = data.error || "Could not send estimate.";
+        err.style.display = "block";
+      }
+    } catch (e) {
+      err.textContent = "Network error sending estimate.";
+      err.style.display = "block";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Send Email";
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      ["modal-library","modal-custom","modal-template","modal-send"].forEach(closeModal);
+    }
+  });
+
+  let libraryParts = [];
+  let pendingPart = null;
+
+  function showLibBrowse() {
+    document.getElementById("lib-modal-title").textContent = "Browse Part Library";
+    document.getElementById("lib-browse-view").style.display = "";
+    document.getElementById("lib-edit-view").style.display = "none";
+    document.getElementById("lib-edit-foot").style.display = "none";
+  }
+  function showLibEdit() {
+    document.getElementById("lib-modal-title").textContent = "Review & Add Part";
+    document.getElementById("lib-browse-view").style.display = "none";
+    document.getElementById("lib-edit-view").style.display = "";
+    document.getElementById("lib-edit-foot").style.display = "";
+  }
+
+  async function openLibrary() {
+    openModal("modal-library");
+    showLibBrowse();
+    document.getElementById("lib-search").value = "";
+    document.getElementById("lib-category").value = "";
+    const list = document.getElementById("lib-list");
+    list.innerHTML = '<div class="qa-empty">Loading parts…</div>';
+
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?browse=1`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    const data = await res.json();
+    libraryParts = data.results || [];
+    renderLibrary();
+  }
+
+  function renderLibrary() {
+    const list = document.getElementById("lib-list");
+    const search = document.getElementById("lib-search").value.trim().toLowerCase();
+    const cat = document.getElementById("lib-category").value;
+
+    let items = libraryParts;
+    if (cat) items = items.filter(p => (p.category || "") === cat);
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || (p.sku || "").toLowerCase().includes(search));
+
+    if (!items.length) {
+      list.innerHTML = '<div class="qa-empty">No parts found.</div>';
+      return;
+    }
+
+    const groups = {};
+    items.forEach(p => {
+      const c = p.category || "Uncategorized";
+      (groups[c] = groups[c] || []).push(p);
+    });
+
+    let html = "";
+    Object.keys(groups).sort().forEach(c => {
+      html += `<div class="qa-cat-label">${escapeHtml(c)}</div>`;
+      groups[c].forEach(p => {
+        html += `<div class="qa-part-row" data-part-id="${p.id}">
+          <div style="min-width:0; flex:1">
+            <div style="font-weight:500; color:#111827">${escapeHtml(p.name)}</div>
+            <div class="qa-part-meta">${p.sku ? "SKU " + escapeHtml(p.sku) : ""}${p.unit ? (p.sku ? " · " : "") + escapeHtml(p.unit) : ""}</div>
+          </div>
+          <div class="qa-part-price">$${parseFloat(p.unit_price).toFixed(2)}</div>
+        </div>`;
+      });
+    });
+    list.innerHTML = html;
+
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const part = libraryParts.find(p => String(p.id) === row.dataset.partId);
+        if (part) loadPartIntoEditor(part);
+      });
+    });
+  }
+
+  function loadPartIntoEditor(part) {
+    pendingPart = part;
+    document.getElementById("lib-edit-name").value = part.name || "";
+    document.getElementById("lib-edit-desc").value = "";
+    document.getElementById("lib-edit-qty").value = "1";
+    document.getElementById("lib-edit-price").value = parseFloat(part.unit_price || 0).toFixed(2);
+    document.getElementById("lib-edit-unit").value = part.unit || "";
+    const catSel = document.getElementById("lib-edit-category");
+    if (part.category) {
+      const opt = Array.from(catSel.options).find(o => o.value === part.category);
+      catSel.value = opt ? part.category : "";
+    } else {
+      catSel.selectedIndex = 0;
+    }
+    showLibEdit();
+    setTimeout(() => document.getElementById("lib-edit-name").focus(), 50);
+  }
+
+  document.getElementById("lib-search").addEventListener("input", renderLibrary);
+  document.getElementById("lib-category").addEventListener("change", renderLibrary);
+  document.getElementById("lib-edit-back").addEventListener("click", showLibBrowse);
+  document.getElementById("lib-edit-cancel").addEventListener("click", () => closeModal("modal-library"));
+  document.getElementById("lib-edit-add").addEventListener("click", async () => {
+    const name = document.getElementById("lib-edit-name").value.trim();
+    const category = document.getElementById("lib-edit-category").value;
+    if (!name) { alert("Item name is required."); return; }
+    if (!category) { alert("Category is required. Please select one."); return; }
+
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      part_id: pendingPart ? pendingPart.id : "",
+      name,
+      quantity: document.getElementById("lib-edit-qty").value || "1",
+      unit_price: document.getElementById("lib-edit-price").value || "0",
+      unit_label: document.getElementById("lib-edit-unit").value || "",
+      category_label: category,
+    });
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+      closeModal("modal-library");
+    }
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  async function openTemplates() {
+    openModal("modal-template");
+    const list = document.getElementById("tpl-list");
+    list.innerHTML = '<div class="qa-empty">Loading templates…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/templates/`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    const data = await res.json();
+    if (!data.results.length) {
+      list.innerHTML = '<div class="qa-empty">No templates yet. Create one from the Parts page.</div>';
+      return;
+    }
+    let html = "";
+    data.results.forEach(t => {
+      html += `<div class="qa-part-row" data-tpl-id="${t.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(t.name)}${t.is_global ? ' <span style="font-size:10px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:10px; margin-left:6px">Global</span>' : ''}</div>
+          <div class="qa-part-meta">${t.item_count} item${t.item_count===1?'':'s'} · $${parseFloat(t.total).toFixed(2)}${t.description ? ' · ' + escapeHtml(t.description) : ''}</div>
+        </div>
+        <div class="qa-part-price">Add &rsaquo;</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => applyTemplate(row.dataset.tplId));
+    });
+  }
+
+  async function applyTemplate(id) {
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/templates/${id}/apply/`, {});
+    if (data.ok) {
+      data.items.forEach(item => addRowToTable(item));
+      updateSummary(data);
+      closeModal("modal-template");
+    }
+  }
+
+  window.submitCustomPart = async function() {
+    const name = document.getElementById("custom-name").value.trim();
+    const category = document.getElementById("custom-category").value;
+    if (!name) { alert("Name is required."); return; }
+    if (!category) { alert("Category is required. Please select one."); return; }
+
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      name,
+      quantity: document.getElementById("custom-qty").value || "1",
+      unit_price: document.getElementById("custom-price").value || "0",
+      unit_label: document.getElementById("custom-unit").value || "",
+      category_label: category,
+    });
+
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+      closeModal("modal-custom");
     }
   };
 

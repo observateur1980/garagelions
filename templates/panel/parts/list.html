@@ -220,12 +220,18 @@
     <!-- ═══ TAB 3: Templates ═══ -->
     <div class="tab-pane fade" id="tab-templates" role="tabpanel">
       <div class="card dashboard-card">
-        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center">
-          <div>
-            <h5 style="margin:0 0 4px">Templates</h5>
-            <p style="color:#6b7280; font-size:14px; margin:0">Reusable groups of parts (coming soon).</p>
+        <div class="card-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+            <h5 style="margin:0">Templates</h5>
+            <button class="btn-panel" data-bs-toggle="modal" data-bs-target="#newTemplateModal">+ New Template</button>
           </div>
-          <button class="btn-panel-outline" disabled>+ New Template</button>
+          <p style="color:#6b7280; font-size:14px; margin:0 0 18px">
+            Reusable bundles of parts. Drop a template into any estimate to add all its items at once.
+          </p>
+
+          <div id="tpl-tab-list">
+            <div style="color:#9ca3af; padding:24px; text-align:center; font-size:14px">Loading templates…</div>
+          </div>
         </div>
       </div>
     </div>
@@ -321,6 +327,42 @@
       <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
         <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
         <button id="ep-save" class="btn-panel" type="button">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ New Template Modal ═══ -->
+<div class="modal fade" id="newTemplateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px">
+      <div class="modal-header" style="border-bottom:1px solid #e5e7eb; padding:16px 24px">
+        <h5 style="margin:0; font-size:18px">New Template</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body panel-form" style="padding:24px">
+        <div id="nt-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+
+        <div style="margin-bottom:14px">
+          <label>Name *</label>
+          <input id="nt-name" type="text" placeholder="e.g. Standard Garage Flooring Package">
+        </div>
+        <div style="margin-bottom:14px">
+          <label>Description</label>
+          <input id="nt-description" type="text" placeholder="Optional short description">
+        </div>
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div style="margin-bottom:14px">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal">
+            <input id="nt-global" type="checkbox" style="width:auto; margin:0"> Make available to all locations (global)
+          </label>
+        </div>
+        {% endif %}
+        <p style="color:#9ca3af; font-size:13px; margin:0">After creating, you'll be taken to the template editor to add parts.</p>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
+        <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button id="nt-create" class="btn-panel" type="button">Create &amp; Edit</button>
       </div>
     </div>
   </div>
@@ -827,6 +869,118 @@
     } catch (e) { showEpErr(e.message); }
   });
 
+})();
+
+// ═══ Templates tab ═══
+(function () {
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+            || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+
+  async function postForm(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(data).toString(),
+    });
+    return res.json();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  async function refreshTemplates() {
+    const list = document.getElementById("tpl-tab-list");
+    if (!list) return;
+    list.innerHTML = '<div style="color:#9ca3af; padding:24px; text-align:center; font-size:14px">Loading templates…</div>';
+
+    const res = await fetch("/panel/parts/ajax/templates/", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+
+    if (!data.results.length) {
+      list.innerHTML = `<div style="color:#9ca3af; padding:32px; text-align:center; font-size:14px; background:#f9fafb; border-radius:8px">
+        No templates yet. Click <strong>+ New Template</strong> above to create one.
+      </div>`;
+      return;
+    }
+
+    let html = `<table class="panel-table" style="margin:0">
+      <thead><tr>
+        <th>Name</th><th style="width:90px">Items</th><th style="width:120px; text-align:right">Total</th>
+        <th style="width:100px">Scope</th><th style="width:160px; text-align:right"></th>
+      </tr></thead><tbody>`;
+    data.results.forEach(t => {
+      html += `<tr>
+        <td>
+          <div style="font-weight:500">${escapeHtml(t.name)}</div>
+          ${t.description ? `<div style="font-size:12px; color:#6b7280; margin-top:2px">${escapeHtml(t.description)}</div>` : ""}
+        </td>
+        <td>${t.item_count}</td>
+        <td style="text-align:right; font-weight:500">$${parseFloat(t.total).toFixed(2)}</td>
+        <td>
+          ${t.is_global
+            ? '<span style="font-size:11px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:2px 8px; border-radius:10px">Global</span>'
+            : '<span style="font-size:11px; color:#6b7280; background:#f3f4f6; border:1px solid #e5e7eb; padding:2px 8px; border-radius:10px">Location</span>'}
+        </td>
+        <td style="text-align:right">
+          <a href="${t.edit_url}" class="btn-panel-outline" style="padding:4px 10px; font-size:13px">Edit</a>
+          ${t.can_delete
+            ? `<button class="btn-panel-outline tpl-del" data-id="${t.id}" style="padding:4px 10px; font-size:13px; color:#b91c1c; border-color:#fecaca; margin-left:4px">Delete</button>`
+            : ""}
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    list.innerHTML = html;
+
+    list.querySelectorAll(".tpl-del").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this template?")) return;
+        const r = await postForm(`/panel/parts/ajax/templates/${btn.dataset.id}/delete/`, {});
+        if (r.ok) refreshTemplates();
+        else if (r.error) alert(r.error);
+      });
+    });
+  }
+
+  // Load when the Templates tab is shown
+  document.querySelector('[data-bs-target="#tab-templates"]')?.addEventListener("shown.bs.tab", refreshTemplates);
+  // Also load on initial page render in case the tab is the active one
+  if (document.querySelector("#tab-templates.active")) refreshTemplates();
+
+  // Create new template
+  document.getElementById("nt-create")?.addEventListener("click", async () => {
+    const name = document.getElementById("nt-name").value.trim();
+    const errorBox = document.getElementById("nt-error");
+    errorBox.style.display = "none";
+    if (!name) {
+      errorBox.textContent = "Name is required.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const globalCb = document.getElementById("nt-global");
+    const r = await postForm("/panel/parts/ajax/templates/create/", {
+      name,
+      description: document.getElementById("nt-description").value.trim(),
+      scope: globalCb && globalCb.checked ? "global" : "location",
+    });
+    if (r.ok) {
+      window.location.href = r.edit_url;
+    } else {
+      errorBox.textContent = r.error || "Could not create template.";
+      errorBox.style.display = "block";
+    }
+  });
+
+  document.getElementById("newTemplateModal")?.addEventListener("show.bs.modal", () => {
+    document.getElementById("nt-name").value = "";
+    document.getElementById("nt-description").value = "";
+    const globalCb = document.getElementById("nt-global");
+    if (globalCb) globalCb.checked = false;
+    document.getElementById("nt-error").style.display = "none";
+  });
 })();
 </script>
 {% endblock %}

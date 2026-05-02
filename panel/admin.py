@@ -69,8 +69,11 @@ class PartInline(admin.TabularInline):
 
 @admin.register(PartCategory)
 class PartCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "sales_point", "is_active")
+    list_display = ("order", "name", "sales_point", "is_active")
+    list_display_links = ("name",)
+    list_editable = ("order",)
     list_filter = ("is_active", "sales_point")
+    ordering = ("order", "name")
     inlines = [PartInline]
 
 

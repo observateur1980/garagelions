@@ -75,10 +75,14 @@ class PartCategory(models.Model):
         help_text="NULL = global category, set = local to this location.",
     )
     is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(
+        default=100,
+        help_text="Lower numbers appear first. Use this to control display order.",
+    )
 
     class Meta:
         verbose_name_plural = "Part categories"
-        ordering = ["name"]
+        ordering = ["order", "name"]
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "sales_point"],
@@ -264,6 +268,10 @@ class Estimate(models.Model):
     customer = models.ForeignKey(
         Customer, on_delete=models.PROTECT, related_name="estimates"
     )
+    lead = models.ForeignKey(
+        "home.LeadModel", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="panel_estimates",
+    )
     project = models.OneToOneField(
         Project, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="estimate"
@@ -323,6 +331,49 @@ class EstimateItem(models.Model):
     @property
     def line_total(self):
         return self.quantity * self.unit_price
+
+
+# ── Estimate Templates ──────────────────────────────────────────────
+class EstimateTemplate(models.Model):
+    """Reusable bundle of items that can be dropped into any estimate."""
+    name = models.CharField(max_length=120)
+    description = models.CharField(max_length=255, blank=True)
+    sales_point = models.ForeignKey(
+        "home.SalesPoint", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="estimate_templates",
+        help_text="NULL = global template, set = local to this location.",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class EstimateTemplateItem(models.Model):
+    template = models.ForeignKey(
+        EstimateTemplate, on_delete=models.CASCADE, related_name="items"
+    )
+    part = models.ForeignKey(Part, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    category_label = models.CharField(max_length=100, blank=True)
+    unit_label = models.CharField(max_length=50, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.name
 
 
 # ── Invoice ─────────────────────────────────────────────────────────

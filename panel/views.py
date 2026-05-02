@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.db.models import Sum, Q, Case, When, IntegerField, Value, Subquery, OuterRef, CharField
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation as DecimalInvalid
@@ -16,7 +17,8 @@ from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
     Unit, SalesPointUnit, SalesPointPart,
-    Estimate, EstimateItem, Invoice, InvoiceItem,
+    Estimate, EstimateItem, EstimateTemplate, EstimateTemplateItem,
+    Invoice, InvoiceItem,
     Transaction, TaskList, Task,
 )
 
@@ -345,6 +347,101 @@ def estimate_edit(request, pk):
 
 @require_POST
 @login_required
+def ajax_estimate_send(request, pk):
+    """Mark an estimate as sent and email the customer a summary."""
+    from django.conf import settings as dj_settings
+    from django.core.mail import EmailMultiAlternatives
+
+    estimate = get_object_or_404(
+        _filter_by_sp(Estimate.objects.select_related("customer", "sales_point"), request.user),
+        pk=pk,
+    )
+    customer = estimate.customer
+    if not customer or not customer.email:
+        return JsonResponse({"ok": False, "error": "Customer has no email on file."}, status=400)
+
+    items = list(estimate.items.all().order_by("order"))
+    if not items:
+        return JsonResponse({"ok": False, "error": "Add at least one item before sending."}, status=400)
+
+    from_email = dj_settings.DEFAULT_FROM_EMAIL
+    if estimate.sales_point and getattr(estimate.sales_point, "from_email", None):
+        from_email = estimate.sales_point.from_email
+
+    subject = f"Your Estimate from Garage Lions — {estimate.estimate_number}"
+
+    rows_html = ""
+    rows_text = ""
+    for it in items:
+        line_total = it.quantity * it.unit_price
+        rows_html += (
+            f"<tr>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb'>{it.name}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; color:#6b7280'>{it.category_label or '—'}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>{it.quantity} {it.unit_label}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>${it.unit_price:.2f}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:600'>${line_total:.2f}</td>"
+            f"</tr>"
+        )
+        rows_text += f"  - {it.name}: {it.quantity} {it.unit_label} × ${it.unit_price:.2f} = ${line_total:.2f}\n"
+
+    html_body = (
+        f"<div style='font-family:system-ui,Arial,sans-serif; max-width:640px; margin:0 auto; color:#111827'>"
+        f"<h2 style='margin:0 0 4px'>{estimate.title}</h2>"
+        f"<p style='color:#6b7280; margin:0 0 24px'>Estimate {estimate.estimate_number}</p>"
+        f"<p>Hi {customer.first_name or customer.full_name},</p>"
+        f"<p>Please find your estimate from Garage Lions below. Reply to this email or call us with any questions.</p>"
+        f"<table style='width:100%; border-collapse:collapse; margin-top:16px; font-size:14px'>"
+        f"<thead><tr style='background:#f9fafb; text-align:left'>"
+        f"<th style='padding:8px 10px; border-bottom:1px solid #e5e7eb'>Item</th>"
+        f"<th style='padding:8px 10px; border-bottom:1px solid #e5e7eb'>Category</th>"
+        f"<th style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>Qty</th>"
+        f"<th style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>Unit Price</th>"
+        f"<th style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>Total</th>"
+        f"</tr></thead><tbody>{rows_html}</tbody></table>"
+        f"<table style='width:100%; margin-top:14px; font-size:14px'>"
+        f"<tr><td style='text-align:right; color:#6b7280'>Subtotal</td><td style='text-align:right; width:120px'>${estimate.subtotal:.2f}</td></tr>"
+        f"<tr><td style='text-align:right; color:#6b7280'>Tax ({estimate.tax_rate}%)</td><td style='text-align:right'>${estimate.tax:.2f}</td></tr>"
+        f"<tr><td style='text-align:right; font-weight:700; font-size:16px'>Total</td><td style='text-align:right; font-weight:700; font-size:16px'>${estimate.total:.2f}</td></tr>"
+        f"</table>"
+        f"<p style='margin-top:24px; color:#6b7280; font-size:13px'>Thank you,<br>The Garage Lions Team<br>www.garagelions.com</p>"
+        f"</div>"
+    )
+    text_body = (
+        f"{estimate.title}\nEstimate {estimate.estimate_number}\n\n"
+        f"Hi {customer.first_name or customer.full_name},\n\n"
+        f"Please find your estimate from Garage Lions below. Reply or call with any questions.\n\n"
+        f"Items:\n{rows_text}\n"
+        f"Subtotal: ${estimate.subtotal:.2f}\n"
+        f"Tax ({estimate.tax_rate}%): ${estimate.tax:.2f}\n"
+        f"Total: ${estimate.total:.2f}\n\n"
+        f"Thank you,\nThe Garage Lions Team\nwww.garagelions.com\n"
+    )
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=subject, body=text_body,
+            from_email=from_email, to=[customer.email], reply_to=[from_email],
+        )
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": f"Email failed: {exc}"}, status=500)
+
+    estimate.status = "sent"
+    estimate.sent_at = timezone.now()
+    estimate.save(update_fields=["status", "sent_at", "updated_at"])
+
+    return JsonResponse({
+        "ok": True,
+        "sent_to": customer.email,
+        "sent_at": estimate.sent_at.isoformat(),
+        "status_label": estimate.get_status_display(),
+    })
+
+
+@require_POST
+@login_required
 def ajax_estimate_update_header(request, pk):
     """AJAX: update estimate title/description/tax_rate."""
     estimate = get_object_or_404(Estimate, pk=pk)
@@ -374,12 +471,15 @@ def ajax_estimate_search_parts(request, pk):
     """AJAX: search parts library for the add bar."""
     sp = _default_sp(request.user)
     q = (request.GET.get("q") or "").strip()
-    if not q:
-        return JsonResponse({"ok": True, "results": []})
+    browse = request.GET.get("browse") == "1"
 
-    qs = _visible_parts(sp).filter(
-        Q(name__icontains=q) | Q(sku__icontains=q)
-    )[:10]
+    qs = _visible_parts(sp)
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(sku__icontains=q))[:10]
+    elif browse:
+        qs = qs.order_by("category__name", "name")[:300]
+    else:
+        return JsonResponse({"ok": True, "results": []})
 
     # Get location price overrides
     price_map = {}
@@ -484,6 +584,105 @@ def ajax_estimate_add_item(request, pk):
         "tax": str(estimate.tax),
         "total": str(estimate.total),
     })
+
+
+# ── Estimate templates ──────────────────────────────────────────────
+@login_required
+def ajax_estimate_templates_list(request, pk):
+    """AJAX: list templates available to the current user."""
+    sp = _default_sp(request.user)
+    qs = EstimateTemplate.objects.all()
+    # Show global templates + templates from user's own sales point.
+    if sp:
+        qs = qs.filter(Q(sales_point__isnull=True) | Q(sales_point=sp))
+    elif not (request.user.is_staff or request.user.is_superuser):
+        qs = qs.filter(sales_point__isnull=True)
+
+    results = []
+    for t in qs.prefetch_related("items"):
+        results.append({
+            "id": t.id,
+            "name": t.name,
+            "description": t.description,
+            "is_global": t.sales_point_id is None,
+            "item_count": t.items.count(),
+            "total": str(sum(i.quantity * i.unit_price for i in t.items.all())),
+        })
+    return JsonResponse({"ok": True, "results": results})
+
+
+@require_POST
+@login_required
+def ajax_estimate_template_save(request, pk):
+    """AJAX: save the current estimate's items as a new template."""
+    estimate = get_object_or_404(Estimate, pk=pk)
+    name = (request.POST.get("name") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    scope = (request.POST.get("scope") or "location").strip()
+
+    if not name:
+        return JsonResponse({"ok": False, "error": "Template name is required."}, status=400)
+    if not estimate.items.exists():
+        return JsonResponse({"ok": False, "error": "Add at least one item before saving as a template."}, status=400)
+
+    sp = _default_sp(request.user)
+    use_sp = sp
+    if scope == "global" and (request.user.is_staff or request.user.is_superuser):
+        use_sp = None
+
+    template = EstimateTemplate.objects.create(
+        name=name, description=description,
+        sales_point=use_sp, created_by=request.user,
+    )
+    for item in estimate.items.all().order_by("order"):
+        EstimateTemplateItem.objects.create(
+            template=template, part=item.part, name=item.name,
+            description=item.description, category_label=item.category_label,
+            unit_label=item.unit_label, quantity=item.quantity,
+            unit_price=item.unit_price, order=item.order,
+        )
+    return JsonResponse({"ok": True, "id": template.id, "name": template.name})
+
+
+@require_POST
+@login_required
+def ajax_estimate_template_apply(request, pk, template_pk):
+    """AJAX: append every item from the given template to this estimate."""
+    estimate = get_object_or_404(Estimate, pk=pk)
+    template = get_object_or_404(EstimateTemplate, pk=template_pk)
+
+    base_order = estimate.items.count()
+    added = []
+    for i, ti in enumerate(template.items.all().order_by("order")):
+        item = EstimateItem.objects.create(
+            estimate=estimate, part=ti.part, name=ti.name,
+            description=ti.description, category_label=ti.category_label,
+            unit_label=ti.unit_label, quantity=ti.quantity,
+            unit_price=ti.unit_price, order=base_order + i,
+        )
+        added.append({
+            "id": item.id, "name": item.name, "unit_label": item.unit_label,
+            "quantity": str(item.quantity), "category_label": item.category_label,
+            "unit_price": str(item.unit_price), "line_total": str(item.line_total),
+        })
+    estimate.recalc_totals()
+
+    return JsonResponse({
+        "ok": True, "items": added,
+        "subtotal": str(estimate.subtotal),
+        "tax": str(estimate.tax),
+        "total": str(estimate.total),
+    })
+
+
+@require_POST
+@login_required
+def ajax_estimate_template_delete(request, pk, template_pk):
+    template = get_object_or_404(EstimateTemplate, pk=template_pk)
+    if template.sales_point_id is None and not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"ok": False, "error": "Only admins can delete global templates."}, status=403)
+    template.delete()
+    return JsonResponse({"ok": True})
 
 
 @require_POST
@@ -669,7 +868,7 @@ def _active_categories(sales_point):
     if sales_point is None:
         return PartCategory.objects.filter(
             sales_point__isnull=True, is_active=True
-        ).order_by("name")
+        ).order_by("order", "name")
 
     enabled_global_ids = SalesPointPartCategory.objects.filter(
         sales_point=sales_point
@@ -679,7 +878,7 @@ def _active_categories(sales_point):
         is_active=True
     ).filter(
         Q(id__in=enabled_global_ids) | Q(sales_point=sales_point)
-    ).order_by("name")
+    ).order_by("order", "name")
 
 
 def _parts_table_context(sp, parts_qs):
@@ -739,7 +938,7 @@ def part_list(request):
         ).values_list("category_id", flat=True)
         suggested_global = PartCategory.objects.filter(
             sales_point__isnull=True, is_active=True
-        ).exclude(id__in=enabled_ids).order_by("name")
+        ).exclude(id__in=enabled_ids).order_by("order", "name")
     else:
         suggested_global = PartCategory.objects.none()
 
@@ -935,7 +1134,7 @@ def _category_response(sp):
         suggested = list(
             PartCategory.objects.filter(
                 sales_point__isnull=True, is_active=True
-            ).exclude(id__in=enabled_ids).order_by("name").values("id", "name")
+            ).exclude(id__in=enabled_ids).order_by("order", "name").values("id", "name")
         )
     else:
         suggested = []
@@ -995,7 +1194,13 @@ def ajax_unit_add_global(request):
 @require_POST
 @login_required
 def ajax_unit_remove(request):
-    """Remove a unit from this location's selection."""
+    """Remove a unit from this location's selection.
+
+    Mirrors ajax_category_remove: removing a global unit only unlinks it from
+    this location (so it remains available in the Suggested list); removing a
+    local unit deactivates that local row. Global units are never deactivated
+    here — that would hide them globally for every location.
+    """
     sp = _default_sp(request.user)
     unit_id = request.POST.get("unit_id")
 
@@ -1005,15 +1210,8 @@ def ajax_unit_remove(request):
         return _unit_response(request.user, sp)
 
     if unit.is_global and sp:
-        # Un-enable the global unit for this location
         SalesPointUnit.objects.filter(sales_point=sp, unit=unit).delete()
-    elif unit.is_global and not sp:
-        # Admin deleting a global unit
-        if request.user.is_staff or request.user.is_superuser:
-            unit.is_active = False
-            unit.save(update_fields=["is_active"])
-    elif not unit.is_global and (unit.sales_point == sp or request.user.is_staff or request.user.is_superuser):
-        # Delete local unit
+    elif not unit.is_global and unit.sales_point == sp:
         unit.is_active = False
         unit.save(update_fields=["is_active"])
 
@@ -1066,6 +1264,239 @@ def part_edit(request, pk):
         "part": part,
         "categories": categories,
         "units": units,
+    })
+
+
+@login_required
+def ajax_parts_search_json(request):
+    """JSON parts search used by the template editor dropdown."""
+    sp = _default_sp(request.user)
+    q = (request.GET.get("q") or "").strip()
+    qs = _visible_parts(sp)
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(sku__icontains=q))[:10]
+    else:
+        qs = qs.order_by("name")[:50]
+
+    price_map, unit_map = {}, {}
+    if sp:
+        for spp in SalesPointPart.objects.filter(sales_point=sp).select_related("custom_unit"):
+            if spp.custom_price is not None:
+                price_map[spp.part_id] = spp.custom_price
+            if spp.custom_unit:
+                unit_map[spp.part_id] = spp.custom_unit
+
+    results = []
+    for p in qs:
+        if p.sales_point is None and sp:
+            price = price_map.get(p.pk, Decimal("0.00"))
+            unit_obj = unit_map.get(p.pk, p.unit)
+        else:
+            price = p.unit_price
+            unit_obj = p.unit
+        results.append({
+            "id": p.id, "name": p.name, "sku": p.sku or "",
+            "unit_price": str(price),
+            "unit": unit_obj.abbreviation if unit_obj else "",
+            "category": p.category.name if p.category else "",
+        })
+    return JsonResponse({"ok": True, "parts": results})
+
+
+# ── Estimate templates (managed on Parts page) ──────────────────────
+def _user_visible_templates(user):
+    sp = _default_sp(user)
+    qs = EstimateTemplate.objects.all()
+    if sp:
+        qs = qs.filter(Q(sales_point__isnull=True) | Q(sales_point=sp))
+    elif not (user.is_staff or user.is_superuser):
+        qs = qs.filter(sales_point__isnull=True)
+    return qs
+
+
+@login_required
+def ajax_templates_list(request):
+    """AJAX: list templates for the Parts → Templates tab."""
+    qs = _user_visible_templates(request.user).prefetch_related("items")
+    is_admin = request.user.is_staff or request.user.is_superuser
+    results = []
+    for t in qs:
+        results.append({
+            "id": t.id,
+            "name": t.name,
+            "description": t.description,
+            "is_global": t.sales_point_id is None,
+            "item_count": t.items.count(),
+            "total": str(sum(i.quantity * i.unit_price for i in t.items.all())),
+            "can_delete": bool(is_admin or t.sales_point_id is not None),
+            "edit_url": reverse("panel:template_edit", args=[t.id]),
+        })
+    return JsonResponse({"ok": True, "results": results})
+
+
+@require_POST
+@login_required
+def ajax_template_create(request):
+    """AJAX: create an empty template, return URL to edit page."""
+    name = (request.POST.get("name") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    scope = (request.POST.get("scope") or "location").strip()
+
+    if not name:
+        return JsonResponse({"ok": False, "error": "Template name is required."}, status=400)
+
+    sp = _default_sp(request.user)
+    use_sp = sp
+    if scope == "global" and (request.user.is_staff or request.user.is_superuser):
+        use_sp = None
+
+    template = EstimateTemplate.objects.create(
+        name=name, description=description,
+        sales_point=use_sp, created_by=request.user,
+    )
+    return JsonResponse({
+        "ok": True,
+        "id": template.id,
+        "edit_url": reverse("panel:template_edit", args=[template.id]),
+    })
+
+
+@require_POST
+@login_required
+def ajax_template_delete(request, pk):
+    template = get_object_or_404(EstimateTemplate, pk=pk)
+    if template.sales_point_id is None and not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"ok": False, "error": "Only admins can delete global templates."}, status=403)
+    template.delete()
+    return JsonResponse({"ok": True})
+
+
+def _can_edit_template(user, template):
+    if template.sales_point_id is None:
+        return user.is_staff or user.is_superuser
+    sp = _default_sp(user)
+    return user.is_staff or user.is_superuser or (sp and template.sales_point_id == sp.id)
+
+
+@login_required
+def template_edit(request, pk):
+    template = get_object_or_404(EstimateTemplate, pk=pk)
+    if not _can_edit_template(request.user, template):
+        return redirect("panel:part_list")
+
+    if request.method == "POST":
+        template.name = (request.POST.get("name") or template.name).strip() or template.name
+        template.description = (request.POST.get("description") or "").strip()
+        template.save(update_fields=["name", "description", "updated_at"])
+        return redirect("panel:part_list")
+
+    items = template.items.all().order_by("order")
+    total = sum(i.quantity * i.unit_price for i in items)
+    return render(request, "panel/parts/template_edit.html", {
+        "template": template,
+        "items": items,
+        "total": total,
+    })
+
+
+@require_POST
+@login_required
+def ajax_template_add_item(request, pk):
+    template = get_object_or_404(EstimateTemplate, pk=pk)
+    if not _can_edit_template(request.user, template):
+        return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
+
+    part_id = request.POST.get("part_id")
+    name = (request.POST.get("name") or "").strip()
+    try:
+        qty = Decimal(request.POST.get("quantity") or "1")
+    except DecimalInvalid:
+        qty = Decimal("1")
+    try:
+        price = Decimal(request.POST.get("unit_price") or "0")
+    except DecimalInvalid:
+        price = Decimal("0")
+    unit_label = (request.POST.get("unit_label") or "").strip()
+    category_label = (request.POST.get("category_label") or "").strip()
+
+    sp = _default_sp(request.user)
+    part = None
+    if part_id:
+        part = Part.objects.filter(pk=part_id).first()
+        if part:
+            name = name or part.name
+            if part.sales_point is None and sp:
+                spp = SalesPointPart.objects.filter(sales_point=sp, part=part).select_related("custom_unit").first()
+                if spp:
+                    price = price or (spp.custom_price if spp.custom_price is not None else Decimal("0"))
+                    unit_label = unit_label or (spp.custom_unit.abbreviation if spp.custom_unit else (part.unit.abbreviation if part.unit else ""))
+                else:
+                    unit_label = unit_label or (part.unit.abbreviation if part.unit else "")
+            else:
+                price = price or part.unit_price
+                unit_label = unit_label or (part.unit.abbreviation if part.unit else "")
+            category_label = category_label or (part.category.name if part.category else "")
+
+    if not name:
+        return JsonResponse({"ok": False, "error": "Item name is required."}, status=400)
+
+    order = template.items.count()
+    item = EstimateTemplateItem.objects.create(
+        template=template, part=part, name=name,
+        quantity=qty, unit_price=price,
+        unit_label=unit_label, category_label=category_label,
+        order=order,
+    )
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.id, "name": item.name,
+            "quantity": str(item.quantity), "unit_price": str(item.unit_price),
+            "unit_label": item.unit_label, "category_label": item.category_label,
+            "line_total": str(item.quantity * item.unit_price),
+        },
+        "total": str(sum(i.quantity * i.unit_price for i in template.items.all())),
+    })
+
+
+@require_POST
+@login_required
+def ajax_template_update_item(request, pk, item_pk):
+    template = get_object_or_404(EstimateTemplate, pk=pk)
+    if not _can_edit_template(request.user, template):
+        return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
+    item = get_object_or_404(EstimateTemplateItem, pk=item_pk, template=template)
+
+    qty = request.POST.get("quantity")
+    if qty is not None:
+        try: item.quantity = Decimal(qty)
+        except DecimalInvalid: pass
+    price = request.POST.get("unit_price")
+    if price is not None:
+        try: item.unit_price = Decimal(price)
+        except DecimalInvalid: pass
+    item.save()
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.id, "name": item.name,
+            "quantity": str(item.quantity), "unit_price": str(item.unit_price),
+            "line_total": str(item.quantity * item.unit_price),
+        },
+        "total": str(sum(i.quantity * i.unit_price for i in template.items.all())),
+    })
+
+
+@require_POST
+@login_required
+def ajax_template_delete_item(request, pk, item_pk):
+    template = get_object_or_404(EstimateTemplate, pk=pk)
+    if not _can_edit_template(request.user, template):
+        return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
+    EstimateTemplateItem.objects.filter(pk=item_pk, template=template).delete()
+    return JsonResponse({
+        "ok": True,
+        "total": str(sum(i.quantity * i.unit_price for i in template.items.all())),
     })
 
 
@@ -1417,6 +1848,7 @@ def lead_detail(request, pk):
 
     activities = lead.activities.select_related("user", "user__profile").order_by("-created_at")[:20]
     todos = lead.todos.all()
+    estimates = lead.panel_estimates.all().order_by("-created_at")
 
     return render(request, "panel/leads/detail.html", {
         "lead": lead,
@@ -1425,6 +1857,7 @@ def lead_detail(request, pk):
         "activities": activities,
         "todos": todos,
         "pending_followup": pending_followup,
+        "estimates": estimates,
     })
 
 
@@ -1810,6 +2243,21 @@ def lead_create(request):
     return render(request, "panel/leads/form.html", {"form": form})
 
 
+@login_required
+def lead_edit(request, pk):
+    lead = get_object_or_404(_lead_queryset(request.user), pk=pk)
+
+    if request.method == "POST":
+        form = ManualLeadForm(request.POST, instance=lead, user=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect("panel:lead_detail", pk=lead.pk)
+    else:
+        form = ManualLeadForm(instance=lead, user=request.user)
+
+    return render(request, "panel/leads/form.html", {"form": form, "lead": lead, "is_edit": True})
+
+
 # ── Lead to Customer + Estimate ─────────────────────────────────────
 @login_required
 def lead_to_estimate(request, lead_pk):
@@ -1852,6 +2300,7 @@ def lead_to_estimate(request, lead_pk):
         estimate_number=number,
         title=title,
         customer=customer,
+        lead=lead,
         sales_point=lead.sales_point,
         description=lead.message or "",
         created_by=request.user,
