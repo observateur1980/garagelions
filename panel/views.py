@@ -1296,8 +1296,7 @@ def lead_list(request):
     if status:
         qs = qs.filter(status=status)
     else:
-        # Closed Lost lives on its own archive page — keep the active list focused.
-        qs = qs.exclude(status="closed_lost")
+        qs = qs.exclude(status__in=["closed_lost", "disqualified"])
 
     can_filter_location = (
         request.user.is_staff or request.user.is_superuser
