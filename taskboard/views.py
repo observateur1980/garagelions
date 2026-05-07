@@ -1,14 +1,19 @@
+import csv
+import io
 import json
 from functools import wraps
 
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.db import models, transaction
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST, require_http_methods
 
 from .models import TaskCategory, TaskItem
+
+
+VALID_PRIORITIES = {p[0] for p in TaskItem.PRIORITY_CHOICES}
 
 
 def admin_required(view_func):
@@ -141,3 +146,83 @@ def api_category_detail(request, pk):
     cat = get_object_or_404(TaskCategory, pk=pk)
     cat.delete()
     return JsonResponse({"ok": True})
+
+
+@admin_required
+@require_POST
+def api_import_csv(request):
+    upload = request.FILES.get("file")
+    if not upload:
+        return JsonResponse({"error": "No file uploaded."}, status=400)
+
+    try:
+        raw = upload.read().decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return JsonResponse({"error": "File must be UTF-8 encoded."}, status=400)
+
+    reader = csv.DictReader(io.StringIO(raw))
+    if not reader.fieldnames:
+        return JsonResponse({"error": "CSV is empty."}, status=400)
+
+    normalized = {(name or "").strip().lower(): name for name in reader.fieldnames}
+    if "category" not in normalized or "title" not in normalized:
+        return JsonResponse(
+            {"error": "CSV must have 'category' and 'title' columns (priority optional)."},
+            status=400,
+        )
+
+    cat_col = normalized["category"]
+    title_col = normalized["title"]
+    prio_col = normalized.get("priority")
+
+    created_categories = 0
+    created_tasks = 0
+    skipped = 0
+    errors = []
+
+    category_cache = {c.name.strip().lower(): c for c in TaskCategory.objects.all()}
+    max_order = TaskCategory.objects.aggregate(m=models.Max("order"))["m"] or 0
+
+    with transaction.atomic():
+        for idx, row in enumerate(reader, start=2):
+            cat_name = (row.get(cat_col) or "").strip()
+            title = (row.get(title_col) or "").strip()
+            priority = (row.get(prio_col) or "New").strip() if prio_col else "New"
+
+            if not cat_name or not title:
+                skipped += 1
+                continue
+
+            if priority not in VALID_PRIORITIES:
+                priority = "New"
+
+            key = cat_name.lower()
+            category = category_cache.get(key)
+            if category is None:
+                base_slug = slugify(cat_name) or "category"
+                slug = base_slug
+                counter = 2
+                while TaskCategory.objects.filter(slug=slug).exists():
+                    slug = f"{base_slug}-{counter}"
+                    counter += 1
+                max_order += 1
+                category = TaskCategory.objects.create(
+                    name=cat_name, slug=slug, order=max_order
+                )
+                category_cache[key] = category
+                created_categories += 1
+
+            TaskItem.objects.create(
+                title=title,
+                category=category,
+                priority=priority,
+                created_by=request.user,
+            )
+            created_tasks += 1
+
+    return JsonResponse({
+        "createdTasks": created_tasks,
+        "createdCategories": created_categories,
+        "skipped": skipped,
+        "errors": errors,
+    })

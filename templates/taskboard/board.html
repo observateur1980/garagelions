@@ -248,10 +248,51 @@
 
     .add-box {
       display: grid;
-      grid-template-columns: 1fr 150px 120px;
+      grid-template-columns: 1fr 150px 130px 120px;
       gap: 10px;
       margin-bottom: 12px;
     }
+
+    .priority-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .pri-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 8px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      transition: 0.18s ease;
+    }
+
+    .pri-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .pri-btn.active {
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .pri-btn[data-priority="all"].active { background: var(--charcoal); }
+    .pri-btn[data-priority="Urgent"].active { background: var(--danger); border-color: var(--danger); }
+    .pri-btn[data-priority="High"].active { background: var(--orange); border-color: var(--orange); }
+    .pri-btn[data-priority="Medium"].active { background: #f0a500; border-color: #f0a500; }
+    .pri-btn[data-priority="Low"].active { background: #168447; border-color: #168447; }
+    .pri-btn[data-priority="New"].active { background: #4a5568; border-color: #4a5568; }
+
+    .badge.priority-Urgent { background: var(--danger); }
+    .badge.priority-High { background: var(--orange); }
+    .badge.priority-Medium { background: #f0a500; }
+    .badge.priority-Low { background: #168447; }
+    .badge.priority-New { background: #4a5568; }
 
     .category-box {
       display: grid;
@@ -572,11 +613,28 @@
           <form class="add-box" onsubmit="addTask(event)">
             <input type="text" id="taskInput" placeholder="Add a new task..." />
             <select id="categoryInput"></select>
+            <select id="priorityInput">
+              <option value="New">New</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
             <button class="add" type="submit">+ Add</button>
           </form>
+          <div class="priority-filters" id="priorityFilters">
+            <button type="button" class="pri-btn active" data-priority="all" onclick="filterByPriority('all')">All Priorities</button>
+            <button type="button" class="pri-btn" data-priority="Urgent" onclick="filterByPriority('Urgent')">Urgent</button>
+            <button type="button" class="pri-btn" data-priority="High" onclick="filterByPriority('High')">High</button>
+            <button type="button" class="pri-btn" data-priority="Medium" onclick="filterByPriority('Medium')">Medium</button>
+            <button type="button" class="pri-btn" data-priority="Low" onclick="filterByPriority('Low')">Low</button>
+            <button type="button" class="pri-btn" data-priority="New" onclick="filterByPriority('New')">New</button>
+          </div>
           <div class="tools">
             <p class="task-meta" id="taskCount">0 completed out of 0 tasks.</p>
             <div class="tool-buttons">
+              <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="importCsv(event)" />
+              <button class="secondary-btn" onclick="document.getElementById('csvFileInput').click()" type="button">Import CSV</button>
               <button class="clear-btn" onclick="clearCompleted()" type="button">Clear Completed</button>
             </div>
           </div>
@@ -645,6 +703,7 @@
     let tasks = [];
     let categories = [];
     let currentFilter = "all";
+    let currentPriorityFilter = "all";
 
     function showMainView(view) {
       document.getElementById("tasksView").classList.toggle("active", view === "tasks");
@@ -707,8 +766,10 @@
       event.preventDefault();
       const input = document.getElementById("taskInput");
       const categorySelect = document.getElementById("categoryInput");
+      const prioritySelect = document.getElementById("priorityInput");
       const title = input.value.trim();
       const category = categorySelect.value;
+      const priority = prioritySelect.value || "New";
 
       if (!title) return;
       if (!category) {
@@ -719,15 +780,24 @@
       try {
         const task = await apiFetch("{% url 'taskboard:api_tasks' %}", {
           method: "POST",
-          body: { title, category, priority: "New" },
+          body: { title, category, priority },
         });
         tasks.unshift(task);
         input.value = "";
+        prioritySelect.value = "New";
         renderAll();
         setStatus("Task added.");
       } catch (e) {
         setStatus("Error: " + e.message);
       }
+    }
+
+    function filterByPriority(priority) {
+      currentPriorityFilter = priority;
+      document.querySelectorAll("#priorityFilters .pri-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.priority === priority);
+      });
+      renderAll();
     }
 
     async function toggleDone(id) {
@@ -762,6 +832,36 @@
         setStatus("Completed tasks cleared.");
       } catch (e) {
         setStatus("Error: " + e.message);
+      }
+    }
+
+    /* ── CSV Import ── */
+
+    async function importCsv(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setStatus("Uploading CSV...");
+      try {
+        const resp = await fetch("{% url 'taskboard:api_import_csv' %}", {
+          method: "POST",
+          headers: { "X-CSRFToken": CSRF_TOKEN },
+          body: formData,
+        });
+        if (!resp.ok) {
+          const err = await resp.text();
+          throw new Error(err);
+        }
+        const data = await resp.json();
+        setStatus(`Imported ${data.createdTasks} task(s), ${data.createdCategories} new category(ies). Skipped: ${data.skipped}.`);
+        event.target.value = "";
+        await loadAll();
+      } catch (e) {
+        setStatus("Import failed: " + e.message);
+        event.target.value = "";
       }
     }
 
@@ -912,9 +1012,13 @@
 
     function renderTasks() {
       const taskList = document.getElementById("taskList");
-      const visible = currentFilter === "all"
+      let visible = currentFilter === "all"
         ? tasks
         : tasks.filter(t => t.category === currentFilter);
+
+      if (currentPriorityFilter !== "all") {
+        visible = visible.filter(t => (t.priority || "New") === currentPriorityFilter);
+      }
 
       taskList.innerHTML = "";
 
@@ -928,15 +1032,15 @@
         el.className = task.done ? "task done" : "task";
 
         const catName = task.categoryName || task.category;
-        const shortCat = catName.length > 12 ? catName.slice(0, 12) + "\u2026" : catName;
+        const priority = task.priority || "New";
 
         el.innerHTML = `
           <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleDone(${task.id})" />
           <div>
             <div class="task-title">${escapeHtml(task.title)}</div>
-            <div class="task-meta">Category: ${escapeHtml(catName)} &middot; Priority: ${escapeHtml(task.priority || 'New')}</div>
+            <div class="task-meta">Category: ${escapeHtml(catName)}</div>
           </div>
-          <span class="badge">${escapeHtml(shortCat)}</span>
+          <span class="badge priority-${escapeHtml(priority)}">${escapeHtml(priority)}</span>
           <button class="remove" onclick="removeTask(${task.id})" title="Remove task">&times;</button>
         `;
 

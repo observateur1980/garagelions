@@ -11,4 +11,5 @@ urlpatterns = [
     path("api/tasks/clear-completed/", views.api_clear_completed, name="api_clear_completed"),
     path("api/categories/", views.api_categories, name="api_categories"),
     path("api/categories/<int:pk>/", views.api_category_detail, name="api_category_detail"),
+    path("api/import-csv/", views.api_import_csv, name="api_import_csv"),
 ]
