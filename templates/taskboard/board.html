@@ -434,7 +434,7 @@
 
     .task {
       display: grid;
-      grid-template-columns: 30px 1fr auto auto;
+      grid-template-columns: 30px 1fr 160px 130px auto;
       align-items: center;
       gap: 12px;
       background: var(--soft);
@@ -442,6 +442,73 @@
       padding: 14px;
       border-radius: 18px;
       box-shadow: 0 8px 20px rgba(17,19,24,0.035);
+    }
+
+    .task-title-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      font-weight: 900;
+      font-size: 15px;
+      box-shadow: none;
+    }
+
+    .task-title-input:hover {
+      border-color: var(--border);
+      background: #fff;
+    }
+
+    .task-title-input:focus {
+      border-color: rgba(242,101,34,0.55);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(242,101,34,0.12);
+    }
+
+    .task.done .task-title-input {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-title-input:disabled,
+    .task-edit-select:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .task-title-input:disabled:hover,
+    .task-edit-select:disabled:hover {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .task-edit-select {
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--charcoal);
+      box-shadow: none;
+    }
+
+    .task-edit-select:focus {
+      border-color: rgba(242,101,34,0.55);
+      box-shadow: 0 0 0 4px rgba(242,101,34,0.12);
+    }
+
+    @media (max-width: 700px) {
+      .task {
+        grid-template-columns: 30px 1fr auto;
+      }
+      .task-edit-select {
+        grid-column: 2 / 4;
+      }
     }
 
     .task input[type="checkbox"] {
@@ -811,6 +878,57 @@
       }
     }
 
+    async function updateTask(id, payload) {
+      try {
+        const updated = await apiFetch(`/taskboard/api/tasks/${id}/`, {
+          method: "PATCH",
+          body: payload,
+        });
+        const idx = tasks.findIndex(t => t.id === id);
+        if (idx !== -1) tasks[idx] = { ...tasks[idx], ...updated };
+        renderAll();
+        setStatus("Task updated.");
+      } catch (e) {
+        setStatus("Error: " + e.message);
+        renderAll();
+      }
+    }
+
+    function onTitleChange(input, id) {
+      const newTitle = input.value.trim();
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      if (!newTitle) {
+        input.value = task.title;
+        return;
+      }
+      if (newTitle === task.title) return;
+      updateTask(id, { title: newTitle });
+    }
+
+    function onTitleKeydown(event, id) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        event.target.blur();
+      } else if (event.key === "Escape") {
+        const task = tasks.find(t => t.id === id);
+        if (task) event.target.value = task.title;
+        event.target.blur();
+      }
+    }
+
+    function onCategoryChange(select, id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task || select.value === task.category) return;
+      updateTask(id, { category: select.value });
+    }
+
+    function onPriorityChange(select, id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task || select.value === task.priority) return;
+      updateTask(id, { priority: select.value });
+    }
+
     async function removeTask(id) {
       try {
         await apiFetch(`/taskboard/api/tasks/${id}/`, { method: "DELETE" });
@@ -1027,20 +1145,31 @@
         return;
       }
 
+      const priorityOptions = ["New", "Low", "Medium", "High", "Urgent"];
+
       visible.forEach(task => {
         const el = document.createElement("div");
         el.className = task.done ? "task done" : "task";
 
-        const catName = task.categoryName || task.category;
         const priority = task.priority || "New";
+
+        const categoryOptions = categories.map(cat =>
+          `<option value="${escapeHtml(cat.slug)}" ${cat.slug === task.category ? "selected" : ""}>${escapeHtml(cat.name)}</option>`
+        ).join("");
+
+        const prioOptions = priorityOptions.map(p =>
+          `<option value="${p}" ${p === priority ? "selected" : ""}>${p}</option>`
+        ).join("");
+
+        const disabled = task.done ? "disabled" : "";
 
         el.innerHTML = `
           <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleDone(${task.id})" />
-          <div>
-            <div class="task-title">${escapeHtml(task.title)}</div>
-            <div class="task-meta">Category: ${escapeHtml(catName)}</div>
-          </div>
-          <span class="badge priority-${escapeHtml(priority)}">${escapeHtml(priority)}</span>
+          <input type="text" class="task-title-input" value="${escapeHtml(task.title)}" ${disabled}
+                 onblur="onTitleChange(this, ${task.id})"
+                 onkeydown="onTitleKeydown(event, ${task.id})" />
+          <select class="task-edit-select" ${disabled} onchange="onCategoryChange(this, ${task.id})">${categoryOptions}</select>
+          <select class="task-edit-select" ${disabled} onchange="onPriorityChange(this, ${task.id})">${prioOptions}</select>
           <button class="remove" onclick="removeTask(${task.id})" title="Remove task">&times;</button>
         `;
 

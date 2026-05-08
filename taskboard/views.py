@@ -84,11 +84,50 @@ def api_tasks(request):
 
 
 @admin_required
-@require_http_methods(["DELETE"])
+@require_http_methods(["DELETE", "PATCH"])
 def api_task_detail(request, pk):
     task = get_object_or_404(TaskItem, pk=pk)
-    task.delete()
-    return JsonResponse({"ok": True})
+
+    if request.method == "DELETE":
+        task.delete()
+        return JsonResponse({"ok": True})
+
+    data = json.loads(request.body or "{}")
+    update_fields = []
+
+    if "title" in data:
+        title = (data.get("title") or "").strip()
+        if not title:
+            return JsonResponse({"error": "Title cannot be empty."}, status=400)
+        task.title = title
+        update_fields.append("title")
+
+    if "category" in data:
+        category = get_object_or_404(TaskCategory, slug=data["category"])
+        task.category = category
+        update_fields.append("category")
+
+    if "priority" in data:
+        priority = data["priority"]
+        if priority not in VALID_PRIORITIES:
+            return JsonResponse({"error": "Invalid priority."}, status=400)
+        task.priority = priority
+        update_fields.append("priority")
+
+    if update_fields:
+        update_fields.append("updated_at")
+        task.save(update_fields=update_fields)
+
+    return JsonResponse({
+        "id": task.id,
+        "title": task.title,
+        "category": task.category.slug,
+        "categoryName": task.category.name,
+        "priority": task.priority,
+        "done": task.done,
+        "createdAt": task.created_at.isoformat(),
+        "updatedAt": task.updated_at.isoformat(),
+    })
 
 
 @admin_required

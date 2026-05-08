@@ -1,0 +1,264 @@
+category,title,priority
+Legal & Trademark,Reserve LLC / Corporation name with state Secretary of State,Urgent
+Legal & Trademark,File Articles of Organization (LLC) or Incorporation,Urgent
+Legal & Trademark,Apply for EIN (Employer Identification Number) with IRS,Urgent
+Legal & Trademark,Draft and sign Operating Agreement / Bylaws,High
+Legal & Trademark,Conduct USPTO trademark search for "Garage Lions" name and logo,High
+Legal & Trademark,Conduct state-level trademark search,High
+Legal & Trademark,File USPTO trademark application for word mark "Garage Lions",High
+Legal & Trademark,File USPTO trademark application for logo / design mark,High
+Legal & Trademark,Register trademark in applicable Nice classifications (37 - Construction),High
+Legal & Trademark,Monitor USPTO office actions and respond within 6 months,Medium
+Legal & Trademark,Register DBA / Fictitious Business Name if needed,Medium
+Legal & Trademark,Apply for state contractor's license,Urgent
+Legal & Trademark,Apply for city / county business license,Urgent
+Legal & Trademark,Register for state sales tax permit,High
+Legal & Trademark,Draft standard customer service contract template,High
+Legal & Trademark,Draft warranty terms document,High
+Legal & Trademark,Draft privacy policy for website,High
+Legal & Trademark,Draft terms of service for website,High
+Legal & Trademark,Draft SMS / messaging consent terms (TCPA compliant),High
+Legal & Trademark,Draft refund and cancellation policy,Medium
+Legal & Trademark,Hire business attorney on retainer,Medium
+Legal & Trademark,Register copyright for website content and photography,Low
+Legal & Trademark,Set up domain ownership protection / privacy,Medium
+Legal & Trademark,File trademark renewal reminder (5-10 year cycle),Low
+Business Setup,Open business bank account (checking),Urgent
+Business Setup,Open business savings account,High
+Business Setup,Apply for business credit card,High
+Business Setup,Set up payment processing (Stripe / Square),Urgent
+Business Setup,Set up ACH / bank transfer for large jobs,High
+Business Setup,Set up financing partner (Affirm / GreenSky / Synchrony),High
+Business Setup,Choose accounting software (QuickBooks Online / Xero),Urgent
+Business Setup,Hire bookkeeper or accountant,High
+Business Setup,Set up chart of accounts for garage services,High
+Business Setup,Define fiscal year and tax filing schedule,Medium
+Business Setup,Register for workers' compensation insurance,Urgent
+Business Setup,Get general liability insurance ($1M+ minimum),Urgent
+Business Setup,Get commercial auto insurance for company vehicles,Urgent
+Business Setup,Get tools and equipment insurance,High
+Business Setup,Get professional liability / E&O insurance,High
+Business Setup,Get cyber liability insurance,Medium
+Business Setup,Set up business mailing address / PO Box,High
+Business Setup,Get business phone line (separate from personal),Urgent
+Business Setup,Set up Google Workspace for company emails,Urgent
+Business Setup,Set up internal file storage (Google Drive / Dropbox Business),High
+Business Setup,Set up password manager for team (1Password / Bitwarden),Medium
+Branding,Finalize official brand color palette (Garage Lions orange / charcoal),Urgent
+Branding,Finalize primary and secondary logo files (SVG / PNG / EPS),Urgent
+Branding,Create brand guidelines document (PDF),High
+Branding,Design business cards,High
+Branding,Design letterhead and invoice templates,High
+Branding,Design vehicle wraps for service trucks / vans,High
+Branding,Order branded uniforms / t-shirts / polos for crew,High
+Branding,Order branded hard hats and safety gear,Medium
+Branding,Order branded yard signs for completed jobs,High
+Branding,Order branded door hangers for neighborhood marketing,Medium
+Branding,Design email signature template for staff,Medium
+Branding,Create branded social media profile and cover images,High
+Branding,Design branded thank-you cards for closed customers,Medium
+Branding,Design branded gift items / swag for VIP customers,Low
+Branding,Order custom embroidered company patches,Low
+Branding,Photograph branded uniform and vehicles for marketing use,Medium
+Website & Tech,Secure all relevant domains (.com .net .co garagelions variants),Urgent
+Website & Tech,Set up SSL certificate for production domain,Urgent
+Website & Tech,Configure DNS (Cloudflare / Route 53),High
+Website & Tech,Set up production server / hosting,Urgent
+Website & Tech,Set up automated nightly database backups,Urgent
+Website & Tech,Set up off-site backup storage (S3 / Backblaze),High
+Website & Tech,Set up staging environment for safe testing,High
+Website & Tech,Set up uptime monitoring (UptimeRobot / Pingdom),High
+Website & Tech,Set up error tracking (Sentry),High
+Website & Tech,Set up Google Analytics 4,Urgent
+Website & Tech,Set up Google Tag Manager,High
+Website & Tech,Set up Meta Pixel for Facebook/Instagram tracking,High
+Website & Tech,Submit sitemap to Google Search Console,High
+Website & Tech,Submit sitemap to Bing Webmaster Tools,Medium
+Website & Tech,SEO audit and on-page optimization for service pages,High
+Website & Tech,Build out service area landing pages (city by city),High
+Website & Tech,Add customer testimonials section to website,High
+Website & Tech,Add before/after photo gallery on website,High
+Website & Tech,Implement cookie consent banner (GDPR / CCPA),Medium
+Website & Tech,Implement schema.org LocalBusiness markup,High
+Website & Tech,Set up CRM (HubSpot / Pipedrive / built-in panel),Urgent
+Website & Tech,Configure lead routing rules,High
+Website & Tech,Configure SMS notifications via Twilio,High
+Website & Tech,Configure transactional email via SendGrid / Postmark,High
+Website & Tech,Set up PWA web push notifications for new leads,High
+Website & Tech,Set up automated lead follow-up sequences,High
+Website & Tech,Build customer-facing booking / quote calendar,High
+Website & Tech,Set up estimate template library on /panel/parts/,High
+Website & Tech,Add online deposit payment link for customers,High
+Website & Tech,Set up customer portal for project status tracking,Medium
+Website & Tech,Mobile UX audit and fixes,High
+Website & Tech,Page speed optimization (Core Web Vitals),High
+Website & Tech,Set up A/B testing framework,Low
+Marketing & Social Media,Claim Google Business Profile,Urgent
+Marketing & Social Media,Verify Google Business Profile via postcard,Urgent
+Marketing & Social Media,Add services photos and hours to GBP,High
+Marketing & Social Media,Set up weekly Google Business Profile posts,High
+Marketing & Social Media,Claim Bing Places listing,Medium
+Marketing & Social Media,Claim Yelp Business listing,High
+Marketing & Social Media,Claim Apple Business Connect listing,Medium
+Marketing & Social Media,Claim Nextdoor Business profile,High
+Marketing & Social Media,Set up Facebook Business Page,Urgent
+Marketing & Social Media,Set up Instagram Business account,Urgent
+Marketing & Social Media,Set up TikTok Business account,High
+Marketing & Social Media,Set up YouTube channel for project walkthroughs,High
+Marketing & Social Media,Set up LinkedIn Company Page,Medium
+Marketing & Social Media,Set up Pinterest Business account (huge for home-improvement),High
+Marketing & Social Media,Set up Houzz profile and project portfolio,High
+Marketing & Social Media,Set up Angi (Angie's List) profile,High
+Marketing & Social Media,Set up Thumbtack contractor profile,High
+Marketing & Social Media,Set up HomeAdvisor profile,Medium
+Marketing & Social Media,Set up BBB (Better Business Bureau) accreditation,High
+Marketing & Social Media,Create monthly content calendar,High
+Marketing & Social Media,Schedule weekly Instagram posts (transformations / reels),High
+Marketing & Social Media,Schedule weekly TikTok before/after videos,High
+Marketing & Social Media,Set up scheduling tool (Buffer / Later / Metricool),Medium
+Marketing & Social Media,Launch Google Ads campaign for high-intent keywords,High
+Marketing & Social Media,Launch Facebook / Instagram lead ads,High
+Marketing & Social Media,Launch retargeting ads for website visitors,Medium
+Marketing & Social Media,Launch local YouTube pre-roll ads,Low
+Marketing & Social Media,Set up referral program for past customers,High
+Marketing & Social Media,Launch email newsletter (monthly tips and offers),Medium
+Marketing & Social Media,Launch SMS marketing for promotions (TCPA-compliant),Medium
+Marketing & Social Media,Sponsor local home shows / community events,Medium
+Marketing & Social Media,Partner with local realtors for referrals,High
+Marketing & Social Media,Partner with home builders / remodelers,High
+Marketing & Social Media,Partner with interior designers,Medium
+Marketing & Social Media,Partner with property management firms,Medium
+Marketing & Social Media,Run a giveaway campaign (free garage makeover),Low
+Sales & Lead Gen,Define lead qualification criteria (BANT or similar),Urgent
+Sales & Lead Gen,Build sales scripts for inbound calls,High
+Sales & Lead Gen,Build sales scripts for outbound follow-up,High
+Sales & Lead Gen,Train sales team on objection handling,High
+Sales & Lead Gen,Define commission and bonus structure for sales reps,High
+Sales & Lead Gen,Set up call recording and review process,Medium
+Sales & Lead Gen,Set up sales pipeline stages in CRM,Urgent
+Sales & Lead Gen,Define KPIs (close rate / cost per lead / LTV),High
+Sales & Lead Gen,Set up weekly sales review meetings,Medium
+Sales & Lead Gen,Build standard pricing book / rate card,Urgent
+Sales & Lead Gen,Build estimate template for flooring jobs,Urgent
+Sales & Lead Gen,Build estimate template for makeover jobs,Urgent
+Sales & Lead Gen,Build estimate template for conversion projects,High
+Sales & Lead Gen,Build storage and cabinet upsell catalog,High
+Sales & Lead Gen,Set up DocuSign / e-signature for contracts,High
+Sales & Lead Gen,Define deposit / payment milestones policy,High
+Sales & Lead Gen,Set up automated quote-follow-up emails,Medium
+Sales & Lead Gen,Set up cold lead reactivation campaign,Medium
+Operations,Define standard operating procedure (SOP) for each service line,Urgent
+Operations,Build job checklist for epoxy/polyurea install,Urgent
+Operations,Build job checklist for cabinet/storage install,High
+Operations,Build job checklist for full conversion projects,High
+Operations,Build pre-job site inspection form,High
+Operations,Build customer walkthrough / sign-off form,High
+Operations,Set up project management tool (Jobber / ServiceTitan / Asana),Urgent
+Operations,Set up scheduling and dispatching workflow,Urgent
+Operations,Set up GPS tracking for service vehicles,Medium
+Operations,Set up time tracking for crews (T-sheets / Clockify),High
+Operations,Build vendor / supplier list with pricing,Urgent
+Operations,Negotiate volume pricing with epoxy / polyurea suppliers,High
+Operations,Negotiate volume pricing with cabinet manufacturers,High
+Operations,Set up inventory management for tools / consumables,High
+Operations,Build PPE / safety equipment checklist,Urgent
+Operations,Document OSHA-compliant safety procedures,Urgent
+Operations,Schedule monthly safety training for crew,High
+Operations,Set up incident reporting and investigation process,High
+Operations,Build quality assurance inspection checklist,High
+Operations,Build punch-list / warranty callback process,High
+Operations,Set up equipment maintenance schedule,Medium
+Operations,Set up uniform / PPE inventory replenishment process,Medium
+Operations,Build customer site protection protocol (floor coverings/dust),High
+Hiring & Team,Write job descriptions for installer / lead installer / sales / admin,Urgent
+Hiring & Team,Define hiring pipeline (Indeed / ZipRecruiter / Craigslist),Urgent
+Hiring & Team,Build interview scorecard / structured interview process,High
+Hiring & Team,Set up background check vendor (Checkr),High
+Hiring & Team,Set up drug screening vendor,Medium
+Hiring & Team,Build new-hire onboarding checklist,Urgent
+Hiring & Team,Build employee handbook (policies / conduct / leave),Urgent
+Hiring & Team,Set up payroll provider (Gusto / ADP / Paychex),Urgent
+Hiring & Team,Set up direct deposit and pay schedule,High
+Hiring & Team,Define PTO / sick leave / holiday policy,High
+Hiring & Team,Define health benefits package (if eligible),Medium
+Hiring & Team,Define 401(k) / retirement plan,Low
+Hiring & Team,Build performance review template (90-day / annual),Medium
+Hiring & Team,Define training certifications (epoxy / polyurea / safety),High
+Hiring & Team,Set up referral bonus program for employees,Medium
+Hiring & Team,Establish team weekly huddle / monthly all-hands,Medium
+Finance & Accounting,Set up monthly financial close process,Urgent
+Finance & Accounting,Build monthly P&L review meeting,High
+Finance & Accounting,Build cash flow forecast (12-month rolling),Urgent
+Finance & Accounting,Set up quarterly tax payment reminders,Urgent
+Finance & Accounting,File quarterly federal estimated taxes,Urgent
+Finance & Accounting,File state sales tax returns on schedule,Urgent
+Finance & Accounting,Reconcile bank accounts weekly,High
+Finance & Accounting,Reconcile credit card statements weekly,High
+Finance & Accounting,Set up gross margin tracking by service line,High
+Finance & Accounting,Set up customer aging / collections process,High
+Finance & Accounting,Set up vendor payments schedule (net-30 etc),Medium
+Finance & Accounting,Build pricing model with target gross margin,High
+Finance & Accounting,Conduct annual budget planning,Medium
+Finance & Accounting,File annual federal and state tax returns,Urgent
+Finance & Accounting,File 1099s for contractors by Jan 31,Urgent
+Finance & Accounting,Conduct annual financial audit / review,Low
+Customer Service,Define service level agreement (response time / call-back time),Urgent
+Customer Service,Set up support email (support@garagelions.com),Urgent
+Customer Service,Set up help desk software (Intercom / Zendesk / Front),High
+Customer Service,Build FAQ / knowledge base on website,High
+Customer Service,Build customer satisfaction survey (post-job NPS),High
+Customer Service,Set up automated review request after job completion,High
+Customer Service,Build complaint escalation process,High
+Customer Service,Build warranty claim process,High
+Customer Service,Build callback / punch-list resolution SLA,High
+Customer Service,Set up customer birthday / anniversary touchpoints,Low
+Reviews & Reputation,Set up automated Google review request via SMS / email,Urgent
+Reviews & Reputation,Set up automated Yelp review request,High
+Reviews & Reputation,Set up automated BBB review request,Medium
+Reviews & Reputation,Build process for responding to all reviews within 48 hours,Urgent
+Reviews & Reputation,Build process for handling negative reviews,Urgent
+Reviews & Reputation,Set up reputation monitoring tool (Birdeye / Podium),Medium
+Reviews & Reputation,Showcase top reviews on website homepage,High
+Reviews & Reputation,Build case study / portfolio page from best jobs,High
+Reviews & Reputation,Submit award nominations (Best of Houzz / Angi Super Service),Low
+Showroom & Workshop,Lease or purchase warehouse / workshop space,High
+Showroom & Workshop,Build sample showroom with flooring and cabinet samples,High
+Showroom & Workshop,Set up flooring sample display board,High
+Showroom & Workshop,Set up cabinet sample display,High
+Showroom & Workshop,Set up wall slat / organization sample display,Medium
+Showroom & Workshop,Install signage at workshop / showroom,Medium
+Showroom & Workshop,Set up secure tool / inventory storage,High
+Showroom & Workshop,Install security system / cameras at warehouse,High
+Showroom & Workshop,Comply with local fire / occupancy permits,Urgent
+Showroom & Workshop,Set up customer parking and entry experience,Medium
+Vehicles & Equipment,Purchase or lease primary service van/truck,Urgent
+Vehicles & Equipment,Apply vehicle wrap with branding,High
+Vehicles & Equipment,Stock van with epoxy install kit,Urgent
+Vehicles & Equipment,Stock van with cabinet install kit,High
+Vehicles & Equipment,Purchase grinder/shotblaster for floor prep,Urgent
+Vehicles & Equipment,Purchase HEPA vacuums and dust extractors,High
+Vehicles & Equipment,Purchase moisture meters and concrete testers,High
+Vehicles & Equipment,Purchase mixing buckets and squeegees / spike rollers,High
+Vehicles & Equipment,Set up second crew vehicle (after first $X revenue),Medium
+Vehicles & Equipment,Schedule routine vehicle maintenance,Medium
+Growth & Expansion,Define 1-year revenue and job-count goals,Urgent
+Growth & Expansion,Define 3-year regional expansion plan,High
+Growth & Expansion,Identify second service market (city / metro),Medium
+Growth & Expansion,Build franchise / licensing playbook (long-term),Low
+Growth & Expansion,Develop strategic partnerships with national retailers,Low
+Growth & Expansion,Explore commercial / fleet contracts (HOAs / dealerships),Medium
+Growth & Expansion,Add new service line (e.g., driveway coatings / patios),Medium
+Growth & Expansion,Apply for industry awards (CIPC / NACE),Low
+Growth & Expansion,Plan annual customer appreciation event,Low
+Growth & Expansion,Build investor / lender pitch deck for growth capital,Low
+Growth & Expansion,Establish relationships with local chambers of commerce,Medium
+Compliance & Risk,Conduct annual insurance policy review,High
+Compliance & Risk,Renew contractor's license annually,Urgent
+Compliance & Risk,Renew business license annually,Urgent
+Compliance & Risk,Maintain OSHA 300 log if required,High
+Compliance & Risk,Conduct annual data privacy review (CCPA / GDPR),Medium
+Compliance & Risk,Maintain SDS (Safety Data Sheets) for all chemicals,Urgent
+Compliance & Risk,Comply with EPA RRP (Lead-Safe) rule for older homes,High
+Compliance & Risk,Review subcontractor insurance certificates annually,High
+Compliance & Risk,Review and update contracts annually with attorney,Medium
+Compliance & Risk,Conduct annual cybersecurity review,Medium
