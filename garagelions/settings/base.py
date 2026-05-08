@@ -110,6 +110,16 @@ VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
 VAPID_ADMIN_EMAIL = os.environ.get("VAPID_ADMIN_EMAIL", "leads@garagelions.com")
 
+# Google Calendar OAuth (per-user). Credentials come from a Google Cloud
+# OAuth 2.0 "Web application" client. The redirect URI registered there
+# must match GOOGLE_OAUTH_REDIRECT_URI exactly.
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    "http://127.0.0.1:8000/panel/calendar/oauth/callback/",
+)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SITE_URL = "https://garagelions.com"

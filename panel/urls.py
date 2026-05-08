@@ -106,6 +106,12 @@ urlpatterns = [
     # Lead → Customer + Estimate
     path("lead/<int:lead_pk>/to-estimate/", views.lead_to_estimate, name="lead_to_estimate"),
 
+    # Google Calendar sync
+    path("calendar/sync/", views.gcal_sync, name="gcal_sync"),
+    path("calendar/oauth/connect/", views.gcal_connect, name="gcal_connect"),
+    path("calendar/oauth/callback/", views.gcal_callback, name="gcal_callback"),
+    path("calendar/disconnect/", views.gcal_disconnect, name="gcal_disconnect"),
+
     # ── Mobile / PWA (standalone shell at /panel/m/) ──────────────────
     path("m/leads/", views.m_lead_list, name="m_lead_list"),
     path("m/leads/<int:pk>/", views.m_lead_detail, name="m_lead_detail"),

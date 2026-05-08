@@ -20,6 +20,7 @@ from .models import (
     Estimate, EstimateItem, EstimateTemplate, EstimateTemplateItem,
     Invoice, InvoiceItem,
     Transaction, TaskList, Task,
+    GoogleCalendarCredential,
 )
 
 
@@ -2238,6 +2239,11 @@ def lead_create(request):
         initial = {"status": "new", "assigned_user": request.user}
         if pm and pm.sales_point:
             initial["sales_point"] = pm.sales_point
+        # Prefill from querystring (used by Google Calendar sync)
+        for field in ("first_name", "last_name", "email", "phone", "address", "zip_code", "message", "source_page"):
+            val = request.GET.get(field)
+            if val:
+                initial[field] = val
         form = ManualLeadForm(user=request.user, initial=initial)
 
     return render(request, "panel/leads/form.html", {"form": form})
@@ -2311,3 +2317,188 @@ def lead_to_estimate(request, lead_pk):
         lead.save(update_fields=["status"])
 
     return redirect("panel:estimate_detail", pk=estimate.pk)
+
+
+# ── Google Calendar sync ────────────────────────────────────────────
+import re as _re
+from urllib.parse import urlencode as _urlencode
+from django.contrib import messages as _messages
+
+from . import google_calendar as _gcal
+
+
+_PHONE_RE = _re.compile(r"(\+?\d[\d\s().-]{7,}\d)")
+_ZIP_RE = _re.compile(r"\b(\d{5})(?:-\d{4})?\b")
+
+
+def _extract_zip(text):
+    if not text:
+        return ""
+    m = _ZIP_RE.search(text)
+    return m.group(1) if m else ""
+
+
+def _split_event_title(summary):
+    """Take an event summary like "John Smith — Roof estimate" or
+    "Lead: Jane Doe" and return (first_name, last_name)."""
+    if not summary:
+        return "", ""
+    s = summary.strip()
+    for sep in (" — ", " - ", ":", "|"):
+        if sep in s:
+            left, _ = s.split(sep, 1)
+            s = left.strip()
+            break
+    # Strip a leading "Lead" / "Consult" / "Appointment" prefix
+    s = _re.sub(r"^(lead|consult(ation)?|appointment|meeting)\s*[:\-]?\s*",
+                "", s, flags=_re.IGNORECASE).strip()
+    parts = s.split(None, 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    return parts[0] if parts else "", ""
+
+
+def _extract_phone(text):
+    if not text:
+        return ""
+    m = _PHONE_RE.search(text)
+    return m.group(1).strip() if m else ""
+
+
+def _event_attendee_email(event):
+    for a in event.get("attendees") or []:
+        if a.get("self"):
+            continue
+        email = a.get("email")
+        if email:
+            return email
+    return ""
+
+
+@login_required
+def gcal_connect(request):
+    """Kick off Google OAuth — redirect the user to Google's consent page."""
+    if not _gcal.is_configured():
+        _messages.error(
+            request,
+            "Google Calendar is not configured. Set GOOGLE_OAUTH_CLIENT_ID "
+            "and GOOGLE_OAUTH_CLIENT_SECRET in your environment.",
+        )
+        return redirect("panel:gcal_sync")
+
+    flow = _gcal.build_flow()
+    auth_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
+    request.session["gcal_oauth_state"] = state
+    return redirect(auth_url)
+
+
+@login_required
+def gcal_callback(request):
+    """Handle Google's redirect after the user grants consent."""
+    if request.GET.get("error"):
+        _messages.error(request, f"Google Calendar: {request.GET['error']}")
+        return redirect("panel:gcal_sync")
+
+    state = request.session.pop("gcal_oauth_state", None)
+    flow = _gcal.build_flow(state=state)
+    try:
+        flow.fetch_token(
+            authorization_response=request.build_absolute_uri(),
+        )
+    except Exception as e:
+        _messages.error(request, f"Google Calendar: could not complete sign-in ({e}).")
+        return redirect("panel:gcal_sync")
+
+    creds = flow.credentials
+    email = _gcal.fetch_userinfo_email(creds)
+    _gcal.save_credentials(request.user, creds, google_email=email)
+    _messages.success(request, f"Google Calendar connected ({email}).")
+    return redirect("panel:gcal_sync")
+
+
+@login_required
+def gcal_disconnect(request):
+    GoogleCalendarCredential.objects.filter(user=request.user).delete()
+    _messages.success(request, "Google Calendar disconnected.")
+    return redirect("panel:gcal_sync")
+
+
+@login_required
+def gcal_sync(request):
+    """List upcoming Google Calendar events and let the user create a
+    Lead from each one."""
+    connected = GoogleCalendarCredential.objects.filter(user=request.user).exists()
+    events_ctx = []
+    error = ""
+
+    if connected:
+        try:
+            raw_events = _gcal.fetch_upcoming_events(request.user, days_ahead=30)
+        except Exception as e:
+            raw_events = []
+            error = str(e)
+
+        # Which events are already converted into leads?
+        existing_sources = set(
+            LeadModel.objects
+            .filter(source_page__startswith="google_calendar:")
+            .values_list("source_page", flat=True)
+        )
+
+        for ev in raw_events:
+            event_id = ev.get("id", "")
+            summary = ev.get("summary", "(untitled event)")
+            description = ev.get("description", "") or ""
+            location = ev.get("location", "") or ""
+            start = (ev.get("start", {}).get("dateTime")
+                     or ev.get("start", {}).get("date") or "")
+            attendee_email = _event_attendee_email(ev)
+            first, last = _split_event_title(summary)
+            phone = _extract_phone(description) or _extract_phone(location)
+            source_tag = _gcal.event_source_tag(event_id)
+
+            prefill = {
+                "first_name": first,
+                "last_name": last,
+                "email": attendee_email,
+                "phone": phone,
+                "address": location,
+                "zip_code": _extract_zip(location) or _extract_zip(description),
+                "message": (description[:1000] if description else summary),
+                "source_page": source_tag,
+            }
+            create_url = (
+                reverse("panel:lead_create")
+                + "?" + _urlencode({k: v for k, v in prefill.items() if v})
+            )
+
+            events_ctx.append({
+                "id": event_id,
+                "summary": summary,
+                "description": description,
+                "location": location,
+                "start": start,
+                "html_link": ev.get("htmlLink", ""),
+                "attendee_email": attendee_email,
+                "first_name": first,
+                "last_name": last,
+                "phone": phone,
+                "already_imported": source_tag in existing_sources,
+                "create_url": create_url,
+            })
+
+    google_email = ""
+    if connected:
+        google_email = request.user.gcal_credential.google_email
+
+    return render(request, "panel/leads/calendar_sync.html", {
+        "connected": connected,
+        "configured": _gcal.is_configured(),
+        "google_email": google_email,
+        "events": events_ctx,
+        "error": error,
+    })

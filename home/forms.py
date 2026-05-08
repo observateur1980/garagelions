@@ -223,6 +223,7 @@ class ManualLeadForm(forms.ModelForm):
         self.fields['source_page'].required = False
         self.fields['message'].required = False
         self.fields['consultation_types'].required = False
+        self.fields['phone'].required = False
 
         # Add blank option to dropdowns
         self.fields['sales_point'].empty_label = '— Select location —'
