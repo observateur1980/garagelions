@@ -63,10 +63,13 @@ def api_tasks(request):
             return JsonResponse({"error": "Title is required."}, status=400)
 
         category = get_object_or_404(TaskCategory, slug=category_slug)
+        min_order = TaskItem.objects.aggregate(m=models.Min("order"))["m"]
+        new_order = (min_order - 1) if min_order is not None else 0
         task = TaskItem.objects.create(
             title=title,
             category=category,
             priority=priority,
+            order=new_order,
             created_by=request.user,
         )
         return JsonResponse({
@@ -137,6 +140,25 @@ def api_task_toggle(request, pk):
     task.done = not task.done
     task.save(update_fields=["done", "updated_at"])
     return JsonResponse({"id": task.id, "done": task.done})
+
+
+@admin_required
+@require_POST
+def api_reorder_tasks(request):
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON."}, status=400)
+
+    ids = data.get("ids", [])
+    if not isinstance(ids, list):
+        return JsonResponse({"error": "ids must be a list."}, status=400)
+
+    with transaction.atomic():
+        for idx, task_id in enumerate(ids):
+            TaskItem.objects.filter(pk=task_id).update(order=idx)
+
+    return JsonResponse({"ok": True, "count": len(ids)})
 
 
 @admin_required
@@ -221,6 +243,8 @@ def api_import_csv(request):
 
     category_cache = {c.name.strip().lower(): c for c in TaskCategory.objects.all()}
     max_order = TaskCategory.objects.aggregate(m=models.Max("order"))["m"] or 0
+    min_task_order = TaskItem.objects.aggregate(m=models.Min("order"))["m"]
+    next_task_order = (min_task_order - 1) if min_task_order is not None else 0
 
     with transaction.atomic():
         for idx, row in enumerate(reader, start=2):
@@ -255,8 +279,10 @@ def api_import_csv(request):
                 title=title,
                 category=category,
                 priority=priority,
+                order=next_task_order,
                 created_by=request.user,
             )
+            next_task_order -= 1
             created_tasks += 1
 
     return JsonResponse({

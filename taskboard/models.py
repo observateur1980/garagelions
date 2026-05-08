@@ -31,6 +31,7 @@ class TaskItem(models.Model):
     )
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="New")
     done = models.BooleanField(default=False)
+    order = models.IntegerField(default=0, db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -42,7 +43,7 @@ class TaskItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["order", "-created_at"]
 
     def __str__(self):
         return self.title

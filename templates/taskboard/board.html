@@ -434,7 +434,7 @@
 
     .task {
       display: grid;
-      grid-template-columns: 30px 1fr 160px 130px auto;
+      grid-template-columns: 22px 30px minmax(0, 1fr) auto auto auto;
       align-items: center;
       gap: 12px;
       background: var(--soft);
@@ -442,6 +442,140 @@
       padding: 14px;
       border-radius: 18px;
       box-shadow: 0 8px 20px rgba(17,19,24,0.035);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .task.editing {
+      grid-template-columns: 22px 30px minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .task-view {
+      min-width: 0;
+    }
+
+    .task-title-view {
+      font-weight: 900;
+      font-size: 15px;
+      line-height: 1.4;
+      color: var(--text);
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      margin-bottom: 4px;
+    }
+
+    .task.done .task-title-view {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .edit-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 8px 12px;
+      border-radius: 11px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .edit-btn:hover {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    .edit-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #fff;
+      color: var(--charcoal);
+    }
+
+    .task-edit-form {
+      display: grid;
+      grid-template-columns: 1fr 160px 130px;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .task-edit-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .save-btn {
+      border: none;
+      background: var(--orange);
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 11px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(242,101,34,0.22);
+    }
+
+    .save-btn:hover {
+      background: var(--orange-dark);
+    }
+
+    .cancel-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 9px 14px;
+      border-radius: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .cancel-btn:hover {
+      background: var(--soft);
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+      text-align: center;
+      user-select: none;
+      padding: 4px 0;
+      border-radius: 6px;
+    }
+
+    .drag-handle:hover {
+      color: var(--charcoal);
+      background: rgba(17,19,24,0.06);
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .task.dragging {
+      opacity: 0.45;
+    }
+
+    .task.drop-before {
+      border-top: 3px solid var(--orange);
+      border-radius: 18px;
+    }
+
+    .task.drop-after {
+      border-bottom: 3px solid var(--orange);
+      border-radius: 18px;
+    }
+
+    .task.done .drag-handle {
+      cursor: not-allowed;
+      pointer-events: none;
+      opacity: 0.4;
     }
 
     .task-title-input {
@@ -454,6 +588,13 @@
       font-weight: 900;
       font-size: 15px;
       box-shadow: none;
+      font-family: inherit;
+      line-height: 1.4;
+      resize: none;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 38px;
     }
 
     .task-title-input:hover {
@@ -504,10 +645,16 @@
 
     @media (max-width: 700px) {
       .task {
-        grid-template-columns: 30px 1fr auto;
+        grid-template-columns: 22px 30px 1fr auto;
       }
-      .task-edit-select {
-        grid-column: 2 / 4;
+      .task-view {
+        grid-column: 1 / -1;
+      }
+      .task-edit-form {
+        grid-template-columns: 1fr;
+      }
+      .task.editing {
+        grid-template-columns: 22px 30px 1fr;
       }
     }
 
@@ -771,6 +918,7 @@
     let categories = [];
     let currentFilter = "all";
     let currentPriorityFilter = "all";
+    let editingTaskId = null;
 
     function showMainView(view) {
       document.getElementById("tasksView").classList.toggle("active", view === "tasks");
@@ -872,6 +1020,7 @@
         const data = await apiFetch(`/taskboard/api/tasks/${id}/toggle/`, { method: "POST" });
         const task = tasks.find(t => t.id === id);
         if (task) task.done = data.done;
+        if (editingTaskId === id && data.done) editingTaskId = null;
         renderAll();
       } catch (e) {
         setStatus("Error: " + e.message);
@@ -886,47 +1035,152 @@
         });
         const idx = tasks.findIndex(t => t.id === id);
         if (idx !== -1) tasks[idx] = { ...tasks[idx], ...updated };
-        renderAll();
-        setStatus("Task updated.");
+        return true;
       } catch (e) {
         setStatus("Error: " + e.message);
-        renderAll();
+        return false;
       }
     }
 
-    function onTitleChange(input, id) {
-      const newTitle = input.value.trim();
+    function startEdit(id) {
+      editingTaskId = id;
+      renderAll();
+      const row = document.querySelector(`.task[data-task-id="${id}"]`);
+      const ta = row && row.querySelector(".task-title-input");
+      if (ta) {
+        autosizeTitle(ta);
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      }
+    }
+
+    function cancelEdit() {
+      editingTaskId = null;
+      renderAll();
+    }
+
+    async function saveEdit(id) {
+      const row = document.querySelector(`.task[data-task-id="${id}"]`);
+      if (!row) return;
+      const titleEl = row.querySelector(".task-title-input");
+      const catEl = row.querySelector(".task-edit-category");
+      const prioEl = row.querySelector(".task-edit-priority");
+
       const task = tasks.find(t => t.id === id);
       if (!task) return;
-      if (!newTitle) {
-        input.value = task.title;
+
+      const title = (titleEl?.value || "").trim();
+      if (!title) {
+        setStatus("Title cannot be empty.");
+        titleEl?.focus();
         return;
       }
-      if (newTitle === task.title) return;
-      updateTask(id, { title: newTitle });
-    }
 
-    function onTitleKeydown(event, id) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        event.target.blur();
-      } else if (event.key === "Escape") {
-        const task = tasks.find(t => t.id === id);
-        if (task) event.target.value = task.title;
-        event.target.blur();
+      const payload = {};
+      if (title !== task.title) payload.title = title;
+      if (catEl && catEl.value !== task.category) payload.category = catEl.value;
+      if (prioEl && prioEl.value !== task.priority) payload.priority = prioEl.value;
+
+      if (Object.keys(payload).length === 0) {
+        editingTaskId = null;
+        renderAll();
+        return;
+      }
+
+      const ok = await updateTask(id, payload);
+      if (ok) {
+        editingTaskId = null;
+        renderAll();
+        setStatus("Task updated.");
       }
     }
 
-    function onCategoryChange(select, id) {
-      const task = tasks.find(t => t.id === id);
-      if (!task || select.value === task.category) return;
-      updateTask(id, { category: select.value });
+    function onEditKeydown(event, id) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelEdit();
+      } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        saveEdit(id);
+      }
     }
 
-    function onPriorityChange(select, id) {
-      const task = tasks.find(t => t.id === id);
-      if (!task || select.value === task.priority) return;
-      updateTask(id, { priority: select.value });
+    /* ── Drag & Drop ── */
+
+    let draggedTaskId = null;
+
+    function enableRowDrag(handle) {
+      const row = handle.closest(".task");
+      if (row) row.setAttribute("draggable", "true");
+    }
+
+    function onTaskDragStart(e, id) {
+      draggedTaskId = id;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(id));
+      e.currentTarget.classList.add("dragging");
+    }
+
+    function onTaskDragOver(e) {
+      if (draggedTaskId === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const row = e.currentTarget;
+      const rect = row.getBoundingClientRect();
+      const after = (e.clientY - rect.top) > rect.height / 2;
+      row.classList.toggle("drop-before", !after);
+      row.classList.toggle("drop-after", after);
+    }
+
+    function onTaskDragLeave(e) {
+      e.currentTarget.classList.remove("drop-before", "drop-after");
+    }
+
+    async function onTaskDrop(e, targetId) {
+      e.preventDefault();
+      const row = e.currentTarget;
+      const after = row.classList.contains("drop-after");
+      row.classList.remove("drop-before", "drop-after");
+
+      const dragId = draggedTaskId;
+      draggedTaskId = null;
+      if (!dragId || dragId === targetId) return;
+
+      const draggedIdx = tasks.findIndex(t => t.id === dragId);
+      if (draggedIdx === -1) return;
+      const [dragged] = tasks.splice(draggedIdx, 1);
+      const targetIdx = tasks.findIndex(t => t.id === targetId);
+      if (targetIdx === -1) {
+        tasks.push(dragged);
+      } else {
+        tasks.splice(after ? targetIdx + 1 : targetIdx, 0, dragged);
+      }
+      renderAll();
+
+      try {
+        await apiFetch("{% url 'taskboard:api_reorder' %}", {
+          method: "POST",
+          body: { ids: tasks.map(t => t.id) },
+        });
+        setStatus("Order saved.");
+      } catch (err) {
+        setStatus("Error saving order: " + err.message);
+      }
+    }
+
+    function onTaskDragEnd(e) {
+      e.currentTarget.classList.remove("dragging");
+      e.currentTarget.setAttribute("draggable", "false");
+      draggedTaskId = null;
+      document.querySelectorAll(".task.drop-before, .task.drop-after").forEach(el => {
+        el.classList.remove("drop-before", "drop-after");
+      });
+    }
+
+    function autosizeTitle(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
     }
 
     async function removeTask(id) {
@@ -1149,29 +1403,64 @@
 
       visible.forEach(task => {
         const el = document.createElement("div");
-        el.className = task.done ? "task done" : "task";
+        const isEditing = editingTaskId === task.id && !task.done;
+        el.className = "task";
+        if (task.done) el.classList.add("done");
+        if (isEditing) el.classList.add("editing");
 
         const priority = task.priority || "New";
+        const catName = task.categoryName || task.category;
 
-        const categoryOptions = categories.map(cat =>
-          `<option value="${escapeHtml(cat.slug)}" ${cat.slug === task.category ? "selected" : ""}>${escapeHtml(cat.name)}</option>`
-        ).join("");
+        el.dataset.taskId = task.id;
+        el.addEventListener("dragstart", (e) => onTaskDragStart(e, task.id));
+        el.addEventListener("dragover", onTaskDragOver);
+        el.addEventListener("dragleave", onTaskDragLeave);
+        el.addEventListener("drop", (e) => onTaskDrop(e, task.id));
+        el.addEventListener("dragend", onTaskDragEnd);
 
-        const prioOptions = priorityOptions.map(p =>
-          `<option value="${p}" ${p === priority ? "selected" : ""}>${p}</option>`
-        ).join("");
-
-        const disabled = task.done ? "disabled" : "";
-
-        el.innerHTML = `
+        const handleHtml = `
+          <span class="drag-handle" title="Drag to reorder"
+                onmousedown="enableRowDrag(this)"
+                ontouchstart="enableRowDrag(this)">&#x2630;</span>
           <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleDone(${task.id})" />
-          <input type="text" class="task-title-input" value="${escapeHtml(task.title)}" ${disabled}
-                 onblur="onTitleChange(this, ${task.id})"
-                 onkeydown="onTitleKeydown(event, ${task.id})" />
-          <select class="task-edit-select" ${disabled} onchange="onCategoryChange(this, ${task.id})">${categoryOptions}</select>
-          <select class="task-edit-select" ${disabled} onchange="onPriorityChange(this, ${task.id})">${prioOptions}</select>
-          <button class="remove" onclick="removeTask(${task.id})" title="Remove task">&times;</button>
         `;
+
+        if (isEditing) {
+          const categoryOptions = categories.map(cat =>
+            `<option value="${escapeHtml(cat.slug)}" ${cat.slug === task.category ? "selected" : ""}>${escapeHtml(cat.name)}</option>`
+          ).join("");
+          const prioOptions = priorityOptions.map(p =>
+            `<option value="${p}" ${p === priority ? "selected" : ""}>${p}</option>`
+          ).join("");
+
+          el.innerHTML = `
+            ${handleHtml}
+            <div class="task-edit-form">
+              <textarea class="task-title-input" rows="1"
+                        oninput="autosizeTitle(this)"
+                        onkeydown="onEditKeydown(event, ${task.id})">${escapeHtml(task.title)}</textarea>
+              <select class="task-edit-select task-edit-category">${categoryOptions}</select>
+              <select class="task-edit-select task-edit-priority">${prioOptions}</select>
+            </div>
+            <div class="task-edit-actions">
+              <button class="save-btn" type="button" onclick="saveEdit(${task.id})">Save</button>
+              <button class="cancel-btn" type="button" onclick="cancelEdit()">Cancel</button>
+            </div>
+          `;
+          const ta = el.querySelector(".task-title-input");
+          requestAnimationFrame(() => autosizeTitle(ta));
+        } else {
+          el.innerHTML = `
+            ${handleHtml}
+            <div class="task-view">
+              <div class="task-title-view">${escapeHtml(task.title)}</div>
+              <div class="task-meta">Category: ${escapeHtml(catName)}</div>
+            </div>
+            <span class="badge priority-${escapeHtml(priority)}">${escapeHtml(priority)}</span>
+            <button class="edit-btn" type="button" onclick="startEdit(${task.id})" ${task.done ? "disabled" : ""}>Edit</button>
+            <button class="remove" onclick="removeTask(${task.id})" title="Remove task">&times;</button>
+          `;
+        }
 
         taskList.appendChild(el);
       });
