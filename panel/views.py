@@ -2509,14 +2509,25 @@ def _extract_phone(text):
     return m.group(1).strip() if m else ""
 
 
-def _event_attendee_email(event):
+def _event_guest(event):
+    """Return (display_name, email) for the first non-self attendee.
+    Either field may be empty if the calendar event didn't include it."""
     for a in event.get("attendees") or []:
         if a.get("self"):
             continue
-        email = a.get("email")
-        if email:
-            return email
-    return ""
+        email = a.get("email") or ""
+        name = a.get("displayName") or ""
+        if email or name:
+            return name, email
+    return "", ""
+
+
+def _split_full_name(full):
+    """Split a "First Last" string into (first, last)."""
+    parts = (full or "").strip().split(None, 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    return (parts[0] if parts else ""), ""
 
 
 @login_required
@@ -2601,8 +2612,11 @@ def gcal_sync(request):
             location = ev.get("location", "") or ""
             start = (ev.get("start", {}).get("dateTime")
                      or ev.get("start", {}).get("date") or "")
-            attendee_email = _event_attendee_email(ev)
-            first, last = _split_event_title(summary)
+            guest_name, attendee_email = _event_guest(ev)
+            if guest_name:
+                first, last = _split_full_name(guest_name)
+            else:
+                first, last = _split_event_title(summary)
             phone = _extract_phone(description) or _extract_phone(location)
             source_tag = _gcal.event_source_tag(event_id)
 
