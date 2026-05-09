@@ -152,7 +152,9 @@ class LeadUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         current = self.instance.status if self.instance and self.instance.pk else None
-        self.fields['status'].choices = _db_status_choices(current_code=current)
+        choices = _db_status_choices(current_code=current)
+        self.fields['status'].choices = choices
+        self.fields['status'].widget.choices = choices
 
     def _get_validation_exclusions(self):
         # The model field hardcodes the original STATUS_CHOICES, but the real
@@ -213,7 +215,9 @@ class ManualLeadForm(forms.ModelForm):
 
         # Status choices come from the DB-managed LeadStatus table
         current = self.instance.status if self.instance and self.instance.pk else None
-        self.fields['status'].choices = _db_status_choices(current_code=current)
+        choices = _db_status_choices(current_code=current)
+        self.fields['status'].choices = choices
+        self.fields['status'].widget.choices = choices
 
         # Make assignment fields optional
         self.fields['sales_point'].required = False
@@ -224,6 +228,8 @@ class ManualLeadForm(forms.ModelForm):
         self.fields['message'].required = False
         self.fields['consultation_types'].required = False
         self.fields['phone'].required = False
+        self.fields['email'].required = False
+        self.fields['zip_code'].required = False
 
         # Add blank option to dropdowns
         self.fields['sales_point'].empty_label = '— Select location —'

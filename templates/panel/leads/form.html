@@ -77,6 +77,24 @@
     <form method="post">
       {% csrf_token %}
 
+      {% if form.errors %}
+      <div style="padding:10px 14px; border-radius:8px; background:#fef2f2;
+                  color:#991b1b; border:1px solid #fecaca; margin-bottom:16px;
+                  font-size:14px">
+        <strong>Please fix the following:</strong>
+        <ul style="margin:6px 0 0 18px; padding:0">
+          {% for field in form %}
+            {% for err in field.errors %}
+              <li>{{ field.label }}: {{ err }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for err in form.non_field_errors %}
+            <li>{{ err }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
       <div class="row">
         <div class="col-md-6">
           <label>First Name</label>
