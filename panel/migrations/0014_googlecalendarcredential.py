@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('panel', '0011_alter_partcategory_options_partcategory_order'),
+        ('panel', '0013_backfill_main_component'),
     ]
 
     operations = [
