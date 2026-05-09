@@ -1,0 +1,905 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ component.name }} — {{ estimate.estimate_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.est-header-bar {
+  background: #374151; color: #fff; padding: 10px 24px;
+  border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 500;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.est-header-bar a { color: #d1d5db; text-decoration: none; font-size: 12px; }
+.est-header-bar a:hover { color: #fff; text-decoration: underline; }
+.est-header {
+  background: #f9fafb; border: 1px solid #e5e7eb; border-top: none;
+  border-radius: 0 0 8px 8px; padding: 24px; margin-bottom: 24px;
+}
+.est-header h2 {
+  margin: 0 0 4px; font-size: 24px; color: #111827; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.est-header h2 .pencil { font-size: 13px; color: #9ca3af; }
+.est-header h2:hover .pencil { color: #374151; }
+.est-meta-row { color: #6b7280; font-size: 13px; margin-top: 6px; }
+.est-meta-row strong { color: #374151; }
+
+.add-bar { position: relative; margin-bottom: 12px; }
+.quick-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.quick-add-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border: 1px solid #d1d5db; border-radius: 8px;
+  background: #fff; color: #374151; font-size: 13px; font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.quick-add-btn:hover { border-color: #111827; background: #f9fafb; color: #111827; }
+.quick-add-btn svg { flex-shrink: 0; }
+
+.qa-overlay {
+  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.5);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.qa-overlay.show { display: flex; }
+.qa-modal {
+  background: #fff; border-radius: 12px; width: 100%;
+  max-width: 640px; max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;
+}
+.qa-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+}
+.qa-modal-head h3 { margin: 0; font-size: 16px; font-weight: 600; color: #111827; }
+.qa-close {
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 22px; line-height: 1; color: #6b7280; padding: 4px 8px;
+}
+.qa-close:hover { color: #111827; }
+.qa-modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.qa-modal-foot {
+  padding: 14px 20px; border-top: 1px solid #e5e7eb;
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.qa-search {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; margin-bottom: 12px; background: #fff;
+}
+.qa-search:focus { outline: none; border-color: #6b7280; }
+select.qa-search { padding-right: 30px; }
+.qa-part-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px;
+  margin-bottom: 6px; cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+.qa-part-row:hover { border-color: #111827; background: #f9fafb; }
+.qa-part-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.qa-part-price { font-weight: 600; color: #111827; }
+.qa-cat-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #6b7280; margin: 14px 0 6px; font-weight: 600;
+}
+.qa-cat-label:first-child { margin-top: 0; }
+.qa-empty { color: #9ca3af; padding: 30px; text-align: center; font-size: 14px; }
+.qa-form-row { margin-bottom: 12px; }
+.qa-form-row label {
+  display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500;
+}
+.qa-form-row input, .qa-form-row textarea, .qa-form-row select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 14px; background: #fff;
+}
+.qa-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+.add-bar input {
+  width: 100%; padding: 12px 16px 12px 40px;
+  border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; background: #fff;
+}
+.add-bar input:focus { outline: none; border-color: #6b7280; }
+.add-bar .search-icon {
+  position: absolute; left: 14px; top: 50%;
+  transform: translateY(-50%); color: #9ca3af; font-size: 16px;
+}
+.add-dropdown {
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff; border: 1px solid #d1d5db; border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100;
+  max-height: 300px; overflow-y: auto;
+}
+.add-dropdown.show { display: block; }
+.add-dropdown-item {
+  padding: 10px 16px; cursor: pointer; font-size: 14px;
+  color: #374151; display: flex; justify-content: space-between; align-items: center;
+}
+.add-dropdown-item:hover { background: #f3f4f6; }
+.add-dropdown-item .price { color: #6b7280; font-size: 13px; }
+.add-dropdown-custom {
+  padding: 10px 16px; border-top: 1px solid #e5e7eb;
+  cursor: pointer; font-size: 14px; color: #374151; font-weight: 500;
+}
+.add-dropdown-custom:hover { background: #f3f4f6; }
+
+.items-section {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 24px;
+}
+.items-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+}
+.items-header h4 { margin: 0; font-size: 16px; color: #111827; }
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th {
+  text-align: left; padding: 10px 12px; font-size: 11px;
+  color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;
+  font-weight: 600; border-bottom: 1px solid #e5e7eb;
+}
+.items-table td {
+  padding: 8px 12px; font-size: 14px; color: #374151;
+  border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+}
+.items-table .editable-cell {
+  border: 1px solid transparent; padding: 6px 8px;
+  border-radius: 4px; min-width: 60px; background: #f9fafb;
+}
+.items-table .editable-cell:focus {
+  outline: none; border-color: #6b7280; background: #fff;
+}
+.item-action-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: #9ca3af; padding: 4px;
+}
+.item-action-btn:hover { color: #374151; }
+.item-edit-btn:hover { color: #2563eb; }
+.item-delete-btn:hover { color: #b91c1c; }
+.item-actions-cell {
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+}
+.item-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #374151; }
+
+.bulk-actions-wrap { position: relative; display: inline-block; }
+.bulk-actions-btn {
+  background: #374151; color: #fff; border: none;
+  padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.bulk-actions-btn:hover { background: #1f2937; }
+.bulk-actions-btn:disabled { opacity: 0.5; cursor: default; }
+.bulk-actions-menu {
+  display: none; position: absolute; right: 0; top: 100%;
+  margin-top: 4px; background: #fff; border: 1px solid #e5e7eb;
+  border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 120; min-width: 170px; overflow: hidden;
+}
+.bulk-actions-menu.show { display: block; }
+.bulk-actions-menu-item {
+  padding: 10px 16px; font-size: 14px; color: #374151;
+  cursor: pointer; white-space: nowrap;
+}
+.bulk-actions-menu-item:hover { background: #f3f4f6; }
+.bulk-actions-menu-item.danger { color: #b91c1c; }
+.bulk-actions-menu-item.danger:hover { background: #fef2f2; }
+
+.summary-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 20px; max-width: 320px; margin-left: auto;
+}
+.summary-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; font-size: 14px; color: #374151;
+}
+.summary-row.subtotal {
+  border-top: 2px solid #e5e7eb;
+  margin-top: 8px; padding-top: 12px;
+  font-size: 16px; font-weight: 600; color: #111827;
+}
+.summary-row.parent-total {
+  border-top: 1px dashed #d1d5db;
+  margin-top: 6px; padding-top: 10px;
+  font-size: 13px; color: #6b7280;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="est-header-bar">
+  <span>Component — {{ estimate.estimate_number }}</span>
+  <a href="{% url 'panel:estimate_edit' estimate.pk %}">&larr; Back to {{ estimate.title }}</a>
+</div>
+<div class="est-header">
+  <h2 onclick="renameComponent()" title="Click to rename">
+    <span id="comp-name">{{ component.name }}</span>
+    <span class="pencil">&#9998;</span>
+  </h2>
+  <div class="est-meta-row">
+    Part of estimate <strong>{{ estimate.title }}</strong> for
+    <a href="{% url 'panel:customer_detail' estimate.customer.pk %}" style="color:#374151">{{ estimate.customer.full_name }}</a>
+  </div>
+</div>
+
+<div class="add-bar">
+  <span class="search-icon">&#128269;</span>
+  <input type="text" id="add-search" placeholder="Add item to {{ component.name }} (search parts or type custom)" autocomplete="off">
+  <div class="add-dropdown" id="add-dropdown"></div>
+</div>
+
+<div class="quick-add-row">
+  <button type="button" class="quick-add-btn" id="btn-browse-library">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+    </svg>
+    Browse Part Library
+  </button>
+  <button type="button" class="quick-add-btn" id="btn-create-custom">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    Create Custom Part
+  </button>
+  <button type="button" class="quick-add-btn" id="btn-add-template">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+    </svg>
+    Add Template
+  </button>
+  <a href="{% url 'panel:estimate_edit' estimate.pk %}" class="quick-add-btn" style="margin-left:auto">
+    Done &rarr;
+  </a>
+</div>
+
+<!-- Modals -->
+<div class="qa-overlay" id="modal-library" onclick="if(event.target===this)closeModal('modal-library')">
+  <div class="qa-modal">
+    <div class="qa-modal-head">
+      <h3 id="lib-modal-title">Browse Part Library</h3>
+      <button class="qa-close" onclick="closeModal('modal-library')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body" id="lib-browse-view">
+      <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap">
+        <input type="text" id="lib-search" class="qa-search" style="margin:0; flex:1; min-width:200px"
+               placeholder="Filter by name or SKU…" autocomplete="off">
+        <select id="lib-category" class="qa-search" style="margin:0; flex:0 0 200px">
+          <option value="">All categories</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="lib-list"><div class="qa-empty">Loading parts…</div></div>
+    </div>
+
+    <div class="qa-modal-body" id="lib-edit-view" style="display:none">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px">
+        <button class="quick-add-btn" id="lib-edit-back" style="padding:6px 12px; font-size:13px">← Back</button>
+        <span style="color:#6b7280; font-size:13px">Adjust details before adding to this component</span>
+      </div>
+      <div class="qa-form-row">
+        <label>Item Name *</label>
+        <input type="text" id="lib-edit-name" required>
+      </div>
+      <div class="qa-form-row">
+        <label>Description</label>
+        <textarea id="lib-edit-desc" rows="2"></textarea>
+      </div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row">
+          <label>Quantity</label>
+          <input type="number" id="lib-edit-qty" value="1" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Price ($)</label>
+          <input type="number" id="lib-edit-price" value="0" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Label</label>
+          <input type="text" id="lib-edit-unit" placeholder="ea, sq ft, hr">
+        </div>
+      </div>
+      <div class="qa-form-row">
+        <label>Category *</label>
+        <select id="lib-edit-category" required>
+          <option value="">— Select a category —</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="qa-modal-foot" id="lib-edit-foot" style="display:none">
+      <button class="quick-add-btn" id="lib-edit-cancel">Cancel</button>
+      <button class="quick-add-btn" id="lib-edit-add" style="background:#111827; color:#fff; border-color:#111827">Add to Component</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-custom" onclick="if(event.target===this)closeModal('modal-custom')">
+  <div class="qa-modal" style="max-width:480px">
+    <div class="qa-modal-head">
+      <h3>Create Custom Part</h3>
+      <button class="qa-close" onclick="closeModal('modal-custom')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body">
+      <div class="qa-form-row">
+        <label>Name *</label>
+        <input type="text" id="custom-name" placeholder="e.g. Custom installation work" required>
+      </div>
+      <div class="qa-form-row">
+        <label>Description</label>
+        <textarea id="custom-desc" rows="2" placeholder="Optional details about this item"></textarea>
+      </div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row">
+          <label>Quantity</label>
+          <input type="number" id="custom-qty" value="1" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Price ($)</label>
+          <input type="number" id="custom-price" value="0" min="0" step="0.01">
+        </div>
+        <div class="qa-form-row">
+          <label>Unit Label</label>
+          <input type="text" id="custom-unit" placeholder="ea, sq ft, hr">
+        </div>
+      </div>
+      <div class="qa-form-row">
+        <label>Category *</label>
+        <select id="custom-category" required>
+          <option value="">— Select a category —</option>
+          {% for c in categories %}
+          <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        {% if not categories %}
+        <p style="color:#9ca3af; font-size:12px; margin-top:6px">
+          No categories available. Add some on the <a href="{% url 'panel:part_list' %}" target="_blank" style="color:#374151">Parts</a> page.
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-custom')">Cancel</button>
+      <button class="quick-add-btn" style="background:#111827; color:#fff; border-color:#111827" onclick="submitCustomPart()">Add to Component</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-template" onclick="if(event.target===this)closeModal('modal-template')">
+  <div class="qa-modal" style="max-width:560px">
+    <div class="qa-modal-head">
+      <h3>Add from Template</h3>
+      <button class="qa-close" onclick="closeModal('modal-template')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body">
+      <div style="font-size:13px; color:#6b7280; margin-bottom:12px">
+        Pick a template to add all its items to <strong>{{ component.name }}</strong>.
+      </div>
+      <div id="tpl-list"><div class="qa-empty">Loading templates…</div></div>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-template')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Items table -->
+<div class="items-section">
+  <div class="items-header">
+    <h4>{{ component.name }} — Items</h4>
+    <div style="display:flex; gap:10px; align-items:center">
+      <div class="bulk-actions-wrap">
+        <button class="bulk-actions-btn" id="bulk-actions-btn" disabled onclick="toggleBulkMenu()">
+          Actions <span style="font-size:10px">&#9660;</span>
+        </button>
+        <div class="bulk-actions-menu" id="bulk-actions-menu">
+          <div class="bulk-actions-menu-item" onclick="bulkAction('copy')">Copy</div>
+          <div class="bulk-actions-menu-item danger" onclick="bulkAction('delete')">Delete</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width:34%">Description</th>
+        <th style="width:10%">Units</th>
+        <th style="width:9%">Qty</th>
+        <th style="width:15%">Category</th>
+        <th style="width:14%; text-align:right">Total</th>
+        <th style="width:18%; text-align:right">
+          <input type="checkbox" class="item-checkbox" id="select-all-cb" title="Select all" onclick="toggleSelectAll(this)">
+        </th>
+      </tr>
+    </thead>
+    <tbody id="items-body">
+      {% for item in items %}
+      <tr data-item-id="{{ item.id }}">
+        <td style="font-weight:500">{{ item.name }}</td>
+        <td style="color:#6b7280; font-size:13px">{{ item.unit_label|default:"—" }}</td>
+        <td><input type="text" class="editable-cell item-qty" value="{{ item.quantity }}" data-field="quantity" style="width:70px"></td>
+        <td style="color:#6b7280; font-size:13px">{{ item.category_label|default:"—" }}</td>
+        <td style="text-align:right; font-weight:500" class="item-total">${{ item.line_total|floatformat:2 }}</td>
+        <td style="text-align:right">
+          <div class="item-actions-cell">
+            <button class="item-action-btn item-edit-btn" onclick="editItem({{ item.id }})" title="Edit">&#9998;</button>
+            <button class="item-action-btn item-delete-btn" onclick="deleteItem({{ item.id }})" title="Delete">&#128465;</button>
+            <input type="checkbox" class="item-checkbox row-cb" data-item-id="{{ item.id }}" onchange="updateBulkBtn()">
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr id="empty-row">
+        <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items in this component yet. Search and add parts above.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Summary (component + estimate roll-up) -->
+<div class="summary-card">
+  <div class="summary-row">
+    <span>Items in this component</span>
+    <span id="comp-item-count">{{ items|length }}</span>
+  </div>
+  <div class="summary-row subtotal">
+    <span>{{ component.name }} subtotal</span>
+    <span id="comp-subtotal">${{ component.subtotal|floatformat:2 }}</span>
+  </div>
+  <div class="summary-row parent-total">
+    <span>Estimate total ({{ estimate.estimate_number }})</span>
+    <span id="est-total">${{ estimate.total|floatformat:2 }}</span>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const EST_ID = {{ estimate.pk }};
+  const COMP_ID = {{ component.pk }};
+  const COMP_RENAME_URL = "{% url 'panel:ajax_estimate_update_component' estimate.pk component.pk %}";
+
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const p = v.split(`; ${name}=`);
+    return p.length === 2 ? p.pop().split(";").shift() : "";
+  }
+  const csrf = getCookie("csrftoken");
+
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-CSRFToken": csrf,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(data).toString(),
+    });
+    return res.json();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function updateSummary(data) {
+    if (data.component_subtotal != null) {
+      document.getElementById("comp-subtotal").textContent = "$" + parseFloat(data.component_subtotal).toFixed(2);
+    }
+    if (data.total != null) {
+      document.getElementById("est-total").textContent = "$" + parseFloat(data.total).toFixed(2);
+    }
+    document.getElementById("comp-item-count").textContent =
+      document.querySelectorAll("#items-body tr[data-item-id]").length;
+  }
+
+  // ── Rename component ──
+  window.renameComponent = async function() {
+    const nameEl = document.getElementById("comp-name");
+    const current = nameEl.textContent.trim();
+    const next = prompt("Component name:", current);
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === current) return;
+    const data = await postJSON(COMP_RENAME_URL, { name: trimmed });
+    if (data.ok) {
+      nameEl.textContent = data.component.name;
+    } else {
+      alert(data.error || "Could not rename component.");
+    }
+  };
+
+  // ── Add bar search ──
+  const searchInput = document.getElementById("add-search");
+  const dropdown = document.getElementById("add-dropdown");
+  let searchTimer = null;
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    const q = searchInput.value.trim();
+    if (!q) { dropdown.classList.remove("show"); return; }
+
+    searchTimer = setTimeout(async () => {
+      const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?q=${encodeURIComponent(q)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      const data = await res.json();
+
+      let html = "";
+      if (data.results.length) {
+        data.results.forEach(p => {
+          html += `<div class="add-dropdown-item" onclick='addPart(${JSON.stringify(p)})'>
+            <span>${escapeHtml(p.name)}${p.sku ? " <span style='color:#9ca3af'>(" + escapeHtml(p.sku) + ")</span>" : ""}</span>
+            <span class="price">$${parseFloat(p.unit_price).toFixed(2)}</span>
+          </div>`;
+        });
+      }
+      html += `<div class="add-dropdown-custom" onclick="addCustomItem()">+ Add "${escapeHtml(q)}" as custom item</div>`;
+      dropdown.innerHTML = html;
+      dropdown.classList.add("show");
+    }, 300);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".add-bar")) dropdown.classList.remove("show");
+  });
+
+  window.addPart = async function(part) {
+    dropdown.classList.remove("show");
+    searchInput.value = "";
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      part_id: part.id,
+      name: part.name,
+      quantity: "1",
+      unit_price: part.unit_price,
+      unit_label: part.unit || "",
+      category_label: part.category || "",
+      component_id: COMP_ID,
+    });
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+    }
+  };
+
+  window.addCustomItem = async function() {
+    const name = searchInput.value.trim();
+    dropdown.classList.remove("show");
+    searchInput.value = "";
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      name, quantity: "1", unit_price: "0", component_id: COMP_ID,
+    });
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+    }
+  };
+
+  function addRowToTable(item) {
+    const empty = document.getElementById("empty-row");
+    if (empty) empty.remove();
+    const tbody = document.getElementById("items-body");
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-item-id", item.id);
+    tr.innerHTML = `
+      <td style="font-weight:500">${escapeHtml(item.name)}</td>
+      <td style="color:#6b7280; font-size:13px">${escapeHtml(item.unit_label || "—")}</td>
+      <td><input type="text" class="editable-cell item-qty" value="${item.quantity}" data-field="quantity" style="width:70px"></td>
+      <td style="color:#6b7280; font-size:13px">${escapeHtml(item.category_label || "—")}</td>
+      <td style="text-align:right; font-weight:500" class="item-total">$${parseFloat(item.line_total).toFixed(2)}</td>
+      <td style="text-align:right">
+        <div class="item-actions-cell">
+          <button class="item-action-btn item-edit-btn" onclick="editItem(${item.id})" title="Edit">&#9998;</button>
+          <button class="item-action-btn item-delete-btn" onclick="deleteItem(${item.id})" title="Delete">&#128465;</button>
+          <input type="checkbox" class="item-checkbox row-cb" data-item-id="${item.id}" onchange="updateBulkBtn()">
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    attachCellListeners(tr);
+  }
+
+  function attachCellListeners(tr) {
+    const itemId = tr.getAttribute("data-item-id");
+    tr.querySelectorAll(".editable-cell").forEach(input => {
+      input.addEventListener("change", async () => {
+        const field = input.dataset.field;
+        const value = input.value;
+        const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { [field]: value });
+        if (data.ok) {
+          tr.querySelector(".item-total").textContent = "$" + parseFloat(data.item.line_total).toFixed(2);
+          updateSummary(data);
+        }
+      });
+    });
+  }
+  document.querySelectorAll("#items-body tr[data-item-id]").forEach(attachCellListeners);
+
+  window.editItem = function(itemId) {
+    const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+    if (!row) return;
+    const nameCell = row.querySelector("td:first-child");
+    const currentName = nameCell.textContent.trim();
+    const newName = prompt("Item name:", currentName);
+    if (newName !== null && newName.trim() !== "") {
+      postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { name: newName.trim() }).then(data => {
+        if (data.ok) {
+          nameCell.textContent = newName.trim();
+          row.querySelector(".item-total").textContent = "$" + parseFloat(data.item.line_total).toFixed(2);
+          updateSummary(data);
+        }
+      });
+    }
+  };
+
+  window.toggleSelectAll = function(el) {
+    document.querySelectorAll(".row-cb").forEach(cb => { cb.checked = el.checked; });
+    updateBulkBtn();
+  };
+
+  window.updateBulkBtn = function() {
+    const checked = document.querySelectorAll(".row-cb:checked").length;
+    document.getElementById("bulk-actions-btn").disabled = checked === 0;
+    const all = document.querySelectorAll(".row-cb");
+    const selectAllCb = document.getElementById("select-all-cb");
+    if (selectAllCb) selectAllCb.checked = all.length > 0 && checked === all.length;
+  };
+
+  window.toggleBulkMenu = function() {
+    document.getElementById("bulk-actions-menu").classList.toggle("show");
+  };
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".bulk-actions-wrap")) {
+      document.getElementById("bulk-actions-menu").classList.remove("show");
+    }
+  });
+
+  window.bulkAction = async function(action) {
+    document.getElementById("bulk-actions-menu").classList.remove("show");
+    const checkedIds = Array.from(document.querySelectorAll(".row-cb:checked")).map(cb => cb.dataset.itemId);
+    if (!checkedIds.length) return;
+    if (action === "delete") {
+      if (!confirm(`Delete ${checkedIds.length} selected item(s)?`)) return;
+      for (const id of checkedIds) await window.deleteItem(parseInt(id));
+    } else if (action === "copy") {
+      for (const id of checkedIds) {
+        const row = document.querySelector(`tr[data-item-id="${id}"]`);
+        if (!row) continue;
+        const name = row.querySelector("td:first-child").textContent.trim();
+        const qty = row.querySelector(".item-qty").value;
+        const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+          name, quantity: qty, unit_price: "0",
+          clone_from: id, component_id: COMP_ID,
+        });
+        if (data.ok) { addRowToTable(data.item); updateSummary(data); }
+      }
+    }
+    document.querySelectorAll(".row-cb").forEach(cb => { cb.checked = false; });
+    updateBulkBtn();
+  };
+
+  window.deleteItem = async function(itemId) {
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/delete-item/${itemId}/`, {});
+    if (data.ok) {
+      const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+      if (row) row.remove();
+      updateSummary(data);
+      if (!document.querySelector("#items-body tr[data-item-id]")) {
+        document.getElementById("items-body").innerHTML = `
+          <tr id="empty-row">
+            <td colspan="6" style="color:#9ca3af; padding:24px; text-align:center">No items in this component yet. Search and add parts above.</td>
+          </tr>`;
+      }
+    }
+  };
+
+  function openModal(id) { document.getElementById(id).classList.add("show"); }
+  window.closeModal = function(id) { document.getElementById(id).classList.remove("show"); };
+
+  document.getElementById("btn-browse-library").addEventListener("click", openLibrary);
+  document.getElementById("btn-create-custom").addEventListener("click", () => {
+    document.getElementById("custom-name").value = "";
+    document.getElementById("custom-desc").value = "";
+    document.getElementById("custom-qty").value = "1";
+    document.getElementById("custom-price").value = "0";
+    document.getElementById("custom-unit").value = "";
+    const catSel = document.getElementById("custom-category");
+    if (catSel) catSel.selectedIndex = 0;
+    openModal("modal-custom");
+    setTimeout(() => document.getElementById("custom-name").focus(), 50);
+  });
+  document.getElementById("btn-add-template").addEventListener("click", openTemplates);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      ["modal-library","modal-custom","modal-template"].forEach(closeModal);
+    }
+  });
+
+  let libraryParts = [];
+  let pendingPart = null;
+
+  function showLibBrowse() {
+    document.getElementById("lib-modal-title").textContent = "Browse Part Library";
+    document.getElementById("lib-browse-view").style.display = "";
+    document.getElementById("lib-edit-view").style.display = "none";
+    document.getElementById("lib-edit-foot").style.display = "none";
+  }
+  function showLibEdit() {
+    document.getElementById("lib-modal-title").textContent = "Review & Add Part";
+    document.getElementById("lib-browse-view").style.display = "none";
+    document.getElementById("lib-edit-view").style.display = "";
+    document.getElementById("lib-edit-foot").style.display = "";
+  }
+
+  async function openLibrary() {
+    openModal("modal-library");
+    showLibBrowse();
+    document.getElementById("lib-search").value = "";
+    document.getElementById("lib-category").value = "";
+    const list = document.getElementById("lib-list");
+    list.innerHTML = '<div class="qa-empty">Loading parts…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?browse=1`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    const data = await res.json();
+    libraryParts = data.results || [];
+    renderLibrary();
+  }
+
+  function renderLibrary() {
+    const list = document.getElementById("lib-list");
+    const search = document.getElementById("lib-search").value.trim().toLowerCase();
+    const cat = document.getElementById("lib-category").value;
+    let items = libraryParts;
+    if (cat) items = items.filter(p => (p.category || "") === cat);
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || (p.sku || "").toLowerCase().includes(search));
+    if (!items.length) {
+      list.innerHTML = '<div class="qa-empty">No parts found.</div>';
+      return;
+    }
+    const groups = {};
+    items.forEach(p => {
+      const c = p.category || "Uncategorized";
+      (groups[c] = groups[c] || []).push(p);
+    });
+    let html = "";
+    Object.keys(groups).sort().forEach(c => {
+      html += `<div class="qa-cat-label">${escapeHtml(c)}</div>`;
+      groups[c].forEach(p => {
+        html += `<div class="qa-part-row" data-part-id="${p.id}">
+          <div style="min-width:0; flex:1">
+            <div style="font-weight:500; color:#111827">${escapeHtml(p.name)}</div>
+            <div class="qa-part-meta">${p.sku ? "SKU " + escapeHtml(p.sku) : ""}${p.unit ? (p.sku ? " · " : "") + escapeHtml(p.unit) : ""}</div>
+          </div>
+          <div class="qa-part-price">$${parseFloat(p.unit_price).toFixed(2)}</div>
+        </div>`;
+      });
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const part = libraryParts.find(p => String(p.id) === row.dataset.partId);
+        if (part) loadPartIntoEditor(part);
+      });
+    });
+  }
+
+  function loadPartIntoEditor(part) {
+    pendingPart = part;
+    document.getElementById("lib-edit-name").value = part.name || "";
+    document.getElementById("lib-edit-desc").value = "";
+    document.getElementById("lib-edit-qty").value = "1";
+    document.getElementById("lib-edit-price").value = parseFloat(part.unit_price || 0).toFixed(2);
+    document.getElementById("lib-edit-unit").value = part.unit || "";
+    const catSel = document.getElementById("lib-edit-category");
+    if (part.category) {
+      const opt = Array.from(catSel.options).find(o => o.value === part.category);
+      catSel.value = opt ? part.category : "";
+    } else {
+      catSel.selectedIndex = 0;
+    }
+    showLibEdit();
+    setTimeout(() => document.getElementById("lib-edit-name").focus(), 50);
+  }
+
+  document.getElementById("lib-search").addEventListener("input", renderLibrary);
+  document.getElementById("lib-category").addEventListener("change", renderLibrary);
+  document.getElementById("lib-edit-back").addEventListener("click", showLibBrowse);
+  document.getElementById("lib-edit-cancel").addEventListener("click", () => closeModal("modal-library"));
+  document.getElementById("lib-edit-add").addEventListener("click", async () => {
+    const name = document.getElementById("lib-edit-name").value.trim();
+    const category = document.getElementById("lib-edit-category").value;
+    if (!name) { alert("Item name is required."); return; }
+    if (!category) { alert("Category is required. Please select one."); return; }
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      part_id: pendingPart ? pendingPart.id : "",
+      name,
+      quantity: document.getElementById("lib-edit-qty").value || "1",
+      unit_price: document.getElementById("lib-edit-price").value || "0",
+      unit_label: document.getElementById("lib-edit-unit").value || "",
+      category_label: category,
+      component_id: COMP_ID,
+    });
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+      closeModal("modal-library");
+    }
+  });
+
+  async function openTemplates() {
+    openModal("modal-template");
+    const list = document.getElementById("tpl-list");
+    list.innerHTML = '<div class="qa-empty">Loading templates…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/templates/`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    const data = await res.json();
+    if (!data.results.length) {
+      list.innerHTML = '<div class="qa-empty">No templates yet. Create one from the Parts page.</div>';
+      return;
+    }
+    let html = "";
+    data.results.forEach(t => {
+      html += `<div class="qa-part-row" data-tpl-id="${t.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(t.name)}${t.is_global ? ' <span style="font-size:10px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:10px; margin-left:6px">Global</span>' : ''}</div>
+          <div class="qa-part-meta">${t.item_count} item${t.item_count===1?'':'s'} · $${parseFloat(t.total).toFixed(2)}${t.description ? ' · ' + escapeHtml(t.description) : ''}</div>
+        </div>
+        <div class="qa-part-price">Add &rsaquo;</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => applyTemplate(row.dataset.tplId));
+    });
+  }
+
+  async function applyTemplate(id) {
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/templates/${id}/apply/`, {
+      component_id: COMP_ID,
+    });
+    if (data.ok) {
+      data.items.forEach(item => addRowToTable(item));
+      updateSummary(data);
+      closeModal("modal-template");
+    }
+  }
+
+  window.submitCustomPart = async function() {
+    const name = document.getElementById("custom-name").value.trim();
+    const category = document.getElementById("custom-category").value;
+    if (!name) { alert("Name is required."); return; }
+    if (!category) { alert("Category is required. Please select one."); return; }
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      name,
+      quantity: document.getElementById("custom-qty").value || "1",
+      unit_price: document.getElementById("custom-price").value || "0",
+      unit_label: document.getElementById("custom-unit").value || "",
+      category_label: category,
+      component_id: COMP_ID,
+    });
+    if (data.ok) {
+      addRowToTable(data.item);
+      updateSummary(data);
+      closeModal("modal-custom");
+    }
+  };
+
+})();
+</script>
+{% endblock %}

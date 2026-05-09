@@ -26,6 +26,7 @@ urlpatterns = [
     path("estimates/new/", views.estimate_create, name="estimate_create"),
     path("estimates/<int:pk>/", views.estimate_detail, name="estimate_detail"),
     path("estimates/<int:pk>/edit/", views.estimate_edit, name="estimate_edit"),
+    path("estimates/<int:pk>/components/<int:component_pk>/edit/", views.estimate_component_edit, name="estimate_component_edit"),
     path("estimates/<int:pk>/send/", views.ajax_estimate_send, name="ajax_estimate_send"),
     path("estimates/<int:pk>/ajax/search-parts/", views.ajax_estimate_search_parts, name="ajax_estimate_search_parts"),
     path("estimates/<int:pk>/ajax/add-item/", views.ajax_estimate_add_item, name="ajax_estimate_add_item"),
@@ -38,6 +39,9 @@ urlpatterns = [
     path("estimates/<int:pk>/ajax/update-header/", views.ajax_estimate_update_header, name="ajax_estimate_update_header"),
     path("estimates/<int:pk>/ajax/move-items/", views.ajax_estimate_move_items, name="ajax_estimate_move_items"),
     path("estimates/<int:pk>/ajax/list-other/", views.ajax_estimate_list_other, name="ajax_estimate_list_other"),
+    path("estimates/<int:pk>/ajax/components/add/", views.ajax_estimate_add_component, name="ajax_estimate_add_component"),
+    path("estimates/<int:pk>/ajax/components/<int:component_pk>/update/", views.ajax_estimate_update_component, name="ajax_estimate_update_component"),
+    path("estimates/<int:pk>/ajax/components/<int:component_pk>/delete/", views.ajax_estimate_delete_component, name="ajax_estimate_delete_component"),
 
     # Invoices
     path("invoices/", views.invoice_list, name="invoice_list"),

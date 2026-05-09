@@ -23,6 +23,7 @@ from .models import (
     GalleryItem,
     Testimonial,
     LeadModel,
+    LeadStatus,
     LeadActivity,
     LeadAttachment,
     VideoReview,
@@ -611,8 +612,47 @@ class StaleLeadFilter(admin.SimpleListFilter):
         return queryset
 
 
+def _lead_status_choices(current_code=None):
+    """LeadStatus.code/label pairs, plus the row's current code as a fallback.
+
+    Mirrors home.forms._db_status_choices. Without the fallback, a row whose
+    status was removed from the LeadStatus table (or that simply isn't a
+    seeded choice) renders a <select> with no matching <option>; the browser
+    then visually shows the first option, and saving silently rewrites the
+    DB to that value.
+    """
+    choices = list(LeadStatus.objects.values_list("code", "label"))
+    if current_code and not any(c == current_code for c, _ in choices):
+        choices.append((current_code, current_code.replace("_", " ").title()))
+    return choices
+
+
+class LeadAdminChangelistForm(forms.ModelForm):
+    """Form used per-row on the changelist when list_editable is active.
+
+    Populates the status dropdown from LeadStatus so custom codes
+    (e.g. "in_operation", "disqualified") survive a save sweep.
+    """
+
+    class Meta:
+        model = LeadModel
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "status" in self.fields:
+            current = self.instance.status if self.instance and self.instance.pk else None
+            self.fields["status"].choices = _lead_status_choices(current_code=current)
+
+
+class LeadAdminChangeForm(LeadAdminChangelistForm):
+    """Form used on the single-lead change page. Same dynamic-choices fix."""
+    pass
+
+
 @admin.register(LeadModel)
 class LeadModelAdmin(admin.ModelAdmin):
+    form = LeadAdminChangeForm
     list_display = (
         "id", "first_name", "last_name", "email", "phone", "zip_code",
         "service_city", "sales_point", "assigned_user",
@@ -627,6 +667,9 @@ class LeadModelAdmin(admin.ModelAdmin):
     inlines = [LeadAttachmentInline, LeadActivityInline]
     ordering = ("-created_at",)
     save_on_top = True
+
+    def get_changelist_form(self, request, **kwargs):
+        return LeadAdminChangelistForm
 
     class Media:
         css = {"all": ("css/admin_lead.css",)}

@@ -308,10 +308,42 @@ class Estimate(models.Model):
         self.total = self.subtotal + self.tax
         self.save(update_fields=["subtotal", "tax", "total"])
 
+    def ensure_main_component(self):
+        """Guarantee the estimate has at least one component. Returns it."""
+        comp = self.components.order_by("order", "id").first()
+        if comp is None:
+            comp = EstimateComponent.objects.create(estimate=self, name="Main", order=0)
+        return comp
+
+
+class EstimateComponent(models.Model):
+    """A section within an estimate (e.g. by room or phase). Items are grouped under components."""
+    estimate = models.ForeignKey(
+        Estimate, on_delete=models.CASCADE, related_name="components"
+    )
+    name = models.CharField(max_length=120, default="Main")
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def subtotal(self):
+        return sum(item.line_total for item in self.items.all())
+
 
 class EstimateItem(models.Model):
     estimate = models.ForeignKey(
         Estimate, on_delete=models.CASCADE, related_name="items"
+    )
+    component = models.ForeignKey(
+        EstimateComponent, on_delete=models.CASCADE,
+        null=True, blank=True, related_name="items",
     )
     part = models.ForeignKey(Part, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=200)
