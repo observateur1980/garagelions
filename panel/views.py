@@ -1948,7 +1948,7 @@ def lead_list(request):
         "quick_filters": quick_filters,
         "bottom_filters": bottom_filters,
         "can_filter_location": can_filter_location,
-        "can_manage_statuses": request.user.is_staff or request.user.is_superuser,
+        "can_manage_statuses": request.user.is_superuser,
         "sort": sort,
         "view_mode": view_mode,
     })
@@ -2177,7 +2177,7 @@ def closed_lost_list(request):
 # ── Lead Status Settings (admin-only) ────────────────────────────────
 
 def _can_manage_lead_statuses(user):
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
+    return user.is_authenticated and user.is_superuser
 
 
 def _slugify_code(label):
