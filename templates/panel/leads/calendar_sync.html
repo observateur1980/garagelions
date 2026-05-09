@@ -83,12 +83,6 @@
           <div style="flex:1; min-width:240px">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px">
               <strong style="font-size:15px; color:#111827">{{ ev.summary }}</strong>
-              {% if ev.already_imported %}
-                <span style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;
-                             font-size:11px; padding:2px 8px; border-radius:999px">
-                  Already a lead
-                </span>
-              {% endif %}
             </div>
             <div style="color:#6b7280; font-size:13px; margin-bottom:4px">
               📅 {{ ev.start }}
@@ -112,13 +106,7 @@
             <a href="{{ ev.html_link }}" target="_blank" rel="noopener"
                class="btn-panel-outline" style="font-size:13px">View</a>
             {% endif %}
-            {% if ev.already_imported %}
-              <span class="btn-panel-outline" style="opacity:.55; cursor:default">
-                Created
-              </span>
-            {% else %}
-              <a href="{{ ev.create_url }}" class="btn-panel">+ Create Lead</a>
-            {% endif %}
+            <a href="{{ ev.create_url }}" class="btn-panel">+ Create Lead</a>
           </div>
         </div>
       </div>

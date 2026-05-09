@@ -2377,6 +2377,10 @@ def lead_create(request):
                 lead.source_page = f"Manual entry by {request.user.get_full_name()}"
             lead.save()
             form.save_m2m()
+            # Came from Google Calendar sync → return to the leads list so the
+            # event no longer shows on the sync page.
+            if (lead.source_page or "").startswith("google_calendar:"):
+                return redirect("panel:lead_list")
             return redirect("panel:lead_detail", pk=lead.pk)
     else:
         initial = {"status": "new", "assigned_user": request.user}
@@ -2607,6 +2611,9 @@ def gcal_sync(request):
 
         for ev in raw_events:
             event_id = ev.get("id", "")
+            source_tag = _gcal.event_source_tag(event_id)
+            if source_tag in existing_sources:
+                continue  # already a lead — don't show it on the sync page
             summary = ev.get("summary", "(untitled event)")
             description = ev.get("description", "") or ""
             location = ev.get("location", "") or ""
@@ -2618,7 +2625,6 @@ def gcal_sync(request):
             else:
                 first, last = _split_event_title(summary)
             phone = _extract_phone(description) or _extract_phone(location)
-            source_tag = _gcal.event_source_tag(event_id)
 
             prefill = {
                 "first_name": first,
@@ -2646,7 +2652,6 @@ def gcal_sync(request):
                 "first_name": first,
                 "last_name": last,
                 "phone": phone,
-                "already_imported": source_tag in existing_sources,
                 "create_url": create_url,
             })
 
