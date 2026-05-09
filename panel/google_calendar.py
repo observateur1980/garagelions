@@ -90,15 +90,35 @@ def fetch_userinfo_email(creds):
         return ""
 
 
+LEADS_CALENDAR_NAME = "Leads"
+
+
+def _pick_calendar_id(service):
+    """Prefer a calendar named "Leads" (case-insensitive); fall back to primary."""
+    try:
+        resp = service.calendarList().list(maxResults=250).execute()
+    except Exception:
+        return "primary", "primary"
+    target = LEADS_CALENDAR_NAME.casefold()
+    for cal in resp.get("items", []):
+        if (cal.get("summary") or "").casefold() == target:
+            return cal["id"], cal.get("summary") or "Leads"
+    for cal in resp.get("items", []):
+        if cal.get("primary"):
+            return cal["id"], cal.get("summary") or "primary"
+    return "primary", "primary"
+
+
 def fetch_upcoming_events(user, days_ahead=30, max_results=50):
     creds = credentials_for_user(user)
     if creds is None:
-        return []
+        return [], ""
     service = build("calendar", "v3", credentials=creds, cache_discovery=False)
+    calendar_id, calendar_name = _pick_calendar_id(service)
     now = timezone.now()
     end = now + timedelta(days=days_ahead)
     resp = service.events().list(
-        calendarId="primary",
+        calendarId=calendar_id,
         timeMin=now.isoformat(),
         timeMax=end.isoformat(),
         singleEvents=True,
@@ -111,7 +131,7 @@ def fetch_upcoming_events(user, days_ahead=30, max_results=50):
         if creds.expiry:
             user.gcal_credential.expiry = creds.expiry
         user.gcal_credential.save(update_fields=["access_token", "expiry", "updated_at"])
-    return resp.get("items", [])
+    return resp.get("items", []), calendar_name
 
 
 def event_source_tag(event_id):

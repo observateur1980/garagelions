@@ -2578,10 +2578,11 @@ def gcal_sync(request):
     connected = GoogleCalendarCredential.objects.filter(user=request.user).exists()
     events_ctx = []
     error = ""
+    calendar_name = ""
 
     if connected:
         try:
-            raw_events = _gcal.fetch_upcoming_events(request.user, days_ahead=30)
+            raw_events, calendar_name = _gcal.fetch_upcoming_events(request.user, days_ahead=30)
         except Exception as e:
             raw_events = []
             error = str(e)
@@ -2643,6 +2644,7 @@ def gcal_sync(request):
         "connected": connected,
         "configured": _gcal.is_configured(),
         "google_email": google_email,
+        "calendar_name": calendar_name,
         "events": events_ctx,
         "error": error,
     })
