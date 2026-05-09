@@ -716,7 +716,12 @@ class LeadModel(models.Model):
     message = models.TextField(blank=True)
 
     source_page = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="new")
+    # Allowed values are governed by the LeadStatus table (admin-managed),
+    # not the hardcoded STATUS_CHOICES list — STATUS_CHOICES is kept only
+    # for legacy seed/reference. Leaving choices= on the field caused Django
+    # admin to silently overwrite custom statuses with "new" because the
+    # rendered <select> didn't include the lead's actual code as an option.
+    status = models.CharField(max_length=30, default="new")
     internal_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -17,7 +17,8 @@ from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
     Unit, SalesPointUnit, SalesPointPart,
-    Estimate, EstimateItem, EstimateTemplate, EstimateTemplateItem,
+    Estimate, EstimateItem, EstimateComponent,
+    EstimateTemplate, EstimateTemplateItem,
     Invoice, InvoiceItem,
     Transaction, TaskList, Task,
 )
@@ -325,21 +326,38 @@ def estimate_create(request):
             created_by=request.user,
             sales_point=_default_sp(request.user),
         )
+        estimate.ensure_main_component()
         return redirect("panel:estimate_detail", pk=estimate.pk)
     return render(request, "panel/estimates/form.html", {"customers": customers})
 
 
 @login_required
 def estimate_edit(request, pk):
-    """Interactive estimate builder page."""
+    """Interactive estimate builder — index of components."""
+    estimate = get_object_or_404(
+        _filter_by_sp(Estimate.objects.select_related("customer"), request.user), pk=pk
+    )
+    estimate.ensure_main_component()
+    components = estimate.components.prefetch_related("items").all()
+    return render(request, "panel/estimates/edit.html", {
+        "estimate": estimate,
+        "components": components,
+    })
+
+
+@login_required
+def estimate_component_edit(request, pk, component_pk):
+    """Sub-estimate editor for a single component within an estimate."""
     sp = _default_sp(request.user)
     estimate = get_object_or_404(
         _filter_by_sp(Estimate.objects.select_related("customer"), request.user), pk=pk
     )
-    items = estimate.items.all()
+    component = get_object_or_404(EstimateComponent, pk=component_pk, estimate=estimate)
+    items = component.items.all()
     categories = _active_categories(sp)
-    return render(request, "panel/estimates/edit.html", {
+    return render(request, "panel/estimates/component_edit.html", {
         "estimate": estimate,
+        "component": component,
         "items": items,
         "categories": categories,
     })
@@ -370,20 +388,61 @@ def ajax_estimate_send(request, pk):
 
     subject = f"Your Estimate from Garage Lions — {estimate.estimate_number}"
 
+    components = list(estimate.components.prefetch_related("items").all())
+    # Items not assigned to any component (legacy fallback) get an "Other" bucket.
+    orphan_items = [it for it in items if it.component_id is None]
+
     rows_html = ""
     rows_text = ""
-    for it in items:
-        line_total = it.quantity * it.unit_price
-        rows_html += (
-            f"<tr>"
-            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb'>{it.name}</td>"
-            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; color:#6b7280'>{it.category_label or '—'}</td>"
-            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>{it.quantity} {it.unit_label}</td>"
-            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>${it.unit_price:.2f}</td>"
-            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:600'>${line_total:.2f}</td>"
-            f"</tr>"
+
+    def _section_html(label, section_items):
+        section_html = (
+            f"<tr><td colspan='5' style='padding:14px 10px 6px; font-weight:600; color:#111827; "
+            f"background:#f3f4f6; border-bottom:1px solid #e5e7eb'>{label}</td></tr>"
         )
-        rows_text += f"  - {it.name}: {it.quantity} {it.unit_label} × ${it.unit_price:.2f} = ${line_total:.2f}\n"
+        section_subtotal = Decimal("0")
+        for it in section_items:
+            line_total = it.quantity * it.unit_price
+            section_subtotal += line_total
+            section_html += (
+                f"<tr>"
+                f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb'>{it.name}</td>"
+                f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; color:#6b7280'>{it.category_label or '—'}</td>"
+                f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>{it.quantity} {it.unit_label}</td>"
+                f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right'>${it.unit_price:.2f}</td>"
+                f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:600'>${line_total:.2f}</td>"
+                f"</tr>"
+            )
+        section_html += (
+            f"<tr><td colspan='4' style='padding:6px 10px; text-align:right; color:#6b7280; "
+            f"border-bottom:1px solid #e5e7eb'>{label} subtotal</td>"
+            f"<td style='padding:6px 10px; text-align:right; font-weight:600; "
+            f"border-bottom:1px solid #e5e7eb'>${section_subtotal:.2f}</td></tr>"
+        )
+        return section_html, section_subtotal
+
+    def _section_text(label, section_items):
+        out = f"\n{label}\n"
+        section_subtotal = Decimal("0")
+        for it in section_items:
+            line_total = it.quantity * it.unit_price
+            section_subtotal += line_total
+            out += f"  - {it.name}: {it.quantity} {it.unit_label} × ${it.unit_price:.2f} = ${line_total:.2f}\n"
+        out += f"  {label} subtotal: ${section_subtotal:.2f}\n"
+        return out
+
+    for comp in components:
+        comp_items = list(comp.items.all().order_by("order"))
+        if not comp_items:
+            continue
+        section_html, _ = _section_html(comp.name, comp_items)
+        rows_html += section_html
+        rows_text += _section_text(comp.name, comp_items)
+
+    if orphan_items:
+        section_html, _ = _section_html("Other", orphan_items)
+        rows_html += section_html
+        rows_text += _section_text("Other", orphan_items)
 
     html_body = (
         f"<div style='font-family:system-ui,Arial,sans-serif; max-width:640px; margin:0 auto; color:#111827'>"
@@ -556,9 +615,12 @@ def ajax_estimate_add_item(request, pk):
     if not name:
         return JsonResponse({"ok": False, "error": "Item name is required."}, status=400)
 
+    component = _resolve_component(estimate, request.POST.get("component_id"))
+
     order = estimate.items.count()
     item = EstimateItem.objects.create(
         estimate=estimate,
+        component=component,
         part=part,
         name=name,
         quantity=qty,
@@ -579,7 +641,72 @@ def ajax_estimate_add_item(request, pk):
             "category_label": item.category_label,
             "unit_price": str(item.unit_price),
             "line_total": str(item.line_total),
+            "component_id": component.id if component else None,
         },
+        "component_subtotal": str(component.subtotal) if component else "0.00",
+        "subtotal": str(estimate.subtotal),
+        "tax": str(estimate.tax),
+        "total": str(estimate.total),
+    })
+
+
+def _resolve_component(estimate, component_id):
+    """Return the EstimateComponent for the given id, falling back to the Main component."""
+    if component_id:
+        comp = estimate.components.filter(pk=component_id).first()
+        if comp:
+            return comp
+    return estimate.ensure_main_component()
+
+
+@require_POST
+@login_required
+def ajax_estimate_add_component(request, pk):
+    estimate = get_object_or_404(
+        _filter_by_sp(Estimate.objects.all(), request.user), pk=pk,
+    )
+    name = (request.POST.get("name") or "").strip() or "New Component"
+    last_order = estimate.components.count()
+    comp = EstimateComponent.objects.create(estimate=estimate, name=name, order=last_order)
+    return JsonResponse({
+        "ok": True,
+        "component": {
+            "id": comp.id,
+            "name": comp.name,
+            "subtotal": "0.00",
+            "edit_url": reverse("panel:estimate_component_edit", kwargs={"pk": estimate.pk, "component_pk": comp.pk}),
+        },
+    })
+
+
+@require_POST
+@login_required
+def ajax_estimate_update_component(request, pk, component_pk):
+    comp = get_object_or_404(EstimateComponent, pk=component_pk, estimate_id=pk)
+    name = (request.POST.get("name") or "").strip()
+    if name:
+        comp.name = name[:120]
+        comp.save(update_fields=["name"])
+    return JsonResponse({"ok": True, "component": {"id": comp.id, "name": comp.name}})
+
+
+@require_POST
+@login_required
+def ajax_estimate_delete_component(request, pk, component_pk):
+    """Delete a component and cascade-delete its items. Refuses to delete the last component."""
+    estimate = get_object_or_404(
+        _filter_by_sp(Estimate.objects.all(), request.user), pk=pk,
+    )
+    comp = get_object_or_404(EstimateComponent, pk=component_pk, estimate=estimate)
+    if estimate.components.count() <= 1:
+        return JsonResponse(
+            {"ok": False, "error": "An estimate must have at least one component."},
+            status=400,
+        )
+    comp.delete()
+    estimate.recalc_totals()
+    return JsonResponse({
+        "ok": True,
         "subtotal": str(estimate.subtotal),
         "tax": str(estimate.tax),
         "total": str(estimate.total),
@@ -650,12 +777,13 @@ def ajax_estimate_template_apply(request, pk, template_pk):
     """AJAX: append every item from the given template to this estimate."""
     estimate = get_object_or_404(Estimate, pk=pk)
     template = get_object_or_404(EstimateTemplate, pk=template_pk)
+    component = _resolve_component(estimate, request.POST.get("component_id"))
 
     base_order = estimate.items.count()
     added = []
     for i, ti in enumerate(template.items.all().order_by("order")):
         item = EstimateItem.objects.create(
-            estimate=estimate, part=ti.part, name=ti.name,
+            estimate=estimate, component=component, part=ti.part, name=ti.name,
             description=ti.description, category_label=ti.category_label,
             unit_label=ti.unit_label, quantity=ti.quantity,
             unit_price=ti.unit_price, order=base_order + i,
@@ -664,11 +792,14 @@ def ajax_estimate_template_apply(request, pk, template_pk):
             "id": item.id, "name": item.name, "unit_label": item.unit_label,
             "quantity": str(item.quantity), "category_label": item.category_label,
             "unit_price": str(item.unit_price), "line_total": str(item.line_total),
+            "component_id": component.id if component else None,
         })
     estimate.recalc_totals()
 
     return JsonResponse({
         "ok": True, "items": added,
+        "component_id": component.id if component else None,
+        "component_subtotal": str(component.subtotal) if component else "0.00",
         "subtotal": str(estimate.subtotal),
         "tax": str(estimate.tax),
         "total": str(estimate.total),
@@ -715,6 +846,7 @@ def ajax_estimate_update_item(request, pk, item_pk):
 
     item.save()
     item.estimate.recalc_totals()
+    comp = item.component
 
     return JsonResponse({
         "ok": True,
@@ -726,7 +858,9 @@ def ajax_estimate_update_item(request, pk, item_pk):
             "category_label": item.category_label,
             "unit_price": str(item.unit_price),
             "line_total": str(item.line_total),
+            "component_id": comp.id if comp else None,
         },
+        "component_subtotal": str(comp.subtotal) if comp else "0.00",
         "subtotal": str(item.estimate.subtotal),
         "tax": str(item.estimate.tax),
         "total": str(item.estimate.total),
@@ -739,11 +873,20 @@ def ajax_estimate_delete_item(request, pk, item_pk):
     """AJAX: delete an estimate item."""
     item = get_object_or_404(EstimateItem, pk=item_pk, estimate_id=pk)
     estimate = item.estimate
+    component_id = item.component_id
     item.delete()
     estimate.recalc_totals()
 
+    component_subtotal = "0.00"
+    if component_id:
+        comp = estimate.components.filter(pk=component_id).first()
+        if comp:
+            component_subtotal = str(comp.subtotal)
+
     return JsonResponse({
         "ok": True,
+        "component_id": component_id,
+        "component_subtotal": component_subtotal,
         "subtotal": str(estimate.subtotal),
         "tax": str(estimate.tax),
         "total": str(estimate.total),
@@ -2305,6 +2448,7 @@ def lead_to_estimate(request, lead_pk):
         description=lead.message or "",
         created_by=request.user,
     )
+    estimate.ensure_main_component()
 
     if lead.status in ("new", "contacted", "appointment_set", "waiting_for_estimate"):
         lead.status = "quoted"

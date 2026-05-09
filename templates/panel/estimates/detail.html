@@ -40,21 +40,31 @@
 
 {% if estimate.items.exists %}
 <h4 class="mt-4 mb-3">Line Items</h4>
-<table class="panel-table">
-  <thead>
-    <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
-  </thead>
-  <tbody>
-    {% for item in estimate.items.all %}
-    <tr>
-      <td>{{ item.name }}<br><small style="color:#6b7280">{{ item.description }}</small></td>
-      <td>{{ item.quantity }}</td>
-      <td>${{ item.unit_price|floatformat:2 }}</td>
-      <td>${{ item.line_total|floatformat:2 }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% for component in estimate.components.all %}
+  {% if component.items.all %}
+  <div style="margin-bottom:18px">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin:0 0 6px; padding:0 4px">
+      <h5 style="margin:0; font-size:15px; color:#111827">{{ component.name }}</h5>
+      <span style="color:#6b7280; font-size:13px">Subtotal <strong style="color:#111827">${{ component.subtotal|floatformat:2 }}</strong></span>
+    </div>
+    <table class="panel-table">
+      <thead>
+        <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+      </thead>
+      <tbody>
+        {% for item in component.items.all %}
+        <tr>
+          <td>{{ item.name }}<br><small style="color:#6b7280">{{ item.description }}</small></td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ item.unit_price|floatformat:2 }}</td>
+          <td>${{ item.line_total|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endfor %}
 {% endif %}
 
 {% if estimate.description %}
