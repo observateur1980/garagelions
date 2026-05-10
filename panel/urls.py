@@ -118,6 +118,7 @@ urlpatterns = [
     path("calendar/oauth/connect/", views.gcal_connect, name="gcal_connect"),
     path("calendar/oauth/callback/", views.gcal_callback, name="gcal_callback"),
     path("calendar/disconnect/", views.gcal_disconnect, name="gcal_disconnect"),
+    path("calendar/events.json", views.ajax_gcal_events_json, name="ajax_gcal_events_json"),
 
     # ── Mobile / PWA (standalone shell at /panel/m/) ──────────────────
     path("m/leads/", views.m_lead_list, name="m_lead_list"),

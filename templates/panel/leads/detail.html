@@ -34,6 +34,12 @@
   {% if lead.assigned_user %}&middot; Assigned to <strong>{{ lead.assigned_user.get_full_name }}</strong>{% else %}&middot; <span style="color:#b91c1c">Unassigned</span>{% endif %}
 </p>
 
+{% if lead.appointment_at %}
+<p style="color:#1f2937; font-size:14px; margin-top:-12px; margin-bottom:20px">
+  <strong>Appointment:</strong> {{ lead.appointment_at|date:"F j, Y g:i a" }}
+</p>
+{% endif %}
+
 <div class="row g-4">
   <!-- Left column -->
   <div class="col-md-7">

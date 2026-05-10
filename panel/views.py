@@ -1902,7 +1902,7 @@ def lead_list(request):
     if status:
         qs = qs.filter(status=status)
     else:
-        qs = qs.exclude(status__in=["closed_lost", "disqualified"])
+        qs = qs.exclude(status__in=["closed_lost", "disqualified", "may_come_back"])
 
     can_filter_location = (
         request.user.is_staff or request.user.is_superuser
@@ -1959,7 +1959,7 @@ def lead_list(request):
         for s in LeadStatus.objects.filter(is_quick_filter=True)
     ]
 
-    bottom_codes = ["closed_lost", "disqualified"]
+    bottom_codes = ["closed_lost", "disqualified", "may_come_back"]
     bottom_filter_map = {s.code: s for s in LeadStatus.objects.filter(code__in=bottom_codes)}
     bottom_filters = [
         {"code": code, "label": bottom_filter_map[code].label,
@@ -2395,9 +2395,10 @@ def m_lead_todo_delete(request, lead_pk, pk):
 @login_required
 def lead_create(request):
     pm = _get_pm(request.user)
+    gcal_connected = hasattr(request.user, "gcal_credential")
 
     if request.method == "POST":
-        form = ManualLeadForm(request.POST, user=request.user)
+        form = ManualLeadForm(request.POST, user=request.user, gcal_connected=gcal_connected)
         if form.is_valid():
             lead = form.save(commit=False)
             if not lead.sales_point and pm and pm.sales_point:
@@ -2418,28 +2419,45 @@ def lead_create(request):
         if pm and pm.sales_point:
             initial["sales_point"] = pm.sales_point
         # Prefill from querystring (used by Google Calendar sync)
-        for field in ("first_name", "last_name", "email", "phone", "address", "zip_code", "message", "source_page"):
+        for field in (
+            "first_name", "last_name", "email", "phone", "address",
+            "zip_code", "message", "source_page", "status", "appointment_at",
+        ):
             val = request.GET.get(field)
             if val:
                 initial[field] = val
-        form = ManualLeadForm(user=request.user, initial=initial)
+        form = ManualLeadForm(user=request.user, gcal_connected=gcal_connected, initial=initial)
 
-    return render(request, "panel/leads/form.html", {"form": form})
+    return render(request, "panel/leads/form.html", {
+        "form": form,
+        "gcal_connected": gcal_connected,
+    })
 
 
 @login_required
 def lead_edit(request, pk):
     lead = get_object_or_404(_lead_queryset(request.user), pk=pk)
+    gcal_connected = hasattr(request.user, "gcal_credential")
 
     if request.method == "POST":
-        form = ManualLeadForm(request.POST, instance=lead, user=request.user)
+        form = ManualLeadForm(request.POST, instance=lead, user=request.user, gcal_connected=gcal_connected)
         if form.is_valid():
             form.save()
-            return redirect("panel:lead_detail", pk=lead.pk)
+            # If the save mutated fields that scope visibility (assigned_user,
+            # sales_point) the user may no longer be able to see this lead via
+            # _lead_queryset — fall back to the list instead of 404'ing.
+            if _lead_queryset(request.user).filter(pk=lead.pk).exists():
+                return redirect("panel:lead_detail", pk=lead.pk)
+            return redirect("panel:lead_list")
     else:
-        form = ManualLeadForm(instance=lead, user=request.user)
+        form = ManualLeadForm(instance=lead, user=request.user, gcal_connected=gcal_connected)
 
-    return render(request, "panel/leads/form.html", {"form": form, "lead": lead, "is_edit": True})
+    return render(request, "panel/leads/form.html", {
+        "form": form,
+        "lead": lead,
+        "is_edit": True,
+        "gcal_connected": gcal_connected,
+    })
 
 
 # ── Lead to Customer + Estimate ─────────────────────────────────────
@@ -2648,8 +2666,8 @@ def gcal_sync(request):
             summary = ev.get("summary", "(untitled event)")
             description = ev.get("description", "") or ""
             location = ev.get("location", "") or ""
-            start = (ev.get("start", {}).get("dateTime")
-                     or ev.get("start", {}).get("date") or "")
+            start_dt = ev.get("start", {}).get("dateTime") or ""
+            start = start_dt or ev.get("start", {}).get("date") or ""
             guest_name, attendee_email = _event_guest(ev)
             if guest_name:
                 first, last = _split_full_name(guest_name)
@@ -2666,6 +2684,8 @@ def gcal_sync(request):
                 "zip_code": _extract_zip(location) or _extract_zip(description),
                 "message": (description[:1000] if description else summary),
                 "source_page": source_tag,
+                "status": "appointment_set",
+                "appointment_at": start_dt[:16] if start_dt else "",
             }
             create_url = (
                 reverse("panel:lead_create")
@@ -2697,4 +2717,35 @@ def gcal_sync(request):
         "calendar_name": calendar_name,
         "events": events_ctx,
         "error": error,
+    })
+
+
+@login_required
+def ajax_gcal_events_json(request):
+    """Upcoming Google Calendar events for the current user, used by the
+    appointment picker on the manual lead-create form."""
+    if not hasattr(request.user, "gcal_credential"):
+        return JsonResponse({"ok": True, "connected": False, "events": []})
+    try:
+        raw_events, calendar_name = _gcal.fetch_upcoming_events(request.user)
+    except Exception as exc:
+        return JsonResponse({
+            "ok": False, "connected": True, "error": str(exc), "events": [],
+        })
+    events = []
+    for ev in raw_events:
+        start_iso = ev.get("start", {}).get("dateTime") or ""
+        if not start_iso:
+            continue  # skip all-day events; datetime-local needs HH:MM
+        events.append({
+            "id": ev.get("id", ""),
+            "summary": ev.get("summary", "(untitled)"),
+            "start_iso": start_iso,
+            "location": ev.get("location", "") or "",
+        })
+    return JsonResponse({
+        "ok": True,
+        "connected": True,
+        "calendar_name": calendar_name,
+        "events": events,
     })

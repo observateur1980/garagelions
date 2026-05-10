@@ -188,7 +188,7 @@ class ManualLeadForm(forms.ModelForm):
             'first_name', 'last_name', 'email', 'phone', 'address', 'zip_code',
             'consultation_types', 'message',
             'sales_point', 'service_city', 'assigned_user',
-            'status', 'internal_notes', 'source_page',
+            'status', 'appointment_at', 'internal_notes', 'source_page',
         ]
         widgets = {
             'first_name':         forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
@@ -203,15 +203,18 @@ class ManualLeadForm(forms.ModelForm):
             'service_city':       forms.Select(attrs={'class': 'form-control'}),
             'assigned_user':      forms.Select(attrs={'class': 'form-control'}),
             'status':             forms.Select(attrs={'class': 'form-control'}),
+            'appointment_at':     forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'internal_notes':     forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Internal notes (not visible to customer)'}),
             'source_page':        forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Phone call, Walk-in, Referral'}),
         }
         labels = {
             'source_page': 'Source / How did they find us?',
+            'appointment_at': 'Appointment date & time',
         }
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, gcal_connected=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.gcal_connected = gcal_connected
 
         # Status choices come from the DB-managed LeadStatus table
         current = self.instance.status if self.instance and self.instance.pk else None
@@ -230,6 +233,10 @@ class ManualLeadForm(forms.ModelForm):
         self.fields['phone'].required = False
         self.fields['email'].required = False
         self.fields['zip_code'].required = False
+        self.fields['appointment_at'].required = False
+        self.fields['appointment_at'].input_formats = [
+            "%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S",
+        ]
 
         # Add blank option to dropdowns
         self.fields['sales_point'].empty_label = '— Select location —'
@@ -260,3 +267,16 @@ class ManualLeadForm(forms.ModelForm):
         exclude = super()._get_validation_exclusions()
         exclude.add('status')
         return exclude
+
+    def clean(self):
+        cleaned = super().clean()
+        if (
+            cleaned.get('status') == 'appointment_set'
+            and self.gcal_connected
+            and not cleaned.get('appointment_at')
+        ):
+            self.add_error(
+                'appointment_at',
+                'Required when status is Appointment Set.',
+            )
+        return cleaned

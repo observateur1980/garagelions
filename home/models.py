@@ -888,6 +888,7 @@ class LeadModel(models.Model):
     # rendered <select> didn't include the lead's actual code as an option.
     status = models.CharField(max_length=30, default="new")
     internal_notes = models.TextField(blank=True)
+    appointment_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

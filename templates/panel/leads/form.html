@@ -165,6 +165,25 @@
         </div>
       </div>
 
+      <div id="appointment-block" style="display:none; padding:12px 14px; margin:8px 0 4px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb">
+        <label>{{ form.appointment_at.label }}</label>
+        {{ form.appointment_at }}
+        {% if gcal_connected %}
+          <label style="margin-top:10px">Or pick from Google Calendar</label>
+          <select id="gcal-event-picker" class="form-control">
+            <option value="">— Loading events… —</option>
+          </select>
+          <small id="gcal-picker-hint" style="display:block; margin-top:6px; color:#6b7280">
+            Selecting an event fills the date/time and tags the source.
+          </small>
+        {% else %}
+          <small style="display:block; margin-top:6px; color:#6b7280">
+            <a href="{% url 'panel:gcal_connect' %}">Connect Google Calendar</a>
+            to pick an appointment from your calendar events.
+          </small>
+        {% endif %}
+      </div>
+
       <label>Source</label>
       {{ form.source_page }}
 
@@ -178,4 +197,78 @@
     </form>
   </div>
 </div>
+
+<script>
+(function() {
+  // Status code is hardcoded here. Labels are admin-editable via the LeadStatus
+  // table, but the "appointment_set" *code* is stable (referenced in
+  // home/models.py and panel/views.py).
+  var APPT_STATUS = "appointment_set";
+  var statusEl = document.getElementById("id_status");
+  var block    = document.getElementById("appointment-block");
+  var apptEl   = document.getElementById("id_appointment_at");
+  var srcEl    = document.getElementById("id_source_page");
+  var picker   = document.getElementById("gcal-event-picker");
+  if (!statusEl || !block) return;
+
+  var gcalConnected = {% if gcal_connected %}true{% else %}false{% endif %};
+  var eventsLoaded  = false;
+
+  function toggle() {
+    var show = statusEl.value === APPT_STATUS;
+    block.style.display = show ? "" : "none";
+    if (show && gcalConnected && !eventsLoaded) loadEvents();
+  }
+
+  function loadEvents() {
+    eventsLoaded = true;
+    fetch("{% url 'panel:ajax_gcal_events_json' %}", { credentials: "same-origin" })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!picker) return;
+        picker.innerHTML = "";
+        var placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "— Pick a calendar event (optional) —";
+        picker.appendChild(placeholder);
+        if (!data.ok || !data.events || !data.events.length) {
+          placeholder.textContent = "— No upcoming events found —";
+          return;
+        }
+        data.events.forEach(function(ev) {
+          var opt = document.createElement("option");
+          opt.value = ev.id;
+          opt.dataset.startIso = ev.start_iso || "";
+          opt.dataset.eventId  = ev.id || "";
+          var when = (ev.start_iso || "").slice(0, 16).replace("T", " ");
+          opt.textContent = when + " — " + (ev.summary || "(untitled)");
+          picker.appendChild(opt);
+        });
+      })
+      .catch(function() {
+        if (picker) picker.innerHTML =
+          '<option value="">— Could not load events —</option>';
+      });
+  }
+
+  if (picker) {
+    picker.addEventListener("change", function() {
+      var opt = picker.options[picker.selectedIndex];
+      if (!opt || !opt.dataset.startIso) return;
+      if (apptEl) apptEl.value = opt.dataset.startIso.slice(0, 16);
+      // Only auto-write source_page if it's blank or already a gcal tag —
+      // don't clobber a manually-typed source.
+      if (srcEl) {
+        var cur = (srcEl.value || "").trim();
+        if (!cur || cur.indexOf("google_calendar:") === 0) {
+          srcEl.value = "google_calendar:" + opt.dataset.eventId;
+        }
+      }
+    });
+  }
+
+  statusEl.addEventListener("change", toggle);
+  toggle();  // run once on load (covers edit page with status already set)
+})();
+</script>
 {% endblock %}
