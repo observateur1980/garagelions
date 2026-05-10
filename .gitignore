@@ -168,3 +168,7 @@ __MACOSX/
 
 deploy.sh
 
+# Database dumps — contain PII and live OAuth tokens, never commit
+backups/
+*.sql.gz
+
