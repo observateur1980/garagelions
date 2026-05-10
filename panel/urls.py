@@ -7,6 +7,9 @@ urlpatterns = [
     # Dashboard
     path("", views.dashboard, name="dashboard"),
 
+    # In-panel guide / help
+    path("help/", views.help_page, name="help"),
+
     # Projects
     path("projects/", views.project_list, name="project_list"),
     path("projects/new/", views.project_create, name="project_create"),

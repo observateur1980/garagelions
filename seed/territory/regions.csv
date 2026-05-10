@@ -1,0 +1,7 @@
+state_code,code,name,internal_label,is_active
+CA,NOR,Northern California,NorCal,true
+CA,CEN,Central California,Central Valley,true
+CA,SOU,Southern California,SoCal,true
+TX,NOR,North Texas,DFW Metroplex,true
+TX,CEN,Central Texas,Austin / San Antonio corridor,true
+TX,GUL,Gulf Coast,Greater Houston,true

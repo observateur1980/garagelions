@@ -21,6 +21,7 @@ from .models import (
     SalesPoint,
     ServiceCity,
     ZipCode,
+    ZipCoverage,
     LeadModel,
     PushSubscription,
 )
@@ -268,23 +269,40 @@ def create_lead(request):
         if lead_form.is_valid():
             lead = lead_form.save(commit=False)
 
-            # ── Route lead to the right sales point via ZIP code ──
+            # ── Route lead via ZIP code ──
+            # ZipCoverage (operations) is the source of truth for routing.
+            # ZipCode (marketing/SEO) is consulted for service_city display
+            # and as a routing fallback while ZipCoverage data is incomplete.
             submitted_zip = (lead.zip_code or "").strip()
-            matched_zip = ZipCode.objects.select_related(
-                "service_city",
-                "service_city__sales_point",
-                "service_city__sales_point__assigned_user",
-            ).filter(
-                code=submitted_zip,
-                service_city__is_active=True,
-                service_city__sales_point__is_active=True,
-            ).first()
+            routed = False
+
+            if submitted_zip:
+                coverage = ZipCoverage.route(submitted_zip)
+                if coverage and coverage.sales_point.is_active:
+                    lead.sales_point = coverage.sales_point
+                    lead.assigned_user = coverage.sales_point.assigned_user
+                    routed = True
+
+            matched_zip = None
+            if submitted_zip:
+                matched_zip = ZipCode.objects.select_related(
+                    "service_city",
+                    "service_city__sales_point",
+                    "service_city__sales_point__assigned_user",
+                ).filter(
+                    code=submitted_zip,
+                    service_city__is_active=True,
+                    service_city__sales_point__is_active=True,
+                ).first()
 
             if matched_zip:
                 lead.service_city = matched_zip.service_city
-                lead.sales_point = matched_zip.service_city.sales_point
-                lead.assigned_user = matched_zip.service_city.sales_point.assigned_user
-            elif selected_sales_point:
+                if not routed:
+                    lead.sales_point = matched_zip.service_city.sales_point
+                    lead.assigned_user = matched_zip.service_city.sales_point.assigned_user
+                    routed = True
+
+            if not routed and selected_sales_point:
                 lead.sales_point = selected_sales_point
                 lead.assigned_user = selected_sales_point.assigned_user
 

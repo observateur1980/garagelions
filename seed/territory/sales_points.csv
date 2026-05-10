@@ -1,0 +1,13 @@
+name,state_code,region_code,code,base_city,slug,location_type,is_active,is_featured,order,address_line_1,local_phone,local_email,lead_notification_email,from_email,reply_to_email,assigned_salesperson,latitude,longitude,royalty_rate
+Bay Area North,CA,NOR,BAYN,Oakland,bay-area-north,company,true,true,10,,,,,,,,37.8044,-122.2712,
+Bay Area South,CA,NOR,BAYS,Santa Clara,bay-area-south,company,true,true,20,,,,,,,,37.3541,-121.9552,
+Sacramento,CA,NOR,SAC,Sacramento,sacramento,company,true,false,30,,,,,,,,38.5816,-121.4944,
+Central Valley,CA,CEN,FRS,Fresno,central-valley,company,true,false,40,,,,,,,,36.7378,-119.7871,
+Los Angeles,CA,SOU,LAX,Los Angeles,los-angeles,company,true,true,50,,,,,,,,34.0522,-118.2437,
+Orange County,CA,SOU,OC,Irvine,orange-county,company,true,false,60,,,,,,,,33.6846,-117.8265,
+Inland Empire,CA,SOU,IE,Ontario,inland-empire,company,true,false,70,,,,,,,,34.0633,-117.6509,
+San Diego,CA,SOU,SD,San Diego,san-diego,company,true,false,80,,,,,,,,32.7157,-117.1611,
+Dallas-Fort Worth,TX,NOR,DAL,Dallas,dallas-fort-worth,company,false,false,90,,,,,,,,32.7767,-96.7970,
+Austin,TX,CEN,AUS,Austin,austin,company,false,false,100,,,,,,,,30.2672,-97.7431,
+San Antonio,TX,CEN,SAT,San Antonio,san-antonio,company,false,false,110,,,,,,,,29.4241,-98.4936,
+Houston,TX,GUL,HOU,Houston,houston,company,false,false,120,,,,,,,,29.7604,-95.3698,

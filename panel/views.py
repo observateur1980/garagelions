@@ -92,6 +92,37 @@ def _lead_counts(qs):
     )
 
 
+# ── Help (renders docs/GUIDE.md) ────────────────────────────────────
+
+@login_required
+def help_page(request):
+    """Render docs/GUIDE.md as the in-panel help page.
+
+    The markdown file is the single source of truth — edit it and the
+    page reflects the change on next request.
+    """
+    import os
+    from django.conf import settings
+    from django.http import Http404
+    import markdown as _md
+
+    guide_path = os.path.join(settings.BASE_DIR, "docs", "GUIDE.md")
+    try:
+        with open(guide_path, "r", encoding="utf-8") as f:
+            source = f.read()
+    except FileNotFoundError:
+        raise Http404("Guide not found.")
+
+    md = _md.Markdown(extensions=["extra", "tables", "fenced_code", "toc"])
+    body_html = md.convert(source)
+    toc_html = md.toc
+
+    return render(request, "panel/help.html", {
+        "body_html": body_html,
+        "toc_html": toc_html,
+    })
+
+
 # ── Dashboard ───────────────────────────────────────────────────────
 @login_required
 def dashboard(request):

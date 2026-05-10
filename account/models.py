@@ -219,6 +219,62 @@ class Profile(models.Model):
 
 
 # ---------------------------------------------------------------------------
+# Role — admin-managed catalog of business roles
+# ---------------------------------------------------------------------------
+
+class Role(models.Model):
+    """Admin-managed list of business roles.
+
+    ProjectManager.role stores the `code` of one of these rows. The Role
+    table governs which codes the UI offers, the human label, and two
+    capability flags that the rest of the app consults:
+
+      - allows_multiple_locations: when True, the user may have entries in
+        ProjectManager.extra_sales_points; when False, only the primary
+        sales_point is allowed.
+      - sees_all_locations: when True, the user sees leads from every
+        active SalesPoint regardless of their assignments.
+
+    Codes for the three seeded roles are referenced from elsewhere in the
+    codebase (see ProjectManager.PROJECT_MANAGER / LOCATION_MANAGER /
+    TERRITORY_MANAGER constants), so those rows are flagged is_protected
+    and cannot be deleted from the admin.
+    """
+
+    code = models.SlugField(
+        max_length=40, unique=True,
+        help_text="Stable identifier referenced in code; lower_snake_case.",
+    )
+    label = models.CharField(max_length=80)
+    description = models.TextField(blank=True)
+    allows_multiple_locations = models.BooleanField(
+        default=False,
+        help_text="If on, this role can be assigned more than one sales point.",
+    )
+    sees_all_locations = models.BooleanField(
+        default=False,
+        help_text="If on, members of this role see leads from every active sales point, regardless of assignment.",
+    )
+    is_protected = models.BooleanField(
+        default=False,
+        help_text="Protected roles are referenced by code elsewhere in the app and cannot be deleted.",
+    )
+    order = models.PositiveIntegerField(default=100)
+
+    class Meta:
+        ordering = ['order', 'label']
+        verbose_name = 'Role'
+        verbose_name_plural = 'Roles'
+
+    def __str__(self):
+        return self.label
+
+    @classmethod
+    def as_choices(cls):
+        return list(cls.objects.values_list('code', 'label'))
+
+
+# ---------------------------------------------------------------------------
 # ProjectManager — business role layer
 # ---------------------------------------------------------------------------
 
@@ -227,22 +283,16 @@ class ProjectManager(models.Model):
     Represents a person's role within the Garage Lions business.
     Separate from Profile (who they are) and MyUser (how they log in).
 
-    Role hierarchy:
-        PROJECT_MANAGER   – works individual leads at one location
-        LOCATION_MANAGER  – runs a SalesPoint, sees their whole team
-        TERRITORY_MANAGER – oversees multiple locations, corporate view
+    Role behavior is governed by the Role table (admin-managed). The
+    constants below are the codes of the three seeded rows and exist
+    only so legacy comparisons elsewhere in the codebase keep working.
     """
 
-    # Role choices
+    # Codes of the three seeded Role rows (kept for backwards compatibility
+    # with code that compares ProjectManager.role to a hardcoded string).
     PROJECT_MANAGER = 'project_manager'
     LOCATION_MANAGER = 'location_manager'
     TERRITORY_MANAGER = 'territory_manager'
-
-    ROLE_CHOICES = [
-        (PROJECT_MANAGER, 'Project Manager'),
-        (LOCATION_MANAGER, 'Location Manager'),
-        (TERRITORY_MANAGER, 'Territory Manager'),
-    ]
 
     # Employment type choices
     W2 = 'w2'
@@ -298,9 +348,12 @@ class ProjectManager(models.Model):
     )
 
     # Role & status
+    # Allowed values are governed by the Role table (admin-managed), not a
+    # hardcoded list. Keeping choices= off the field prevents Django admin
+    # from silently overwriting custom codes with the default during a
+    # save sweep — same fix used on LeadModel.status.
     role = models.CharField(
-        max_length=30,
-        choices=ROLE_CHOICES,
+        max_length=40,
         default=PROJECT_MANAGER,
     )
     status = models.CharField(
@@ -379,22 +432,116 @@ class ProjectManager(models.Model):
     def direct_report_count(self):
         return self.direct_reports.count()
 
+    @property
+    def role_obj(self):
+        """Return the Role row matching self.role, or None if missing."""
+        if not self.role:
+            return None
+        try:
+            return Role.objects.get(code=self.role)
+        except Role.DoesNotExist:
+            return None
+
+    def get_role_display(self):
+        r = self.role_obj
+        if r:
+            return r.label
+        return (self.role or '').replace('_', ' ').title() or '—'
+
+    @property
+    def allows_multiple_locations(self):
+        r = self.role_obj
+        if r:
+            return r.allows_multiple_locations
+        return self.role in (self.LOCATION_MANAGER, self.TERRITORY_MANAGER)
+
+    @property
+    def sees_all_locations(self):
+        r = self.role_obj
+        if r:
+            return r.sees_all_locations
+        return self.role == self.TERRITORY_MANAGER
+
     def get_visible_sales_points(self):
-        """
-        Returns the QuerySet of SalesPoints this person can see leads for.
-        - Project Manager: only their assigned sales_point
-        - Location Manager: their primary + any extra sales_points
-        - Territory Manager: all active sales_points
+        """QuerySet of SalesPoints this person can see leads for.
+
+        Driven by Role flags:
+          - sees_all_locations=True  → every active SalesPoint
+          - allows_multiple_locations → primary + extras
+          - otherwise                → primary only
         """
         from home.models import SalesPoint
-        if self.role == self.TERRITORY_MANAGER:
+        if self.sees_all_locations:
             return SalesPoint.objects.filter(is_active=True)
-        pks = list(self.extra_sales_points.values_list('pk', flat=True))
+        pks = []
         if self.sales_point_id:
             pks.append(self.sales_point_id)
+        if self.allows_multiple_locations and self.pk:
+            pks.extend(self.extra_sales_points.values_list('pk', flat=True))
         if pks:
             return SalesPoint.objects.filter(pk__in=pks)
         return SalesPoint.objects.none()
+
+    @property
+    def assigned_sales_points(self):
+        """SalesPoints where this user is `SalesPoint.assigned_user`.
+
+        Independent of `sales_point` / `extra_sales_points` — that pair
+        models employment ('home base' + extras), while this models the
+        SP-side ownership ('who's the point of contact for this SP').
+        """
+        from home.models import SalesPoint
+        if not self.user_id:
+            return SalesPoint.objects.none()
+        return SalesPoint.objects.filter(assigned_user_id=self.user_id)
+
+    @property
+    def connected_sales_points(self):
+        """Union of every SalesPoint connected to this user, with provenance.
+
+        Returns list of (sales_point, list_of_tags) where tags are any of:
+        'primary', 'extra', 'assigned_user'. Used by the admin change page
+        so the user can see at a glance why each SP shows up.
+        """
+        bag = {}
+
+        def tag(sp, name):
+            entry = bag.setdefault(sp.pk, (sp, []))
+            if name not in entry[1]:
+                entry[1].append(name)
+
+        if self.sales_point_id:
+            tag(self.sales_point, 'primary')
+        if self.pk:
+            for sp in self.extra_sales_points.all():
+                tag(sp, 'extra')
+        for sp in self.assigned_sales_points:
+            tag(sp, 'assigned_user')
+
+        return sorted(bag.values(), key=lambda pair: (pair[0].order, pair[0].name))
+
+    @property
+    def managed_sales_points(self):
+        """Concrete list of SalesPoints this person manages (display use).
+
+        For sees_all_locations roles this returns every active SP — same
+        as get_visible_sales_points — but evaluated as a list so admin
+        templates can call len() without re-querying.
+        """
+        return list(self.get_visible_sales_points().order_by('order', 'name'))
+
+    def clean(self):
+        super().clean()
+        # Block extras when role disallows multiple locations.
+        if self.pk and not self.allows_multiple_locations:
+            from django.core.exceptions import ValidationError
+            if self.extra_sales_points.exists():
+                raise ValidationError({
+                    'extra_sales_points':
+                        f"The role '{self.get_role_display()}' is configured "
+                        "for a single location. Remove extra sales points or "
+                        "switch to a role that allows multiple locations.",
+                })
 
 
 # ---------------------------------------------------------------------------

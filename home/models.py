@@ -147,6 +147,51 @@ LOCATION_TYPE_CHOICES = [
 ]
 
 
+# ── Territory hierarchy: State → Region → SalesPoint → ZipCoverage ──
+
+class State(models.Model):
+    code = models.CharField(max_length=2, unique=True, help_text="USPS two-letter state code, e.g. CA, TX")
+    name = models.CharField(max_length=80, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["code"]
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.code
+
+
+class Region(models.Model):
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="regions")
+    code = models.CharField(max_length=8, help_text="Short region code, e.g. NOR, SOU, CEN")
+    name = models.CharField(max_length=120, help_text="Public/marketing name, e.g. 'Northern California'")
+    internal_label = models.CharField(max_length=120, blank=True, help_text="Optional internal-only label.")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["state__code", "code"]
+        constraints = [
+            models.UniqueConstraint(fields=["state", "code"], name="unique_region_per_state"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    @property
+    def internal_code(self):
+        return f"{self.state.code}-{self.code}"
+
+    def __str__(self):
+        return self.internal_code
+
+
 class SalesPoint(models.Model):
     name = models.CharField(max_length=150)
     slug = models.SlugField(unique=True, blank=True)
@@ -195,10 +240,39 @@ class SalesPoint(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
+    # ── Territory ──
+    region = models.ForeignKey(
+        "Region", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="sales_points",
+    )
+    code = models.CharField(
+        max_length=8, blank=True,
+        help_text="Short sales-point code unique within its region, e.g. SCL, DAL.",
+    )
+    base_city = models.CharField(
+        max_length=120, blank=True,
+        help_text="Operational base city, e.g. 'Santa Clara'. May differ from marketing name.",
+    )
+
     class Meta:
         ordering = ["order", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["region", "code"],
+                name="unique_sp_code_per_region",
+                condition=models.Q(code__gt=""),
+            ),
+        ]
+
+    @property
+    def internal_code(self):
+        if self.region_id and self.code:
+            return f"{self.region.internal_code}-{self.code}"
+        return ""
 
     def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
         if not self.slug:
             base = slugify(self.name)
             slug = base
@@ -208,6 +282,32 @@ class SalesPoint(models.Model):
                 slug = f"{base}-{i}"
             self.slug = slug
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        # Block assigning a single-location user to a second SalesPoint.
+        # Their ProjectManager.role flag (allows_multiple_locations) is the
+        # source of truth — promote the user or pick someone else.
+        if self.assigned_user_id:
+            from django.core.exceptions import ValidationError
+            pm = getattr(self.assigned_user, "project_manager", None)
+            if pm and not pm.allows_multiple_locations:
+                conflict = (
+                    SalesPoint.objects
+                    .filter(assigned_user_id=self.assigned_user_id)
+                    .exclude(pk=self.pk)
+                    .first()
+                )
+                if conflict:
+                    raise ValidationError({
+                        "assigned_user":
+                            f"{self.assigned_user.email} has the role "
+                            f"'{pm.get_role_display()}', which is configured "
+                            f"for a single location, but is already assigned "
+                            f"to '{conflict.name}'. Promote the user to a "
+                            f"role that allows multiple locations or pick "
+                            f"someone else.",
+                    })
 
     def __str__(self):
         return self.name
@@ -353,6 +453,71 @@ class ZipCode(models.Model):
 
     def __str__(self):
         return f"{self.code} -> {self.service_city.name}, {self.service_city.state}"
+
+
+class ZipCoverage(models.Model):
+    """Operational ZIP routing: which sales point owns this ZIP, with backup
+    and a coverage tier. Separate from ZipCode (which drives marketing/SEO
+    pages) because ops and marketing have different lifecycles."""
+
+    CORE = "core"
+    EXTENDED = "extended"
+    EDGE = "edge"
+    FUTURE = "future"
+    COVERAGE_CHOICES = [
+        (CORE, "Core"),
+        (EXTENDED, "Extended"),
+        (EDGE, "Edge"),
+        (FUTURE, "Future"),
+    ]
+
+    zip_code = models.CharField(max_length=10, unique=True)
+    city = models.CharField(max_length=120, blank=True)
+    county = models.CharField(max_length=120, blank=True)
+
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="zip_coverages")
+    region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="zip_coverages")
+    sales_point = models.ForeignKey(
+        SalesPoint, on_delete=models.PROTECT, related_name="primary_zip_coverages",
+    )
+    backup_sales_point = models.ForeignKey(
+        SalesPoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="backup_zip_coverages",
+    )
+
+    coverage_type = models.CharField(max_length=16, choices=COVERAGE_CHOICES, default=CORE)
+    drive_time_target = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="Target minutes from primary sales point. Planning value, not measured.",
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.CharField(max_length=255, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["state__code", "region__code", "zip_code"]
+        indexes = [
+            models.Index(fields=["state", "region"]),
+            models.Index(fields=["sales_point", "coverage_type"]),
+        ]
+        verbose_name = "ZIP coverage"
+        verbose_name_plural = "ZIP coverage"
+
+    def __str__(self):
+        sp_label = self.sales_point.code or self.sales_point.name
+        return f"{self.zip_code} → {sp_label}"
+
+    @classmethod
+    def route(cls, zip_code):
+        """Look up the routing record for a ZIP. Returns the ZipCoverage row
+        with sales_point and backup_sales_point preloaded, or None."""
+        return (
+            cls.objects
+            .select_related("sales_point", "backup_sales_point", "region", "state")
+            .filter(zip_code=zip_code, is_active=True)
+            .first()
+        )
 
 
 def _resize_image_inplace(file_field, max_size=480, quality=55):

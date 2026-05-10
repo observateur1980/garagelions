@@ -29,6 +29,9 @@ from .models import (
     VideoReview,
     ServiceCity,
     FranchiseAgreement,
+    State,
+    Region,
+    ZipCoverage,
 )
 
 
@@ -199,6 +202,156 @@ class ServiceCityAdmin(admin.ModelAdmin):
         return render(request, "admin/home/servicecity/import_csv.html", context)
 
 
+# ── Territory: State / Region / ZipCoverage ──────────────────────────────
+
+class StateRegionInline(admin.TabularInline):
+    model = Region
+    fk_name = "state"
+    extra = 0
+    can_delete = False
+    show_change_link = True
+    verbose_name = "Region in this state"
+    verbose_name_plural = "Regions in this state"
+    fields = ("code", "name", "internal_label", "is_active")
+    readonly_fields = fields
+    ordering = ("code",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class StateZipCoverageInline(admin.TabularInline):
+    model = ZipCoverage
+    fk_name = "state"
+    extra = 0
+    can_delete = False
+    show_change_link = True
+    verbose_name = "ZIP in this state"
+    verbose_name_plural = "ZIPs in this state"
+    fields = ("zip_code", "city", "region", "sales_point", "backup_sales_point", "coverage_type", "is_active")
+    readonly_fields = fields
+    ordering = ("region__code", "zip_code")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "region", "sales_point", "backup_sales_point",
+        )
+
+
+@admin.register(State)
+class StateAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "region_count", "sales_point_count", "zip_coverage_count", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name")
+    ordering = ("code",)
+    inlines = [StateRegionInline, StateZipCoverageInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _region_count=models.Count("regions", distinct=True),
+            _sp_count=models.Count("regions__sales_points", distinct=True),
+            _zc_count=models.Count("zip_coverages", distinct=True),
+        )
+
+    def region_count(self, obj):
+        return obj._region_count
+    region_count.short_description = "# Regions"
+    region_count.admin_order_field = "_region_count"
+
+    def sales_point_count(self, obj):
+        return obj._sp_count
+    sales_point_count.short_description = "# SPs"
+    sales_point_count.admin_order_field = "_sp_count"
+
+    def zip_coverage_count(self, obj):
+        return obj._zc_count
+    zip_coverage_count.short_description = "# ZIPs"
+    zip_coverage_count.admin_order_field = "_zc_count"
+
+
+class RegionSalesPointInline(admin.TabularInline):
+    model = SalesPoint
+    fk_name = "region"
+    extra = 0
+    can_delete = False
+    show_change_link = True
+    verbose_name = "Sales point in this region"
+    verbose_name_plural = "Sales points in this region"
+    fields = ("name", "code", "base_city", "location_type", "is_active")
+    readonly_fields = fields
+    ordering = ("order", "name")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class RegionZipCoverageInline(admin.TabularInline):
+    model = ZipCoverage
+    fk_name = "region"
+    extra = 0
+    can_delete = False
+    show_change_link = True
+    verbose_name = "ZIP in this region"
+    verbose_name_plural = "ZIPs in this region"
+    fields = ("zip_code", "city", "sales_point", "backup_sales_point", "coverage_type", "is_active")
+    readonly_fields = fields
+    ordering = ("zip_code",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("sales_point", "backup_sales_point")
+
+
+@admin.register(Region)
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ("internal_code", "name", "state", "sales_point_count", "zip_coverage_count", "is_active")
+    list_filter = ("state", "is_active")
+    search_fields = ("code", "name", "state__code", "state__name")
+    autocomplete_fields = ("state",)
+    ordering = ("state__code", "code")
+    inlines = [RegionSalesPointInline, RegionZipCoverageInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _sp_count=models.Count("sales_points", distinct=True),
+            _zc_count=models.Count("zip_coverages", distinct=True),
+        )
+
+    def internal_code(self, obj):
+        return obj.internal_code
+    internal_code.short_description = "Code"
+    internal_code.admin_order_field = "code"
+
+    def sales_point_count(self, obj):
+        return obj._sp_count
+    sales_point_count.short_description = "# SPs"
+    sales_point_count.admin_order_field = "_sp_count"
+
+    def zip_coverage_count(self, obj):
+        return obj._zc_count
+    zip_coverage_count.short_description = "# ZIPs"
+    zip_coverage_count.admin_order_field = "_zc_count"
+
+
+@admin.register(ZipCoverage)
+class ZipCoverageAdmin(admin.ModelAdmin):
+    list_display = (
+        "zip_code", "city", "county", "state", "region",
+        "sales_point", "backup_sales_point", "coverage_type",
+        "drive_time_target", "is_active",
+    )
+    list_filter = ("state", "region", "coverage_type", "is_active", "sales_point")
+    search_fields = ("zip_code", "city", "county")
+    autocomplete_fields = ("state", "region", "sales_point", "backup_sales_point")
+    ordering = ("state__code", "region__code", "zip_code")
+    list_editable = ("coverage_type", "is_active")
+
+
 # ── ZipCode ───────────────────────────────────────────────────────────────
 
 @admin.register(ZipCode)
@@ -217,16 +370,65 @@ class ZipCodeAdmin(admin.ModelAdmin):
 @admin.register(SalesPoint)
 class SalesPointAdmin(admin.ModelAdmin):
     list_display = (
-        "name", "location_type", "local_phone", "local_email",
-        "assigned_user", "is_active", "is_featured", "order",
-        "related_cities", "manage_territory_link",
+        "name", "internal_code_display", "state_code", "region_code",
+        "location_type", "base_city",
+        "primary_zip_count", "backup_zip_count", "city_count",
+        "local_phone", "assigned_user",
+        "is_active", "is_featured", "order",
+        "manage_territory_link",
     )
+    list_display_links = ("name", "internal_code_display")
     list_editable = ("is_active", "is_featured", "order")
-    list_filter = ("location_type", "is_active", "is_featured")
-    search_fields = ("name", "local_email", "lead_notification_email")
+    list_filter = (
+        "region__state", "region", "location_type",
+        "is_active", "is_featured",
+    )
+    search_fields = (
+        "name", "code", "base_city", "local_email", "lead_notification_email",
+        "region__code", "region__name", "region__state__code", "region__state__name",
+    )
+    autocomplete_fields = ("region",)
     prepopulated_fields = {"slug": ("name",)}
     inlines = [SalesPointWorkingHourInline, FranchiseAgreementInline]
-    readonly_fields = ("zip_codes_preview",)
+    readonly_fields = ("zip_codes_preview", "internal_code")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request).select_related("region", "region__state", "assigned_user")
+        return qs.annotate(
+            _primary_zip_count=models.Count("primary_zip_coverages", distinct=True),
+            _backup_zip_count=models.Count("backup_zip_coverages", distinct=True),
+            _city_count=models.Count("cities", distinct=True),
+        )
+
+    def internal_code_display(self, obj):
+        return obj.internal_code or "—"
+    internal_code_display.short_description = "Code"
+    internal_code_display.admin_order_field = "code"
+
+    def state_code(self, obj):
+        return obj.region.state.code if obj.region_id else "—"
+    state_code.short_description = "State"
+    state_code.admin_order_field = "region__state__code"
+
+    def region_code(self, obj):
+        return obj.region.code if obj.region_id else "—"
+    region_code.short_description = "Region"
+    region_code.admin_order_field = "region__code"
+
+    def primary_zip_count(self, obj):
+        return obj._primary_zip_count
+    primary_zip_count.short_description = "# ZIPs"
+    primary_zip_count.admin_order_field = "_primary_zip_count"
+
+    def backup_zip_count(self, obj):
+        return obj._backup_zip_count
+    backup_zip_count.short_description = "# Backup"
+    backup_zip_count.admin_order_field = "_backup_zip_count"
+
+    def city_count(self, obj):
+        return obj._city_count
+    city_count.short_description = "# Cities"
+    city_count.admin_order_field = "_city_count"
 
     fieldsets = (
         ("Basic", {
@@ -234,6 +436,9 @@ class SalesPointAdmin(admin.ModelAdmin):
                 "name", "slug", "location_type", "royalty_rate",
                 "is_active", "is_featured", "order",
             )
+        }),
+        ("Territory", {
+            "fields": ("region", "code", "base_city", "internal_code"),
         }),
         ("SEO", {
             "fields": ("page_title", "meta_description", "hero_title", "hero_subtitle")
@@ -254,11 +459,6 @@ class SalesPointAdmin(admin.ModelAdmin):
             "fields": ("latitude", "longitude")
         }),
     )
-
-    def related_cities(self, obj):
-        cities = ServiceCity.objects.filter(sales_point=obj, is_active=True).order_by("order", "name")
-        return ", ".join(city.name for city in cities) or "-"
-    related_cities.short_description = "Cities"
 
     def related_zip_codes(self, obj):
         cities = ServiceCity.objects.filter(sales_point=obj, is_active=True).order_by("order", "name")
