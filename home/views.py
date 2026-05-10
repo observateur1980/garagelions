@@ -33,6 +33,11 @@ from .notifications import (
 )
 from .geo import auto_set_location
 
+OLD_SLUG_REDIRECTS = {
+    "bay-area": "bay-area-north",
+    "los-angeles-area": "los-angeles",
+}
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,6 +89,8 @@ def locations_list(request):
 
 
 def location_detail(request, slug):
+    if slug in OLD_SLUG_REDIRECTS:
+        return redirect("location_detail", slug=OLD_SLUG_REDIRECTS[slug], permanent=True)
     sales_point = get_object_or_404(SalesPoint, slug=slug, is_active=True)
     galleries = sales_point.galleries.filter(is_active=True).prefetch_related("items").order_by("order", "name")[:12]
     cities = sales_point.cities.filter(is_active=True).prefetch_related("zip_codes").order_by("order", "name")
@@ -119,6 +126,7 @@ def location_detail(request, slug):
 
 
 def set_location(request, slug):
+    slug = OLD_SLUG_REDIRECTS.get(slug, slug)
     sales_point = get_object_or_404(SalesPoint, slug=slug, is_active=True)
     request.session["selected_sales_point_slug"] = sales_point.slug
     request.session["location_auto_detected"] = False   # hide banner after manual pick/dismiss
