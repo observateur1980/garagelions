@@ -246,12 +246,25 @@ class ManualLeadForm(forms.ModelForm):
         # If a regular salesperson (not staff), lock sales_point to their own location
         if user and not user.is_staff and not user.is_superuser:
             try:
-                sp = user.project_manager.sales_point
+                pm = user.project_manager
+                sp = pm.sales_point
                 if sp:
+                    # Allowed SPs: primary + extras (LocationManager support).
+                    allowed_sp_ids = [sp.pk] + list(
+                        pm.extra_sales_points.values_list("pk", flat=True)
+                    )
+                    # Defensive: keep the instance's current SP selectable on edit.
+                    if self.instance and self.instance.pk and self.instance.sales_point_id \
+                            and self.instance.sales_point_id not in allowed_sp_ids:
+                        allowed_sp_ids.append(self.instance.sales_point_id)
                     self.fields['sales_point'].initial = sp
                     self.fields['sales_point'].queryset = \
-                        self.fields['sales_point'].queryset.filter(pk=sp.pk)
-                    self.fields['sales_point'].widget.attrs['disabled'] = True
+                        self.fields['sales_point'].queryset.filter(pk__in=allowed_sp_ids)
+                    # Use Django's form-field disabled (ignores submitted data,
+                    # reuses the instance/initial value) instead of an HTML
+                    # widget attribute — disabled HTML inputs don't POST and
+                    # would silently blank sales_point on save.
+                    self.fields['sales_point'].disabled = True
                     self.fields['service_city'].queryset = \
                         self.fields['service_city'].queryset.filter(sales_point=sp)
                     self.fields['assigned_user'].queryset = \
