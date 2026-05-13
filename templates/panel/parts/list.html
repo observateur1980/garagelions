@@ -1,6 +1,109 @@
 {% extends "panel/base.html" %}
 {% block title %}Parts{% endblock %}
 
+{% block extra_css %}
+<style>
+.ap-overlay {
+  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.55);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1100; padding: 20px;
+}
+.ap-overlay.show { display: flex; }
+.ap-modal {
+  background: #fff; border-radius: 4px; width: 100%; max-width: 1180px;
+  max-height: 92vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+}
+.ap-tabs {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px; background: #eef5fb; border-bottom: 1px solid #d8e6f1;
+  justify-content: center; position: relative;
+}
+.ap-tab {
+  padding: 14px 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+  color: #1f6cb6; text-transform: uppercase;
+  border-bottom: 3px solid #1f6cb6; background: transparent; border-top: 0; border-left: 0; border-right: 0;
+}
+.ap-close-icons { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; }
+.ap-icon-btn {
+  background: transparent; border: 0; cursor: pointer; color: #6b7280;
+  font-size: 18px; padding: 4px 6px; line-height: 1;
+}
+.ap-icon-btn:hover { color: #111827; }
+
+.ap-body { display: flex; flex: 1; min-height: 0; }
+.ap-left { flex: 1 1 auto; min-width: 0; padding: 0; overflow-y: auto; background: #fff; }
+.ap-right { width: 360px; flex-shrink: 0; border-left: 1px solid #e5e7eb; background: #fff; overflow-y: auto; padding: 14px; }
+
+.ap-desc-row { background: #eef5fb; padding: 14px 24px; border-bottom: 1px solid #d8e6f1; }
+.ap-desc-row label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.ap-desc-row input {
+  width: 100%; padding: 10px 12px; border: 1px solid #cfd9e3; border-radius: 3px;
+  font-size: 14px; background: #fff;
+}
+
+.ap-row-1 { display: flex; align-items: center; gap: 16px; padding: 14px 24px; }
+.ap-cat-select {
+  flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 3px;
+  background: #f3f4f6; font-size: 13px; color: #4b5563;
+}
+.ap-mode-toggle { display: inline-flex; border: 1px solid #d1d5db; border-radius: 3px; overflow: hidden; }
+.ap-mode-toggle button {
+  background: #fff; border: 0; padding: 8px 16px; font-size: 13px; color: #6b7280; cursor: pointer;
+}
+.ap-mode-toggle button.active { background: #f3f4f6; color: #111827; font-weight: 600; }
+
+.ap-section-title {
+  background: #e9eef2; padding: 9px 24px; display: flex; justify-content: space-between;
+  font-size: 13px; font-weight: 600; color: #374151;
+}
+.ap-section-title a { color: #2b80c9; font-size: 12px; cursor: pointer; text-decoration: none; }
+
+.ap-units { display: flex; gap: 6px; padding: 14px 24px; flex-wrap: wrap; align-items: center; }
+.ap-units .unit-label { font-size: 12px; color: #6b7280; margin-right: 6px; }
+.ap-unit-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border: 1px solid #d1d5db; border-radius: 3px;
+  background: #fff; font-size: 13px; color: #374151; cursor: pointer;
+}
+.ap-unit-chip.active { background: #1f6cb6; color: #fff; border-color: #1f6cb6; }
+.ap-unit-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: #d1d5db; }
+.ap-unit-chip.active .dot { background: #fff; }
+
+.ap-cost-card { border: 1px solid #e5e7eb; margin: 0 24px 12px; border-radius: 3px; overflow: hidden; }
+.ap-cost-head { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #f3f4f6; }
+.ap-cost-head .cb-wrap { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ap-cost-head .cb-wrap input { width: 16px; height: 16px; }
+.ap-cost-head .cost-name { font-weight: 600; color: #111827; font-size: 14px; }
+.ap-cost-head .cost-unit-link { color: #2b80c9; font-size: 12px; }
+.ap-cost-head .caret { background: transparent; border: 0; font-size: 14px; color: #9ca3af; padding: 4px 6px; cursor: pointer; margin-left: auto; }
+.ap-cost-body { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #fafbfc; }
+.ap-cost-body.collapsed { display: none; }
+.ap-cost-body label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.ap-stepper { display: inline-flex; align-items: center; background: #fff; border: 1px solid #d1d5db; border-radius: 3px; overflow: hidden; }
+.ap-stepper button { background: #fff; border: 0; padding: 8px 14px; font-size: 16px; color: #374151; cursor: pointer; line-height: 1; }
+.ap-stepper button:hover { background: #f3f4f6; }
+.ap-stepper input { border: 0; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; padding: 8px 10px; width: 80px; text-align: center; font-size: 14px; background: #fff; }
+.ap-stepper input:focus { outline: none; }
+
+.ap-preview-head { background: #d1d5db; color: #111827; padding: 10px 14px; font-weight: 700; font-size: 14px; }
+.ap-preview-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.ap-preview-row .label { color: #374151; }
+.ap-preview-row .net { color: #111827; min-width: 60px; text-align: right; background: #f3f4f6; padding: 4px 8px; border-radius: 2px; font-weight: 600; }
+.ap-preview-row.total .net { background: #c5c7cc; font-weight: 700; }
+
+.ap-foot { display: flex; justify-content: space-between; padding: 14px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; }
+.ap-foot .ap-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border: 1px solid #d1d5db; background: #fff; color: #374151;
+  border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.ap-foot .ap-btn:hover { background: #f3f4f6; }
+.ap-foot .ap-btn.primary { background: #fff; color: #1f6cb6; border-color: #1f6cb6; }
+.ap-foot .ap-btn.primary:hover { background: #eff7ff; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="max-width:1100px">
 
@@ -19,6 +122,11 @@
     <li class="nav-item" role="presentation">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-templates" type="button" role="tab">
         Templates
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-packages" type="button" role="tab">
+        Packages
       </button>
     </li>
   </ul>
@@ -161,7 +269,7 @@
               <h5 style="margin:0">Parts</h5>
               <p style="color:#6b7280; font-size:14px; margin:4px 0 0">Create and manage your parts library.</p>
             </div>
-            <button class="btn-panel" type="button" data-bs-toggle="modal" data-bs-target="#newPartModal">+ New Part</button>
+            <button class="btn-panel" type="button" id="btn-open-new-part">+ New Part</button>
           </div>
 
           <hr style="border-color:#e5e7eb; margin:0 0 16px">
@@ -197,24 +305,6 @@
         </div>
       </div>
 
-      {% if sales_point %}
-      <!-- Add from Global Library -->
-      <div class="card dashboard-card">
-        <div class="card-body">
-          <h5 style="margin:0 0 4px">Add from Global Library</h5>
-          <p style="color:#6b7280; font-size:14px; margin:4px 0 16px">Search and add parts created by admin to your location.</p>
-
-          <div style="margin-bottom:16px">
-            <input id="global-parts-q" type="text" placeholder="Search global parts by name or SKU..."
-                   style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px">
-          </div>
-
-          <div id="global-parts-content">
-            <div style="padding:16px; color:#9ca3af; font-size:14px; text-align:center">Loading global parts...</div>
-          </div>
-        </div>
-      </div>
-      {% endif %}
     </div>
 
     <!-- ═══ TAB 3: Templates ═══ -->
@@ -231,6 +321,25 @@
 
           <div id="tpl-tab-list">
             <div style="color:#9ca3af; padding:24px; text-align:center; font-size:14px">Loading templates…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB 4: Packages ═══ -->
+    <div class="tab-pane fade" id="tab-packages" role="tabpanel">
+      <div class="card dashboard-card">
+        <div class="card-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+            <h5 style="margin:0">Packages</h5>
+            <button class="btn-panel" data-bs-toggle="modal" data-bs-target="#packageModal" id="pkg-new-btn">+ New Package</button>
+          </div>
+          <p style="color:#6b7280; font-size:14px; margin:0 0 18px">
+            Ready-to-use scope-of-work blocks. Each adds one rich line item (name, description, price) to an estimate.
+          </p>
+
+          <div id="pkg-tab-list">
+            <div style="color:#9ca3af; padding:24px; text-align:center; font-size:14px">Loading packages…</div>
           </div>
         </div>
       </div>
@@ -259,13 +368,21 @@
             <label>SKU (optional)</label>
             <input id="np-sku" type="text" placeholder="e.g. ST-24">
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label>Category</label>
             <select id="np-category">
               <option value="">No category</option>
               {% for c in selected_categories %}
               <option value="{{ c.pk }}">{{ c.name }}</option>
               {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label>Cost Type *</label>
+            <select id="np-cost-type">
+              <option value="material">Material</option>
+              <option value="labor">Labor</option>
+              <option value="sub">Subcontractor</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -288,6 +405,134 @@
         <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
         <button id="np-save" class="btn-panel" type="button">Create Part</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Styled Add Part Modal (new) ═══ -->
+<div class="ap-overlay" id="modal-add-part-lib" onclick="if(event.target===this)apClose()">
+  <div class="ap-modal" onclick="event.stopPropagation()">
+    <div class="ap-tabs">
+      <button type="button" class="ap-tab active">Add Part</button>
+      <div class="ap-close-icons">
+        <button class="ap-icon-btn" id="ap-close-lib" aria-label="Close">&times;</button>
+      </div>
+    </div>
+
+    <div id="ap-err" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; margin:0; font-size:14px; border-bottom:1px solid #fecaca"></div>
+
+    <div class="ap-body">
+      <div class="ap-left">
+        <div class="ap-desc-row">
+          <label for="ap-desc-lib">Description</label>
+          <input type="text" id="ap-desc-lib" placeholder="">
+        </div>
+        <div class="ap-row-1">
+          <select class="ap-cat-select" id="ap-category-lib">
+            <option value="">Select a Category…</option>
+            {% for c in selected_categories %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+          </select>
+          <div class="ap-mode-toggle">
+            <button type="button" data-mode="simple">Simple</button>
+            <button type="button" data-mode="standard" class="active">Standard</button>
+          </div>
+        </div>
+        <div class="ap-section-title"><span>Cost calculation</span><a id="ap-collapse-all-lib">Collapse All</a></div>
+        <div class="ap-units">
+          <span class="unit-label">Unit Type:</span>
+          <button type="button" class="ap-unit-chip active" data-unit="Piece"><span class="dot"></span>Piece</button>
+          <button type="button" class="ap-unit-chip" data-unit="Sq. Foot">Sq. Foot</button>
+          <button type="button" class="ap-unit-chip" data-unit="Lin. Foot">Lin. Foot</button>
+          <button type="button" class="ap-unit-chip" data-unit="Cub. Yard">Cub. Yard</button>
+          <button type="button" class="ap-unit-chip" data-unit="Dollar">Dollar</button>
+          <button type="button" class="ap-unit-chip" data-unit="Hour">Hour</button>
+        </div>
+
+        <div class="ap-cost-card" data-cost="material">
+          <div class="ap-cost-head">
+            <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="material"> <span class="cost-name">Material</span></label>
+            <span class="cost-unit-link">$ / <span class="unit-name">Piece</span></span>
+            <button type="button" class="caret" data-cost="material">&#9650;</button>
+          </div>
+          <div class="ap-cost-body">
+            <div>
+              <label>$ / <span class="unit-name">Piece</span></label>
+              <span class="ap-stepper">
+                <button type="button" data-step="material_unit_price" data-dir="-1">&minus;</button>
+                <input type="number" class="ap-input" data-field="material_unit_price" value="0" min="0" step="any">
+                <button type="button" data-step="material_unit_price" data-dir="1">+</button>
+              </span>
+            </div>
+            <div>
+              <label>Multiplier</label>
+              <input type="number" class="ap-input" data-field="material_multiplier" value="1" min="0" step="any" style="width:120px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-cost-card" data-cost="labor">
+          <div class="ap-cost-head">
+            <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="labor"> <span class="cost-name">Labor</span></label>
+            <span class="cost-unit-link">Hours per Unit</span>
+            <button type="button" class="caret" data-cost="labor">&#9650;</button>
+          </div>
+          <div class="ap-cost-body">
+            <div>
+              <label>Hours per Unit</label>
+              <span class="ap-stepper">
+                <button type="button" data-step="labor_unit_price" data-dir="-1">&minus;</button>
+                <input type="number" class="ap-input" data-field="labor_unit_price" value="1" min="0" step="any">
+                <button type="button" data-step="labor_unit_price" data-dir="1">+</button>
+              </span>
+            </div>
+            <div>
+              <label>Labor Rate, $</label>
+              <input type="number" class="ap-input" data-field="labor_multiplier" value="51.4265" min="0" step="any" style="width:140px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-cost-card" data-cost="sub">
+          <div class="ap-cost-head">
+            <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="sub"> <span class="cost-name">Subcontractor</span></label>
+            <span class="cost-unit-link">$ / <span class="unit-name">Piece</span></span>
+            <button type="button" class="caret" data-cost="sub">&#9650;</button>
+          </div>
+          <div class="ap-cost-body">
+            <div>
+              <label>$ / <span class="unit-name">Piece</span></label>
+              <span class="ap-stepper">
+                <button type="button" data-step="sub_unit_price" data-dir="-1">&minus;</button>
+                <input type="number" class="ap-input" data-field="sub_unit_price" value="0" min="0" step="any">
+                <button type="button" data-step="sub_unit_price" data-dir="1">+</button>
+              </span>
+            </div>
+            <div>
+              <label>Multiplier</label>
+              <input type="number" class="ap-input" data-field="sub_multiplier" value="1" min="0" step="any" style="width:120px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:0 24px 14px">
+          <label style="font-size:12px; color:#6b7280; display:block; margin:14px 0 6px">SKU (optional)</label>
+          <input type="text" id="ap-sku" placeholder="e.g. ST-24" style="width:200px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px; font-size:13px">
+        </div>
+      </div>
+
+      <div class="ap-right">
+        <div class="ap-preview-head">Part Preview</div>
+        <div class="ap-preview-row"><span class="label">Material cost / <span class="pv-unit">Piece</span></span><span class="net" id="pv-mat-lib">$0.00</span></div>
+        <div class="ap-preview-row"><span class="label">Labor cost / <span class="pv-unit">Piece</span></span><span class="net" id="pv-lab-lib">$0.00</span></div>
+        <div class="ap-preview-row"><span class="label">Sub cost / <span class="pv-unit">Piece</span></span><span class="net" id="pv-sub-lib">$0.00</span></div>
+        <div class="ap-preview-row total"><span class="label">Total cost / <span class="pv-unit">Piece</span></span><span class="net" id="pv-total-lib">$0.00</span></div>
+        <div class="ap-preview-row"><span class="label">Will create</span><span class="net" id="pv-count-lib">0 parts</span></div>
+      </div>
+    </div>
+
+    <div class="ap-foot">
+      <button type="button" class="ap-btn" id="ap-cancel-lib">&#10005; Close</button>
+      <button type="button" class="ap-btn primary" id="ap-add-lib">&#10004; Add Part</button>
     </div>
   </div>
 </div>
@@ -363,6 +608,66 @@
       <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
         <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
         <button id="nt-create" class="btn-panel" type="button">Create &amp; Edit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Package Modal (create / edit) ═══ -->
+<div class="modal fade" id="packageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px">
+      <div class="modal-header" style="border-bottom:1px solid #e5e7eb; padding:16px 24px">
+        <h5 style="margin:0; font-size:18px" id="pkg-modal-title">New Package</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body panel-form" style="padding:24px">
+        <div id="pkg-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:14px"></div>
+        <input type="hidden" id="pkg-id">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label>Name *</label>
+            <input id="pkg-name" type="text" placeholder="e.g. 3-Layer Epoxy Flake Garage Flooring System">
+          </div>
+          <div class="col-md-4">
+            <label>Unit</label>
+            <select id="pkg-unit">
+              <option value="">No unit</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label>Cost Type *</label>
+            <select id="pkg-cost-type">
+              <option value="material">Material</option>
+              <option value="labor">Labor</option>
+              <option value="sub">Subcontractor</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label>Unit Price</label>
+            <input id="pkg-price" type="text" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="col-md-8">
+            <p style="color:#6b7280; font-size:13px; margin:8px 0 0">
+              Markup is set per estimate (Material / Labor / Subcontractor %), not per package.
+            </p>
+          </div>
+          {% if request.user.is_staff or request.user.is_superuser %}
+          <div class="col-12" id="pkg-scope-row">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal">
+              <input id="pkg-global" type="checkbox" style="width:auto; margin:0"> Make available to all locations (global)
+            </label>
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <label>Description</label>
+            <textarea id="pkg-description" rows="10" placeholder="Multi-paragraph scope of work, what's included, exclusions, etc."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e5e7eb; padding:12px 24px">
+        <button class="btn-panel-outline" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button id="pkg-save" class="btn-panel" type="button">Save Package</button>
       </div>
     </div>
   </div>
@@ -652,83 +957,6 @@
     } catch (e) { showPartsErr(e.message); }
   };
 
-  // ═══════════════════════════════════════════════
-  // ADD FROM GLOBAL LIBRARY
-  // ═══════════════════════════════════════════════
-  const globalQEl = document.getElementById("global-parts-q");
-  const globalContent = document.getElementById("global-parts-content");
-  let globalTimer = null;
-
-  async function loadGlobalParts() {
-    const q = globalQEl ? globalQEl.value.trim() : "";
-    const url = `{% url 'panel:ajax_global_parts_list' %}` + (q ? `?q=${encodeURIComponent(q)}` : "");
-    try {
-      const res = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
-      const data = await res.json();
-      renderGlobalParts(data.categories || []);
-    } catch (e) {}
-  }
-
-  function renderGlobalParts(categories) {
-    if (!globalContent) return;
-    if (!categories.length) {
-      globalContent.innerHTML = '<div style="padding:16px; color:#9ca3af; font-size:14px; text-align:center">No global parts available to add.</div>';
-      return;
-    }
-
-    let html = "";
-    categories.forEach(cat => {
-      html += `<div style="margin-bottom:24px">
-        <div style="font-size:15px; font-weight:700; color:#111827; margin:0 0 10px; padding:8px 12px; background:#f3f4f6; border-radius:6px; border-left:4px solid #374151">${cat.name}</div>
-        <table class="panel-table" style="margin:0">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>SKU</th>
-              <th>Unit</th>
-              <th style="width:80px"></th>
-            </tr>
-          </thead>
-          <tbody>`;
-      cat.parts.forEach(p => {
-        html += `<tr>
-              <td style="font-weight:500">${p.name}</td>
-              <td style="color:#6b7280">${p.sku || "—"}</td>
-              <td>${p.unit || "—"}</td>
-              <td style="text-align:right">
-                <button type="button" onclick="addGlobalPart(${p.id})" class="btn-panel" style="padding:4px 12px; font-size:12px">+ Add</button>
-              </td>
-            </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    });
-    globalContent.innerHTML = html;
-  }
-
-  if (globalQEl) {
-    globalQEl.addEventListener("input", () => {
-      clearTimeout(globalTimer);
-      globalTimer = setTimeout(loadGlobalParts, 250);
-    });
-  }
-
-  // Load global parts when Parts tab is shown
-  document.querySelector('[data-bs-target="#tab-parts"]')?.addEventListener("shown.bs.tab", () => {
-    refreshParts();
-    loadGlobalParts();
-  });
-
-  window.addGlobalPart = async function(partId) {
-    try {
-      const payload = await postJSON("{% url 'panel:ajax_parts_add_global' %}", { part_id: partId });
-      if (payload.ok) {
-        tableEl.innerHTML = payload.html;
-        injectPartActions();
-        loadGlobalParts();
-      }
-    } catch (e) { showPartsErr(e.message); }
-  };
-
   // Update price inline
   window.updatePartPrice = async function(input) {
     const partId = input.dataset.partId;
@@ -766,6 +994,8 @@
   document.getElementById("newPartModal")?.addEventListener("show.bs.modal", () => {
     clearNpErr(); loadUnits();
     npName.value = ""; npSku.value = ""; npCategory.value = ""; npPrice.value = ""; npNotes.value = "";
+    const ct = document.getElementById("np-cost-type");
+    if (ct) ct.value = "material";
     setTimeout(() => npName.focus(), 150);
   });
 
@@ -779,6 +1009,7 @@
         name,
         sku: (npSku.value || "").trim(),
         category_id: npCategory.value || "",
+        cost_type: (document.getElementById("np-cost-type")?.value || "material"),
         unit_id: npUnit.value || "",
         unit_price: (npPrice.value || "").trim(),
         notes: (npNotes.value || "").trim(),
@@ -981,6 +1212,313 @@
     if (globalCb) globalCb.checked = false;
     document.getElementById("nt-error").style.display = "none";
   });
+
+  // ═══════════════════════════════════════════════
+  // PACKAGES TAB
+  // ═══════════════════════════════════════════════
+  const pkgList = document.getElementById("pkg-tab-list");
+  const pkgErr = document.getElementById("pkg-error");
+  const pkgModalEl = document.getElementById("packageModal");
+  const pkgModal = pkgModalEl ? new bootstrap.Modal(pkgModalEl) : null;
+
+  function showPkgErr(msg) { pkgErr.textContent = msg; pkgErr.style.display = "block"; }
+  function clearPkgErr() { pkgErr.style.display = "none"; }
+
+  async function loadPkgUnits() {
+    const sel = document.getElementById("pkg-unit");
+    if (!sel) return;
+    try {
+      const res = await fetch("{% url 'panel:ajax_units' %}", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const payload = await res.json();
+      sel.innerHTML = `<option value="">No unit</option>` +
+        payload.results.map(u => `<option value="${u.id}">${u.name}${u.abbr ? " (" + u.abbr + ")" : ""}</option>`).join("");
+    } catch (e) {
+      sel.innerHTML = `<option value="">No unit</option>`;
+    }
+  }
+
+  function resetPkgForm() {
+    document.getElementById("pkg-id").value = "";
+    document.getElementById("pkg-name").value = "";
+    document.getElementById("pkg-unit").value = "";
+    document.getElementById("pkg-price").value = "";
+    document.getElementById("pkg-cost-type").value = "material";
+    document.getElementById("pkg-description").value = "";
+    const g = document.getElementById("pkg-global");
+    if (g) g.checked = false;
+    document.getElementById("pkg-modal-title").textContent = "New Package";
+    clearPkgErr();
+  }
+
+  pkgModalEl?.addEventListener("show.bs.modal", () => { loadPkgUnits(); });
+
+  async function refreshPackages() {
+    if (!pkgList) return;
+    pkgList.innerHTML = '<div style="color:#9ca3af; padding:24px; text-align:center; font-size:14px">Loading packages…</div>';
+    const res = await fetch("/panel/parts/ajax/packages/", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+
+    if (!data.results.length) {
+      pkgList.innerHTML = `<div style="color:#9ca3af; padding:32px; text-align:center; font-size:14px; background:#f9fafb; border-radius:8px">
+        No packages yet. Click <strong>+ New Package</strong> above to create one.
+      </div>`;
+      return;
+    }
+
+    let html = `<table class="panel-table" style="margin:0">
+      <thead><tr>
+        <th>Name</th>
+        <th style="width:110px">Cost Type</th>
+        <th style="width:80px">Unit</th>
+        <th style="width:120px; text-align:right">Unit Price</th>
+        <th style="width:90px">Scope</th>
+        <th style="width:160px; text-align:right"></th>
+      </tr></thead><tbody>`;
+    data.results.forEach(p => {
+      const desc = p.description ? `<div style="font-size:12px; color:#6b7280; margin-top:2px; white-space:pre-wrap; max-height:3em; overflow:hidden">${escapeHtml(p.description)}</div>` : "";
+      html += `<tr>
+        <td>
+          <div style="font-weight:500">${escapeHtml(p.name)}</div>
+          ${desc}
+        </td>
+        <td style="color:#6b7280">${escapeHtml(p.cost_type_label || "")}</td>
+        <td style="color:#6b7280">${escapeHtml(p.unit_label || "")}</td>
+        <td style="text-align:right; font-weight:500">$${parseFloat(p.unit_price).toFixed(2)}</td>
+        <td>
+          ${p.is_global
+            ? '<span style="font-size:11px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:2px 8px; border-radius:10px">Global</span>'
+            : '<span style="font-size:11px; color:#6b7280; background:#f3f4f6; border:1px solid #e5e7eb; padding:2px 8px; border-radius:10px">Location</span>'}
+        </td>
+        <td style="text-align:right">
+          ${p.can_edit
+            ? `<button class="btn-panel-outline pkg-edit" data-id="${p.id}" style="padding:4px 10px; font-size:13px">Edit</button>`
+            : ""}
+          ${p.can_delete
+            ? `<button class="btn-panel-outline pkg-del" data-id="${p.id}" style="padding:4px 10px; font-size:13px; color:#b91c1c; border-color:#fecaca; margin-left:4px">Delete</button>`
+            : ""}
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    pkgList.innerHTML = html;
+
+    pkgList.querySelectorAll(".pkg-edit").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const p = data.results.find(x => x.id === parseInt(btn.dataset.id, 10));
+        if (!p) return;
+        resetPkgForm();
+        await loadPkgUnits();
+        document.getElementById("pkg-id").value = p.id;
+        document.getElementById("pkg-name").value = p.name;
+        document.getElementById("pkg-unit").value = p.unit_id || "";
+        document.getElementById("pkg-cost-type").value = p.cost_type || "material";
+        document.getElementById("pkg-price").value = parseFloat(p.unit_price).toFixed(2);
+        document.getElementById("pkg-description").value = p.description || "";
+        const g = document.getElementById("pkg-global");
+        if (g) g.checked = p.is_global;
+        document.getElementById("pkg-modal-title").textContent = "Edit Package";
+        pkgModal && pkgModal.show();
+      });
+    });
+
+    pkgList.querySelectorAll(".pkg-del").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this package?")) return;
+        const r = await postForm(`/panel/parts/ajax/packages/${btn.dataset.id}/delete/`, {});
+        if (r.ok) refreshPackages();
+        else if (r.error) alert(r.error);
+      });
+    });
+  }
+
+  document.querySelector('[data-bs-target="#tab-packages"]')?.addEventListener("shown.bs.tab", refreshPackages);
+  if (document.querySelector("#tab-packages.active")) refreshPackages();
+
+  document.getElementById("pkg-new-btn")?.addEventListener("click", resetPkgForm);
+
+  document.getElementById("pkg-save")?.addEventListener("click", async () => {
+    clearPkgErr();
+    const id = document.getElementById("pkg-id").value.trim();
+    const name = document.getElementById("pkg-name").value.trim();
+    if (!name) { showPkgErr("Name is required."); return; }
+
+    const globalCb = document.getElementById("pkg-global");
+    const payload = {
+      name,
+      unit_id: document.getElementById("pkg-unit").value || "",
+      cost_type: document.getElementById("pkg-cost-type").value || "material",
+      unit_price: document.getElementById("pkg-price").value.trim() || "0",
+      description: document.getElementById("pkg-description").value.trim(),
+      scope: globalCb && globalCb.checked ? "global" : "location",
+    };
+
+    const url = id
+      ? `/panel/parts/ajax/packages/${id}/update/`
+      : "/panel/parts/ajax/packages/create/";
+    const r = await postForm(url, payload);
+    if (r.ok) {
+      pkgModal && pkgModal.hide();
+      refreshPackages();
+    } else {
+      showPkgErr(r.error || "Could not save package.");
+    }
+  });
+})();
+
+// ── Styled Add Part modal ──
+(function() {
+  const apModal = document.getElementById("modal-add-part-lib");
+  if (!apModal) return;
+
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const p = v.split(`; ${name}=`);
+    return p.length === 2 ? p.pop().split(";").shift() : "";
+  }
+  const csrf = getCookie("csrftoken");
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                 "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest" },
+      body: new URLSearchParams(data).toString(),
+    });
+    return res.json();
+  }
+
+  const state = {
+    unit: "Piece",
+    rows: {
+      material: { enabled: false, unit_price: 0, multiplier: 1 },
+      labor:    { enabled: false, unit_price: 1, multiplier: 51.4265 },
+      sub:      { enabled: false, unit_price: 0, multiplier: 1 },
+    },
+  };
+
+  function apOpen() {
+    apModal.classList.add("show");
+    apReset();
+    setTimeout(() => document.getElementById("ap-desc-lib").focus(), 50);
+  }
+  window.apClose = function() {
+    apModal.classList.remove("show");
+    document.getElementById("ap-err").style.display = "none";
+  };
+  function showErr(msg) {
+    const el = document.getElementById("ap-err");
+    el.textContent = msg; el.style.display = "block";
+  }
+  function apReset() {
+    document.getElementById("ap-desc-lib").value = "";
+    document.getElementById("ap-category-lib").selectedIndex = 0;
+    document.getElementById("ap-sku").value = "";
+    state.unit = "Piece";
+    state.rows.material = { enabled: false, unit_price: 0, multiplier: 1 };
+    state.rows.labor    = { enabled: false, unit_price: 1, multiplier: 51.4265 };
+    state.rows.sub      = { enabled: false, unit_price: 0, multiplier: 1 };
+    apModal.querySelectorAll(".ap-cost-enabled").forEach(cb => { cb.checked = false; });
+    apModal.querySelectorAll(".ap-input").forEach(inp => {
+      const [ct, ...rest] = inp.dataset.field.split("_");
+      const field = rest.join("_");
+      inp.value = state.rows[ct][field];
+    });
+    apModal.querySelectorAll(".ap-unit-chip").forEach(c => c.classList.toggle("active", c.dataset.unit === "Piece"));
+    apModal.querySelectorAll(".unit-name, .pv-unit").forEach(el => el.textContent = "Piece");
+    apModal.querySelectorAll(".ap-cost-body").forEach(b => b.classList.remove("collapsed"));
+    apModal.querySelectorAll(".caret").forEach(c => c.innerHTML = "&#9650;");
+    recompute();
+  }
+
+  function read() {
+    apModal.querySelectorAll(".ap-cost-enabled").forEach(cb => {
+      state.rows[cb.dataset.cost].enabled = cb.checked;
+    });
+    apModal.querySelectorAll(".ap-input").forEach(inp => {
+      const [ct, ...rest] = inp.dataset.field.split("_");
+      const field = rest.join("_");
+      state.rows[ct][field] = parseFloat(inp.value) || 0;
+    });
+  }
+  function recompute() {
+    read();
+    const fmt = v => "$" + (Math.round(v * 100) / 100).toFixed(2);
+    let count = 0;
+    let mat = 0, lab = 0, sub = 0;
+    if (state.rows.material.enabled) { mat = state.rows.material.unit_price * state.rows.material.multiplier; count++; }
+    if (state.rows.labor.enabled)    { lab = state.rows.labor.unit_price * state.rows.labor.multiplier; count++; }
+    if (state.rows.sub.enabled)      { sub = state.rows.sub.unit_price * state.rows.sub.multiplier; count++; }
+    document.getElementById("pv-mat-lib").textContent = fmt(mat);
+    document.getElementById("pv-lab-lib").textContent = fmt(lab);
+    document.getElementById("pv-sub-lib").textContent = fmt(sub);
+    document.getElementById("pv-total-lib").textContent = fmt(mat + lab + sub);
+    document.getElementById("pv-count-lib").textContent = count + " part" + (count === 1 ? "" : "s");
+  }
+
+  apModal.querySelectorAll(".ap-unit-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      apModal.querySelectorAll(".ap-unit-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      state.unit = chip.dataset.unit;
+      apModal.querySelectorAll(".unit-name, .pv-unit").forEach(el => el.textContent = state.unit);
+    });
+  });
+  apModal.querySelectorAll("[data-step]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const field = btn.dataset.step;
+      const dir = parseFloat(btn.dataset.dir) || 1;
+      const inp = apModal.querySelector(`.ap-input[data-field="${field}"]`);
+      if (!inp) return;
+      inp.value = Math.max(0, (parseFloat(inp.value) || 0) + dir);
+      recompute();
+    });
+  });
+  apModal.addEventListener("input", recompute);
+  apModal.addEventListener("change", recompute);
+  apModal.querySelectorAll(".caret").forEach(c => {
+    c.addEventListener("click", () => {
+      const body = c.closest(".ap-cost-card").querySelector(".ap-cost-body");
+      const collapsed = body.classList.toggle("collapsed");
+      c.innerHTML = collapsed ? "&#9660;" : "&#9650;";
+    });
+  });
+  document.getElementById("ap-collapse-all-lib").addEventListener("click", () => {
+    apModal.querySelectorAll(".ap-cost-body").forEach(b => b.classList.add("collapsed"));
+    apModal.querySelectorAll(".caret").forEach(c => c.innerHTML = "&#9660;");
+  });
+
+  document.getElementById("btn-open-new-part").addEventListener("click", apOpen);
+  document.getElementById("ap-close-lib").addEventListener("click", apClose);
+  document.getElementById("ap-cancel-lib").addEventListener("click", apClose);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") apClose(); });
+
+  document.getElementById("ap-add-lib").addEventListener("click", async () => {
+    read();
+    const name = document.getElementById("ap-desc-lib").value.trim();
+    if (!name) { showErr("Description is required."); return; }
+    const anyEnabled = ["material","labor","sub"].some(c => state.rows[c].enabled);
+    if (!anyEnabled) { showErr("Enable at least one cost type."); return; }
+    const payload = {
+      description: name,
+      sku: document.getElementById("ap-sku").value.trim(),
+      category_id: document.getElementById("ap-category-lib").value || "",
+      unit_label: state.unit,
+    };
+    for (const ct of ["material","labor","sub"]) {
+      payload[`${ct}_enabled`] = state.rows[ct].enabled ? "1" : "0";
+      payload[`${ct}_unit_price`] = state.rows[ct].unit_price;
+      payload[`${ct}_multiplier`] = state.rows[ct].multiplier;
+    }
+    const data = await postJSON("{% url 'panel:ajax_parts_create_multi' %}", payload);
+    if (data.ok) {
+      const tableEl = document.getElementById("parts-table");
+      if (tableEl && data.html) { tableEl.innerHTML = data.html; if (typeof injectPartActions === "function") injectPartActions(); }
+      apClose();
+    } else {
+      showErr(data.error || "Could not create part(s).");
+    }
+  });
+
+  recompute();
 })();
 </script>
 {% endblock %}

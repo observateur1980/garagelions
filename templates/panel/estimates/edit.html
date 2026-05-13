@@ -9,14 +9,12 @@
 }
 .est-header {
   background: #f9fafb; border: 1px solid #e5e7eb; border-top: none;
-  border-radius: 0 0 8px 8px; padding: 24px; margin-bottom: 24px;
+  border-radius: 0 0 8px 8px; padding: 24px; margin-bottom: 18px;
 }
-.est-header h2 {
-  margin: 0 0 4px; font-size: 24px; color: #111827;
-}
+.est-header h2 { margin: 0 0 4px; font-size: 24px; color: #111827; cursor: pointer; }
 .est-header .customer-link { color: #374151; text-decoration: none; font-size: 14px; }
 .est-header .customer-link:hover { text-decoration: underline; }
-.est-desc { color: #6b7280; font-size: 13px; margin: 4px 0 0; cursor: pointer; }
+.est-desc { color: #6b7280; font-size: 13px; cursor: pointer; }
 .est-desc:hover { color: #374151; }
 
 .est-actions { display: flex; gap: 16px; align-items: flex-start; }
@@ -32,72 +30,120 @@
 }
 .est-action-btn:hover .est-action-icon { background: #e5e7eb; }
 
-.section-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: 0 0 12px;
+/* Toolbar */
+.est-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  padding: 12px 16px; background: #fff;
+  border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 16px;
+  position: sticky; top: 0; z-index: 50;
 }
-.section-head h4 { margin: 0; font-size: 16px; color: #111827; }
-.add-component-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 14px;
-  border: 1px dashed #9ca3af;
-  border-radius: 8px; background: #fff; color: #374151;
-  font-size: 13px; font-weight: 500; cursor: pointer;
+.section-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 16px;
+  background: #fff; border-bottom: 1px solid #f3f4f6;
 }
-.add-component-btn:hover { border-color: #111827; color: #111827; background: #f9fafb; }
-
-.components-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-.component-row {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
-  padding: 14px 18px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.component-row:hover { border-color: #374151; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.component-row .col-name {
-  flex: 1; min-width: 0;
-}
-.component-row .col-name a {
-  color: #111827; text-decoration: none; font-weight: 600; font-size: 15px;
-}
-.component-row .col-name a:hover { text-decoration: underline; }
-.component-row .col-meta { color: #6b7280; font-size: 12px; margin-top: 2px; }
-.component-row .col-subtotal {
-  font-weight: 600; color: #111827; font-size: 15px;
-  width: 130px; text-align: right;
-}
-.component-row .col-actions { display: flex; gap: 6px; margin-left: 12px; }
-.component-row .row-edit-btn {
-  background: #111827; color: #fff; border: none;
-  padding: 7px 14px; border-radius: 6px; font-size: 13px;
+.quick-add-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 13px; border: 1px solid #d1d5db; border-radius: 8px;
+  background: #fff; color: #374151; font-size: 13px; font-weight: 500;
   cursor: pointer; text-decoration: none;
 }
-.component-row .row-edit-btn:hover { background: #000; }
-.component-row .row-del-btn {
+.quick-add-btn:hover { border-color: #111827; background: #f9fafb; color: #111827; }
+.quick-add-btn svg { flex-shrink: 0; }
+.quick-add-btn.primary { background: #111827; color: #fff; border-color: #111827; }
+.quick-add-btn.primary:hover { background: #000; color: #fff; }
+
+/* Sections (one per component) */
+.section-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  margin-bottom: 16px; overflow: hidden;
+}
+.section-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+}
+.section-head .section-name {
+  font-size: 14px; font-weight: 700; color: #111827;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.section-head .section-name .pencil { font-size: 18px; color: #9ca3af; }
+.section-head .section-name:hover .pencil { color: #374151; }
+.section-head .section-meta {
+  display: flex; gap: 14px; align-items: center;
+  font-size: 12px; color: #6b7280;
+}
+.section-head .section-subtotal {
+  font-size: 14px; font-weight: 600; color: #111827;
+}
+.section-head .section-del {
   background: none; border: 1px solid #d1d5db; color: #9ca3af;
-  font-size: 14px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; padding: 4px 8px; border-radius: 6px; cursor: pointer;
 }
-.component-row .row-del-btn:hover { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+.section-head .section-del:hover { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
 
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th {
+  text-align: left; padding: 10px 12px; font-size: 11px;
+  color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;
+  font-weight: 600; border-bottom: 1px solid #e5e7eb;
+}
+.items-table td {
+  padding: 7px 12px; font-size: 13px; color: #374151;
+  border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+}
+.items-table tfoot td {
+  border-top: 2px solid #e5e7eb; border-bottom: none; padding: 10px 12px;
+}
+.items-table .editable-cell {
+  border: 1px solid transparent; padding: 5px 7px;
+  border-radius: 4px; min-width: 50px; background: #f9fafb; font-size: 13px;
+}
+.items-table .editable-cell:focus { outline: none; border-color: #6b7280; background: #fff; }
+.item-action-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; color: #9ca3af; padding: 3px;
+}
+.item-action-btn:hover { color: #374151; }
+.item-edit-btn:hover { color: #2563eb; }
+.item-delete-btn:hover { color: #b91c1c; }
+.item-actions-cell { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.item-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #374151; }
+
+.section-foot {
+  padding: 8px 12px; background: #fafafa; border-top: 1px solid #f3f4f6;
+  display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #6b7280;
+}
+.section-foot .add-here {
+  background: none; border: 1px dashed #d1d5db; padding: 5px 12px;
+  border-radius: 6px; color: #374151; font-size: 12px; cursor: pointer;
+}
+.section-foot .add-here:hover { border-color: #111827; color: #111827; background: #fff; }
+
+.empty-section { color: #9ca3af; padding: 18px; text-align: center; font-size: 13px; }
 .empty-components {
-  border: 1px dashed #d1d5db; border-radius: 8px;
-  padding: 30px; text-align: center; color: #9ca3af; background: #fff;
+  border: 1px dashed #d1d5db; border-radius: 10px;
+  padding: 30px; text-align: center; color: #9ca3af; background: #fff; margin-bottom: 16px;
 }
 
+/* Summary panel */
 .summary-card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
-  padding: 20px; max-width: 320px; margin-left: auto;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 18px; max-width: 360px; margin-left: auto; margin-top: 8px;
 }
 .summary-row {
   display: flex; justify-content: space-between;
-  padding: 6px 0; font-size: 14px; color: #374151;
+  padding: 5px 0; font-size: 14px; color: #374151;
 }
+.summary-row.muted { color: #6b7280; font-size: 13px; }
 .summary-row.total {
-  border-top: 2px solid #e5e7eb; margin-top: 8px; padding-top: 12px;
-  font-size: 18px; font-weight: 600; color: #111827;
+  border-top: 2px solid #111827; margin-top: 8px; padding-top: 12px;
+  font-size: 18px; font-weight: 700; color: #111827;
+}
+.summary-row.basebid {
+  border-top: 1px solid #e5e7eb; margin-top: 6px; padding-top: 10px;
+  font-weight: 600; color: #111827;
 }
 
-/* ── Send modal ── */
+/* Modals */
 .qa-overlay {
   position: fixed; inset: 0; background: rgba(17, 24, 39, 0.5);
   display: none; align-items: center; justify-content: center;
@@ -106,7 +152,7 @@
 .qa-overlay.show { display: flex; }
 .qa-modal {
   background: #fff; border-radius: 12px; width: 100%;
-  max-width: 460px; max-height: 85vh;
+  max-width: 640px; max-height: 85vh;
   display: flex; flex-direction: column;
   box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;
 }
@@ -125,13 +171,187 @@
   padding: 14px 20px; border-top: 1px solid #e5e7eb;
   display: flex; justify-content: flex-end; gap: 8px;
 }
-.btn-base {
-  padding: 9px 14px; border: 1px solid #d1d5db; border-radius: 8px;
-  background: #fff; color: #374151; font-size: 13px; font-weight: 500; cursor: pointer;
+.qa-search {
+  width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; margin-bottom: 12px; background: #fff;
 }
-.btn-base:hover { border-color: #111827; color: #111827; }
-.btn-primary { background: #111827; color: #fff; border-color: #111827; }
-.btn-primary:hover { background: #000; color: #fff; }
+.qa-search:focus { outline: none; border-color: #6b7280; }
+select.qa-search { padding-right: 30px; }
+.qa-part-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px;
+  margin-bottom: 6px; cursor: pointer;
+}
+.qa-part-row:hover { border-color: #111827; background: #f9fafb; }
+.qa-part-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.qa-part-price { font-weight: 600; color: #111827; }
+.qa-cat-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #6b7280; margin: 14px 0 6px; font-weight: 600;
+}
+.qa-cat-label:first-child { margin-top: 0; }
+.qa-empty { color: #9ca3af; padding: 30px; text-align: center; font-size: 14px; }
+.qa-form-row { margin-bottom: 12px; }
+.qa-form-row label {
+  display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500;
+}
+.qa-form-row input, .qa-form-row textarea, .qa-form-row select {
+  width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 14px; background: #fff;
+}
+.qa-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* ─── New Add Part modal ─── */
+.ap-overlay {
+  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.55);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1100; padding: 20px;
+}
+.ap-overlay.show { display: flex; }
+.ap-modal {
+  background: #fff; border-radius: 4px; width: 100%; max-width: 1180px;
+  max-height: 92vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+}
+.ap-tabs {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px; background: #eef5fb; border-bottom: 1px solid #d8e6f1;
+  justify-content: center; position: relative;
+}
+.ap-tab {
+  padding: 14px 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+  color: #3d8bd6; text-transform: uppercase; cursor: pointer;
+  border-bottom: 3px solid transparent; background: transparent; border-top: 0; border-left: 0; border-right: 0;
+}
+.ap-tab.active { color: #1f6cb6; border-bottom-color: #1f6cb6; }
+.ap-tab:hover { color: #1f6cb6; }
+.ap-close-icons { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; }
+.ap-icon-btn {
+  background: transparent; border: 0; cursor: pointer; color: #6b7280;
+  font-size: 18px; padding: 4px 6px; line-height: 1;
+}
+.ap-icon-btn:hover { color: #111827; }
+
+.ap-body { display: flex; flex: 1; min-height: 0; }
+.ap-left { flex: 1 1 auto; min-width: 0; padding: 0; overflow-y: auto; background: #fff; }
+.ap-right { width: 360px; flex-shrink: 0; border-left: 1px solid #e5e7eb; background: #fff; overflow-y: auto; padding: 14px; }
+
+.ap-desc-row { background: #eef5fb; padding: 14px 24px; border-bottom: 1px solid #d8e6f1; }
+.ap-desc-row label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.ap-desc-row input {
+  width: 100%; padding: 10px 12px; border: 1px solid #cfd9e3; border-radius: 3px;
+  font-size: 14px; background: #fff;
+}
+
+.ap-row-1 {
+  display: flex; align-items: center; gap: 16px; padding: 14px 24px;
+}
+.ap-cat-select {
+  flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 3px;
+  background: #f3f4f6; font-size: 13px; color: #4b5563;
+}
+.ap-mode-toggle { display: inline-flex; border: 1px solid #d1d5db; border-radius: 3px; overflow: hidden; }
+.ap-mode-toggle button {
+  background: #fff; border: 0; padding: 8px 16px; font-size: 13px; color: #6b7280; cursor: pointer;
+}
+.ap-mode-toggle button.active { background: #f3f4f6; color: #111827; font-weight: 600; }
+
+.ap-section-title {
+  background: #e9eef2; padding: 9px 24px; display: flex; justify-content: space-between;
+  font-size: 13px; font-weight: 600; color: #374151;
+}
+.ap-section-title a { color: #2b80c9; font-size: 12px; cursor: pointer; text-decoration: none; }
+.ap-section-title a:hover { text-decoration: underline; }
+
+.ap-units { display: flex; gap: 6px; padding: 14px 24px; flex-wrap: wrap; align-items: center; }
+.ap-units .unit-label { font-size: 12px; color: #6b7280; margin-right: 6px; }
+.ap-unit-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border: 1px solid #d1d5db; border-radius: 3px;
+  background: #fff; font-size: 13px; color: #374151; cursor: pointer;
+}
+.ap-unit-chip.active { background: #1f6cb6; color: #fff; border-color: #1f6cb6; }
+.ap-unit-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: #d1d5db; }
+.ap-unit-chip.active .dot { background: #fff; }
+
+.ap-qty-bar {
+  background: #2b80c9; color: #fff; padding: 12px 24px; margin: 0 24px 14px;
+  border-radius: 2px; display: flex; align-items: center; justify-content: center; gap: 16px;
+}
+.ap-qty-bar .qty-label { font-weight: 700; font-size: 14px; }
+.ap-stepper {
+  display: inline-flex; align-items: center; gap: 0; background: #fff;
+  border-radius: 3px; overflow: hidden;
+}
+.ap-stepper button {
+  background: #fff; border: 0; padding: 8px 14px; font-size: 16px; color: #374151; cursor: pointer; line-height: 1;
+}
+.ap-stepper button:hover { background: #f3f4f6; }
+.ap-stepper input {
+  border: 0; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
+  padding: 8px 10px; width: 70px; text-align: center; font-size: 14px; background: #fff;
+}
+.ap-stepper input:focus { outline: none; }
+
+.ap-cost-card { border: 1px solid #e5e7eb; margin: 0 24px 12px; border-radius: 3px; overflow: hidden; }
+.ap-cost-head {
+  display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: #fff;
+  border-bottom: 1px solid #f3f4f6;
+}
+.ap-cost-head .cb-wrap { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ap-cost-head .cb-wrap input { width: 16px; height: 16px; }
+.ap-cost-head .cost-name { font-weight: 600; color: #111827; font-size: 14px; }
+.ap-cost-head .cost-unit-link { color: #2b80c9; font-size: 12px; text-decoration: none; cursor: pointer; }
+.ap-cost-head .cost-unit-link:hover { text-decoration: underline; }
+.ap-cost-head .cost-markup-link { color: #2b80c9; font-size: 12px; cursor: pointer; margin-left: auto; }
+.ap-cost-head .cost-markup-link:hover { text-decoration: underline; }
+.ap-cost-head .caret {
+  background: transparent; border: 0; font-size: 14px; color: #9ca3af; padding: 4px 6px; cursor: pointer;
+}
+.ap-cost-body {
+  padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #fafbfc;
+}
+.ap-cost-body.collapsed { display: none; }
+.ap-cost-body label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+
+.ap-preview-head {
+  background: #d1d5db; color: #111827; padding: 10px 14px;
+  font-weight: 700; font-size: 14px;
+}
+.ap-preview-row {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px;
+}
+.ap-preview-row .label { color: #374151; }
+.ap-preview-row .raw { color: #6b7280; min-width: 60px; text-align: right; }
+.ap-preview-row .net { color: #111827; min-width: 60px; text-align: right; background: #f3f4f6; padding: 4px 8px; border-radius: 2px; font-weight: 600; }
+.ap-preview-row.total .raw, .ap-preview-row.total .net { background: #c5c7cc; font-weight: 700; }
+.ap-preview-row.markup { background: #2a1f6e; color: #fff; }
+.ap-preview-row.markup .label, .ap-preview-row.markup .raw { color: #d4d4f5; }
+.ap-preview-row.markup .net { background: #1c1652; color: #fff; }
+.ap-preview-row.basebid { background: #2b80c9; color: #fff; }
+.ap-preview-row.basebid .label, .ap-preview-row.basebid .raw { color: #d8ecf9; }
+.ap-preview-row.basebid .net { background: #1f6cb6; color: #fff; }
+.ap-preview-row.muted { background: #fff; }
+.ap-preview-row.muted .label { color: #374151; }
+.ap-preview-row.muted .net { background: transparent; padding: 0; font-weight: 500; }
+
+.ap-foot { display: flex; justify-content: space-between; padding: 14px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; }
+.ap-foot .ap-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border: 1px solid #d1d5db; background: #fff; color: #374151;
+  border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.ap-foot .ap-btn:hover { background: #f3f4f6; }
+.ap-foot .ap-btn.primary { background: #fff; color: #1f6cb6; border-color: #1f6cb6; }
+.ap-foot .ap-btn.primary:hover { background: #eff7ff; }
+
+.ap-pane { display: none; }
+.ap-pane.active { display: block; }
+
+/* Library/Template list inside ap modal */
+.ap-picker { padding: 14px 24px; }
+.ap-picker input.qa-search { margin-bottom: 12px; }
 </style>
 {% endblock %}
 
@@ -141,96 +361,458 @@
 <div class="est-header-bar">Estimate — {{ estimate.estimate_number }}</div>
 <div class="est-header">
   <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px">
-    <div style="flex:1">
-      <h2 id="est-title" class="est-desc" style="font-size:24px; color:#111827; cursor:pointer" onclick="editField('title')">{{ estimate.title }}</h2>
-      <div style="margin:6px 0">
+    <div style="flex:1; min-width:0">
+      <h2 id="est-title" onclick="editField('title')">{{ estimate.title }}</h2>
+      <div style="margin:4px 0">
         <a href="{% url 'panel:customer_detail' estimate.customer.pk %}" class="customer-link">{{ estimate.customer.full_name }}</a>
       </div>
-      {% if estimate.description %}<div style="color:#6b7280; font-size:13px; margin-top:4px">{{ estimate.description }}</div>{% endif %}
+      <div class="est-desc" id="est-desc-text" onclick="editField('description')">
+        {% if estimate.description %}{{ estimate.description }}{% else %}+ Add description{% endif %}
+      </div>
     </div>
     <div class="est-actions">
       <a href="{% url 'panel:estimate_detail' estimate.pk %}" class="est-action-btn">
-        <span class="est-action-icon">&#128065;</span>
-        View
+        <span class="est-action-icon">&#128065;</span>View
       </a>
       <button type="button" class="est-action-btn" id="btn-send-customer">
-        <span class="est-action-icon">&#9993;</span>
-        Send to Customer
+        <span class="est-action-icon">&#9993;</span>Send
       </button>
       <a href="{% url 'panel:estimate_list' %}" class="est-action-btn">
-        <span class="est-action-icon">&#128203;</span>
-        All Estimates
+        <span class="est-action-icon">&#128203;</span>All
       </a>
     </div>
   </div>
 </div>
 
-<!-- Components index -->
-<div class="section-head">
-  <h4>Components</h4>
-  <button type="button" class="add-component-btn" onclick="addComponent()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
-    Add Component
-  </button>
-</div>
-
-<div class="components-list" id="components-list">
+<!-- Sections (one per component) -->
+<div id="components-list">
   {% for component in components %}
-  <div class="component-row" data-component-id="{{ component.id }}">
-    <div class="col-name">
-      <a href="{% url 'panel:estimate_component_edit' estimate.pk component.pk %}">{{ component.name }}</a>
-      <div class="col-meta">{{ component.items.count }} item{{ component.items.count|pluralize }}</div>
+  <div class="section-card" data-component-id="{{ component.id }}"{% if forloop.first %} data-main="1"{% endif %}>
+    <div class="section-head">
+      {% if forloop.first %}
+      <span class="section-name" style="cursor:default">
+        <span class="comp-name">Project Parts</span>
+      </span>
+      {% else %}
+      <a class="section-name" href="{% url 'panel:estimate_component_edit' estimate.pk component.pk %}" style="text-decoration:none; color:inherit">
+        <span class="comp-name">{{ component.name }}</span>
+        <span class="pencil">&#9998;</span>
+      </a>
+      {% endif %}
+      <div class="section-meta">
+        <span><span class="comp-item-count">{{ component.items.count }}</span> item{{ component.items.count|pluralize }}</span>
+        <span class="section-subtotal">$<span class="comp-subtotal">{{ component.subtotal|floatformat:2 }}</span></span>
+        {% if not forloop.first %}<button class="section-del" onclick="deleteComponent({{ component.id }})" title="Delete component">&#128465;</button>{% endif %}
+      </div>
     </div>
-    <div class="col-subtotal">${{ component.subtotal|floatformat:2 }}</div>
-    <div class="col-actions">
-      <a href="{% url 'panel:estimate_component_edit' estimate.pk component.pk %}" class="row-edit-btn">Edit &rarr;</a>
-      <button class="row-del-btn" onclick="deleteComponent({{ component.id }})" title="Delete component">&#128465;</button>
+    {% if forloop.first %}
+    <div class="section-actions">
+      <button type="button" class="quick-add-btn" id="btn-browse-library">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>Browse Part Library
+      </button>
+      <button type="button" class="quick-add-btn" id="btn-create-custom">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>Custom Part
+      </button>
+      <button type="button" class="quick-add-btn" id="btn-add-template">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
+        </svg>Template
+      </button>
+      <button type="button" class="quick-add-btn" id="btn-add-package">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>Package
+      </button>
+    </div>
+    {% endif %}
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:28%">Description</th>
+          <th style="width:6%">Units</th>
+          <th style="width:7%">Qty</th>
+          <th style="width:13%">Category</th>
+          <th style="width:9%; text-align:right">Material</th>
+          <th style="width:9%; text-align:right">Labor</th>
+          <th style="width:9%; text-align:right">Sub Cost</th>
+          <th style="width:10%; text-align:right">Total</th>
+          <th style="width:9%; text-align:right"></th>
+        </tr>
+      </thead>
+      <tbody class="items-body" data-component-id="{{ component.id }}">
+        {% for item in component.items.all %}
+        <tr data-item-id="{{ item.id }}" data-cost-type="{{ item.cost_type }}">
+          <td style="font-weight:500">{{ item.name }}</td>
+          <td style="color:#6b7280; font-size:12px">{{ item.unit_label|default:"—" }}</td>
+          <td><input type="text" class="editable-cell item-qty" value="{{ item.quantity }}" data-field="quantity" style="width:55px"></td>
+          <td style="color:#6b7280; font-size:12px">{{ item.category_label|default:"—" }}</td>
+          <td class="cost-cell" style="text-align:right">{% if item.cost_type == "material" %}<input type="text" class="editable-cell item-price" value="{{ item.unit_price }}" data-field="unit_price" style="width:75px; text-align:right">{% else %}<span style="color:#d1d5db">—</span>{% endif %}</td>
+          <td class="cost-cell" style="text-align:right">{% if item.cost_type == "labor" %}<input type="text" class="editable-cell item-price" value="{{ item.unit_price }}" data-field="unit_price" style="width:75px; text-align:right">{% else %}<span style="color:#d1d5db">—</span>{% endif %}</td>
+          <td class="cost-cell" style="text-align:right">{% if item.cost_type == "sub" %}<input type="text" class="editable-cell item-price" value="{{ item.unit_price }}" data-field="unit_price" style="width:75px; text-align:right">{% else %}<span style="color:#d1d5db">—</span>{% endif %}</td>
+          <td class="item-total" style="text-align:right; font-weight:500">${{ item.line_total|floatformat:2 }}</td>
+          <td style="text-align:right">
+            <div class="item-actions-cell">
+              <button class="item-action-btn item-edit-btn" onclick="editItem({{ item.id }})" title="Edit">&#9998;</button>
+              <button class="item-action-btn item-delete-btn" onclick="deleteItem({{ item.id }})" title="Delete">&#128465;</button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="9" class="empty-section">No items in this component yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="section-foot">
+      {% if forloop.first %}
+        <span></span>
+      {% else %}
+        <a class="quick-add-btn" href="{% url 'panel:estimate_component_edit' estimate.pk component.pk %}" style="padding:7px 14px; font-size:13px">Open component page &rsaquo;</a>
+      {% endif %}
+      <span style="font-size:11px; color:#9ca3af">Component subtotal: $<span class="comp-subtotal-foot">{{ component.subtotal|floatformat:2 }}</span></span>
     </div>
   </div>
   {% empty %}
-  <div class="empty-components">No components yet. Click "Add Component" to start building this estimate.</div>
+  <div class="empty-components">No components yet. Click <strong>+ New Component</strong> below to start.</div>
   {% endfor %}
+</div>
+
+<div style="margin: 8px 0 16px; display:flex; justify-content:flex-end">
+  <button type="button" class="quick-add-btn" id="btn-add-component" onclick="addComponent()">+ New Component</button>
 </div>
 
 <!-- Summary -->
 <div class="summary-card">
-  <div class="summary-row">
-    <span>Subtotal</span>
-    <span id="sum-subtotal">${{ estimate.subtotal|floatformat:2 }}</span>
+  <div class="summary-row muted">
+    <span>Material</span><span>$<span id="grand-mat">0.00</span></span>
+  </div>
+  <div class="summary-row muted">
+    <span>Labor</span><span>$<span id="grand-lab">0.00</span></span>
+  </div>
+  <div class="summary-row muted">
+    <span>Subcontractor</span><span>$<span id="grand-sub">0.00</span></span>
+  </div>
+  <div class="summary-row basebid">
+    <span>Cost subtotal</span><span>$<span id="grand-cost">{{ estimate.cost_subtotal|floatformat:2 }}</span></span>
+  </div>
+  <div class="summary-row muted">
+    <span>Markup</span><span>$<span id="grand-markup">{{ estimate.markup_amount|floatformat:2 }}</span></span>
+  </div>
+  <div class="summary-row basebid">
+    <span>Base bid</span><span>$<span id="sum-subtotal">{{ estimate.subtotal|floatformat:2 }}</span></span>
   </div>
   <div class="summary-row">
     <span>Tax (<span id="sum-tax-rate" style="cursor:pointer; text-decoration:underline dotted" onclick="editField('tax_rate')">{{ estimate.tax_rate }}%</span>)</span>
-    <span id="sum-tax">${{ estimate.tax|floatformat:2 }}</span>
+    <span>$<span id="sum-tax">{{ estimate.tax|floatformat:2 }}</span></span>
   </div>
   <div class="summary-row total">
-    <span>Total</span>
-    <span id="sum-total">${{ estimate.total|floatformat:2 }}</span>
+    <span>Total</span><span>$<span id="sum-total">{{ estimate.total|floatformat:2 }}</span></span>
+  </div>
+</div>
+
+<!-- ── New unified Add Part modal ── -->
+<div class="ap-overlay" id="modal-add-part" onclick="if(event.target===this)closeApModal()">
+  <div class="ap-modal" onclick="event.stopPropagation()">
+    <div class="ap-tabs">
+      <button type="button" class="ap-tab" data-pane="pane-part">Add Part</button>
+      <button type="button" class="ap-tab active" data-pane="pane-custom">Add Custom Part</button>
+      <button type="button" class="ap-tab" data-pane="pane-template">Add Template</button>
+      <div class="ap-close-icons">
+        <button class="ap-icon-btn" id="ap-close" aria-label="Close">&times;</button>
+      </div>
+    </div>
+
+    <!-- ADD PART pane: part picker -->
+    <div class="ap-pane" id="pane-part">
+      <div class="ap-picker">
+        <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap">
+          <input type="text" id="ap-lib-search" class="qa-search" style="margin:0; flex:1; min-width:200px" placeholder="Filter by name or SKU…">
+          <select id="ap-lib-category" class="qa-search" style="margin:0; flex:0 0 200px">
+            <option value="">All categories</option>
+            {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div id="ap-lib-list"><div class="qa-empty">Loading parts…</div></div>
+      </div>
+    </div>
+
+    <!-- ADD CUSTOM PART pane: main form -->
+    <div class="ap-pane active" id="pane-custom">
+      <div class="ap-body">
+        <div class="ap-left">
+          <div class="ap-desc-row">
+            <label for="ap-desc">Description</label>
+            <input type="text" id="ap-desc" placeholder="">
+          </div>
+          <div class="ap-row-1">
+            <select class="ap-cat-select" id="ap-category">
+              <option value="">Select a Category…</option>
+              {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+            </select>
+            <div class="ap-mode-toggle">
+              <button type="button" data-mode="simple">Simple</button>
+              <button type="button" data-mode="standard" class="active">Standard</button>
+            </div>
+          </div>
+          <div class="ap-section-title">
+            <span>Cost calculation</span>
+            <a id="ap-collapse-all">Collapse All</a>
+          </div>
+          <div class="ap-units">
+            <span class="unit-label">Unit Type:</span>
+            <button type="button" class="ap-unit-chip active" data-unit="Piece"><span class="dot"></span>Piece</button>
+            <button type="button" class="ap-unit-chip" data-unit="Sq. Foot">Sq. Foot</button>
+            <button type="button" class="ap-unit-chip" data-unit="Lin. Foot">Lin. Foot</button>
+            <button type="button" class="ap-unit-chip" data-unit="Cub. Yard">Cub. Yard</button>
+            <button type="button" class="ap-unit-chip" data-unit="Dollar">Dollar</button>
+            <button type="button" class="ap-unit-chip" data-unit="Hour">Hour</button>
+          </div>
+          <div class="ap-qty-bar">
+            <span class="qty-label">Quantity (<span id="ap-qty-unit-name">Piece</span>)</span>
+            <span class="ap-stepper">
+              <button type="button" data-step="qty" data-dir="-1">&minus;</button>
+              <input type="number" id="ap-qty" value="1" min="0" step="any">
+              <button type="button" data-step="qty" data-dir="1">+</button>
+            </span>
+          </div>
+
+          {% for row in "material,labor,sub"|cut:" " %}{% endfor %}
+          <!-- Material -->
+          <div class="ap-cost-card" data-cost="material">
+            <div class="ap-cost-head">
+              <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="material"> <span class="cost-name">Material</span></label>
+              <span class="cost-unit-link">$ / <span class="unit-name">Piece</span> &#9662;</span>
+              <span class="cost-markup-link" data-cost="material">Markup</span>
+              <button type="button" class="caret" data-cost="material">&#9650;</button>
+            </div>
+            <div class="ap-cost-body">
+              <div>
+                <label>$ / <span class="unit-name">Piece</span></label>
+                <span class="ap-stepper">
+                  <button type="button" data-step="material_unit_price" data-dir="-1">&minus;</button>
+                  <input type="number" class="ap-input" data-field="material_unit_price" value="0" min="0" step="any" style="width:100px">
+                  <button type="button" data-step="material_unit_price" data-dir="1">+</button>
+                </span>
+              </div>
+              <div>
+                <label>Multiplier</label>
+                <input type="number" class="ap-input" data-field="material_multiplier" value="1" min="0" step="any" style="width:120px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+              </div>
+            </div>
+          </div>
+
+          <!-- Labor -->
+          <div class="ap-cost-card" data-cost="labor">
+            <div class="ap-cost-head">
+              <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="labor"> <span class="cost-name">Labor</span></label>
+              <span class="cost-unit-link">Hours per Unit &#9662;</span>
+              <span class="cost-markup-link" data-cost="labor">Markup</span>
+              <button type="button" class="caret" data-cost="labor">&#9650;</button>
+            </div>
+            <div class="ap-cost-body">
+              <div>
+                <label>Hours per Unit</label>
+                <span class="ap-stepper">
+                  <button type="button" data-step="labor_unit_price" data-dir="-1">&minus;</button>
+                  <input type="number" class="ap-input" data-field="labor_unit_price" value="1" min="0" step="any" style="width:100px">
+                  <button type="button" data-step="labor_unit_price" data-dir="1">+</button>
+                </span>
+              </div>
+              <div>
+                <label>Labor Rate, $</label>
+                <input type="number" class="ap-input" data-field="labor_multiplier" value="51.4265" min="0" step="any" style="width:140px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+              </div>
+            </div>
+          </div>
+
+          <!-- Subcontractor -->
+          <div class="ap-cost-card" data-cost="sub">
+            <div class="ap-cost-head">
+              <label class="cb-wrap"><input type="checkbox" class="ap-cost-enabled" data-cost="sub"> <span class="cost-name">Subcontractor</span></label>
+              <span class="cost-unit-link">$ / <span class="unit-name">Piece</span> &#9662;</span>
+              <span class="cost-markup-link" data-cost="sub">Markup</span>
+              <button type="button" class="caret" data-cost="sub">&#9650;</button>
+            </div>
+            <div class="ap-cost-body">
+              <div>
+                <label>$ / <span class="unit-name">Piece</span></label>
+                <span class="ap-stepper">
+                  <button type="button" data-step="sub_unit_price" data-dir="-1">&minus;</button>
+                  <input type="number" class="ap-input" data-field="sub_unit_price" value="0" min="0" step="any" style="width:100px">
+                  <button type="button" data-step="sub_unit_price" data-dir="1">+</button>
+                </span>
+              </div>
+              <div>
+                <label>Multiplier</label>
+                <input type="number" class="ap-input" data-field="sub_multiplier" value="1" min="0" step="any" style="width:120px; padding:8px 12px; border:1px solid #d1d5db; border-radius:3px">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-right">
+          <div class="ap-preview-head">Part Preview</div>
+          <div class="ap-preview-row"><span class="label">Material</span><span class="raw" id="pv-mat-raw">$0.00</span><span class="net" id="pv-mat-net">$0.00</span></div>
+          <div class="ap-preview-row"><span class="label">Labor</span><span class="raw" id="pv-lab-raw">$0.00</span><span class="net" id="pv-lab-net">$0.00</span></div>
+          <div class="ap-preview-row"><span class="label">Subcontractor</span><span class="raw" id="pv-sub-raw">$0.00</span><span class="net" id="pv-sub-net">$0.00</span></div>
+          <div class="ap-preview-row total"><span class="label">Total</span><span class="raw" id="pv-total-raw">$0.00</span><span class="net" id="pv-total-net">$0.00</span></div>
+          <div class="ap-preview-row markup"><span class="label">Markup</span><span class="raw" id="pv-markup-raw">$0.00</span><span class="net" id="pv-markup-net">$0.00</span></div>
+          <div class="ap-preview-row basebid"><span class="label">Base Bid</span><span class="raw" id="pv-bid-raw">$0.00</span><span class="net" id="pv-bid-net">$0.00</span></div>
+          <div class="ap-preview-row muted" style="margin-top:10px"><span class="label">Quantity</span><span class="raw"></span><span class="net" id="pv-qty">1.00</span></div>
+          <div class="ap-preview-row muted"><span class="label">Labor Hours</span><span class="raw"></span><span class="net" id="pv-lab-hrs">0.00</span></div>
+          <div class="ap-preview-row muted"><span class="label">Cost per <span id="pv-unit-name">Piece</span></span><span class="raw"></span><span class="net" id="pv-per-unit">$0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD TEMPLATE pane: template picker -->
+    <div class="ap-pane" id="pane-template">
+      <div class="ap-picker">
+        <div style="font-size:13px; color:#6b7280; margin-bottom:12px">Pick a template to add all its items to <strong>{% if components %}{{ components.0.name|default:"Project Parts" }}{% else %}Project Parts{% endif %}</strong>.</div>
+        <div id="ap-tpl-list"><div class="qa-empty">Loading templates…</div></div>
+      </div>
+    </div>
+
+    <div class="ap-foot">
+      <button type="button" class="ap-btn" id="ap-cancel">&#10005; Close</button>
+      <button type="button" class="ap-btn primary" id="ap-add">&#10004; Add Part</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Legacy modals (kept temporarily for package flow) ── -->
+<div class="qa-overlay" id="modal-library" onclick="if(event.target===this)closeModal('modal-library')">
+  <div class="qa-modal">
+    <div class="qa-modal-head">
+      <h3 id="lib-modal-title">Browse Part Library</h3>
+      <button class="qa-close" onclick="closeModal('modal-library')" aria-label="Close">×</button>
+    </div>
+    <div class="qa-modal-body" id="lib-browse-view">
+      <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap">
+        <input type="text" id="lib-search" class="qa-search" style="margin:0; flex:1; min-width:200px" placeholder="Filter by name or SKU…">
+        <select id="lib-category" class="qa-search" style="margin:0; flex:0 0 200px">
+          <option value="">All categories</option>
+          {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div id="lib-list"><div class="qa-empty">Loading parts…</div></div>
+    </div>
+    <div class="qa-modal-body" id="lib-edit-view" style="display:none">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px">
+        <button class="quick-add-btn" id="lib-edit-back" style="padding:6px 12px; font-size:13px">← Back</button>
+        <span style="color:#6b7280; font-size:13px">Adjust before adding</span>
+      </div>
+      <div class="qa-form-row"><label>Item Name *</label><input type="text" id="lib-edit-name"></div>
+      <div class="qa-form-row"><label>Description</label><textarea id="lib-edit-desc" rows="2"></textarea></div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row"><label>Quantity</label><input type="number" id="lib-edit-qty" value="1" min="0" step="0.01"></div>
+        <div class="qa-form-row"><label>Unit Price ($)</label><input type="number" id="lib-edit-price" value="0" min="0" step="0.01"></div>
+        <div class="qa-form-row"><label>Unit Label</label><input type="text" id="lib-edit-unit" placeholder="ea, sq ft"></div>
+      </div>
+      <div class="qa-form-row">
+        <label>Category</label>
+        <select id="lib-edit-category">
+          <option value="">— No category —</option>
+          {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="qa-modal-foot" id="lib-edit-foot" style="display:none">
+      <button class="quick-add-btn" id="lib-edit-cancel">Cancel</button>
+      <button class="quick-add-btn primary" id="lib-edit-add">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-custom" onclick="if(event.target===this)closeModal('modal-custom')">
+  <div class="qa-modal" style="max-width:480px">
+    <div class="qa-modal-head"><h3>Create Custom Part</h3><button class="qa-close" onclick="closeModal('modal-custom')">×</button></div>
+    <div class="qa-modal-body">
+      <div class="qa-form-row"><label>Name *</label><input type="text" id="custom-name" placeholder="e.g. Custom installation work"></div>
+      <div class="qa-form-row"><label>Description</label><textarea id="custom-desc" rows="2"></textarea></div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row"><label>Quantity</label><input type="number" id="custom-qty" value="1" min="0" step="0.01"></div>
+        <div class="qa-form-row"><label>Unit Price ($)</label><input type="number" id="custom-price" value="0" min="0" step="0.01"></div>
+        <div class="qa-form-row"><label>Unit Label</label><input type="text" id="custom-unit" placeholder="ea, sq ft"></div>
+      </div>
+      <div class="qa-form-row">
+        <label>Cost Type *</label>
+        <select id="custom-cost-type"><option value="material">Material</option><option value="labor">Labor</option><option value="sub">Subcontractor</option></select>
+      </div>
+      <div class="qa-form-row">
+        <label>Category</label>
+        <select id="custom-category">
+          <option value="">— No category —</option>
+          {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="qa-modal-foot">
+      <button class="quick-add-btn" onclick="closeModal('modal-custom')">Cancel</button>
+      <button class="quick-add-btn primary" onclick="submitCustomPart()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-template" onclick="if(event.target===this)closeModal('modal-template')">
+  <div class="qa-modal" style="max-width:560px">
+    <div class="qa-modal-head"><h3>Add from Template</h3><button class="qa-close" onclick="closeModal('modal-template')">×</button></div>
+    <div class="qa-modal-body">
+      <div style="font-size:13px; color:#6b7280; margin-bottom:12px">Pick a template to add all its items to <strong id="tpl-target-name">the active component</strong>.</div>
+      <div id="tpl-list"><div class="qa-empty">Loading templates…</div></div>
+    </div>
+    <div class="qa-modal-foot"><button class="quick-add-btn" onclick="closeModal('modal-template')">Close</button></div>
+  </div>
+</div>
+
+<div class="qa-overlay" id="modal-package" onclick="if(event.target===this)closeModal('modal-package')">
+  <div class="qa-modal" style="max-width:620px">
+    <div class="qa-modal-head"><h3 id="pkg-modal-title">Add Package</h3><button class="qa-close" onclick="closeModal('modal-package')">×</button></div>
+    <div class="qa-modal-body" id="pkg-pick-view">
+      <div style="font-size:13px; color:#6b7280; margin-bottom:12px">Pick a package to add to <strong id="pkg-target-name">the active component</strong>.</div>
+      <input type="text" id="pkg-pick-search" class="qa-search" style="margin:0 0 10px" placeholder="Filter by name…">
+      <div id="pkg-pick-list"><div class="qa-empty">Loading packages…</div></div>
+    </div>
+    <div class="qa-modal-body" id="pkg-qty-view" style="display:none">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px">
+        <button class="quick-add-btn" id="pkg-qty-back" style="padding:6px 12px; font-size:13px">← Back</button>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-weight:500; color:#111827; font-size:15px" id="pkg-qty-name"></div>
+        <div style="color:#6b7280; font-size:13px; white-space:pre-wrap; margin-top:4px" id="pkg-qty-desc"></div>
+      </div>
+      <div class="qa-form-grid">
+        <div class="qa-form-row"><label>Quantity (<span id="pkg-qty-unit">unit</span>)</label><input type="number" id="pkg-qty-input" value="1" min="0" step="0.01"></div>
+        <div class="qa-form-row"><label>Unit Price</label><div style="padding:8px 12px; background:#f3f4f6; border-radius:6px; font-size:14px" id="pkg-qty-price">$0.00</div></div>
+        <div class="qa-form-row"><label>Line Total</label><div style="padding:8px 12px; background:#ecfdf5; border-radius:6px; font-size:14px; font-weight:600; color:#065f46" id="pkg-qty-total">$0.00</div></div>
+      </div>
+    </div>
+    <div class="qa-modal-foot" id="pkg-qty-foot" style="display:none">
+      <button class="quick-add-btn" onclick="closeModal('modal-package')">Cancel</button>
+      <button class="quick-add-btn primary" id="pkg-qty-add">Add</button>
+    </div>
   </div>
 </div>
 
 <!-- Send modal -->
 <div class="qa-overlay" id="modal-send" onclick="if(event.target===this)closeModal('modal-send')">
-  <div class="qa-modal">
-    <div class="qa-modal-head">
-      <h3>Send Estimate to Customer</h3>
-      <button class="qa-close" onclick="closeModal('modal-send')" aria-label="Close">×</button>
-    </div>
+  <div class="qa-modal" style="max-width:460px">
+    <div class="qa-modal-head"><h3>Send Estimate to Customer</h3><button class="qa-close" onclick="closeModal('modal-send')">×</button></div>
     <div class="qa-modal-body">
       <div id="send-error" style="display:none; background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:14px"></div>
       <p style="margin:0 0 8px; color:#374151; font-size:14px">This will email the estimate to:</p>
       <div style="padding:10px 12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; font-weight:500; color:#111827">
         {{ estimate.customer.full_name }} &lt;{{ estimate.customer.email|default:"no email on file" }}&gt;
       </div>
-      <p style="margin:14px 0 0; color:#6b7280; font-size:13px">
-        The estimate will be marked as <strong>Sent</strong>. You can edit it again afterwards if needed.
-      </p>
     </div>
     <div class="qa-modal-foot">
-      <button class="btn-base" onclick="closeModal('modal-send')">Cancel</button>
-      <button class="btn-base btn-primary" id="btn-send-confirm">Send Email</button>
+      <button class="quick-add-btn" onclick="closeModal('modal-send')">Cancel</button>
+      <button class="quick-add-btn primary" id="btn-send-confirm">Send Email</button>
     </div>
   </div>
 </div>
@@ -254,35 +836,41 @@
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        "X-CSRFToken": csrf,
-        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest",
       },
       body: new URLSearchParams(data).toString(),
     });
     return res.json();
   }
-
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
   function openModal(id) { document.getElementById(id).classList.add("show"); }
   window.closeModal = function(id) { document.getElementById(id).classList.remove("show"); };
 
-  // ── Inline header field editing (title / description / tax) ──
+  // ── Active component (always the main / Project Parts section) ──
+  const mainCard = document.querySelector('.section-card[data-main="1"]');
+  const MAIN_COMP_ID = mainCard ? parseInt(mainCard.getAttribute("data-component-id"), 10) : null;
+  function getActiveComponentId() { return MAIN_COMP_ID; }
+  const tplTargetEl = document.getElementById("tpl-target-name");
+  const pkgTargetEl = document.getElementById("pkg-target-name");
+  if (tplTargetEl) tplTargetEl.textContent = "Project Parts";
+  if (pkgTargetEl) pkgTargetEl.textContent = "Project Parts";
+
+  // ── Header inline edit ──
   window.editField = function(field) {
     let current = "";
-    if (field === "title") current = document.getElementById("est-title").textContent;
+    if (field === "title") current = document.getElementById("est-title").textContent.trim();
+    else if (field === "description") current = "{{ estimate.description|escapejs }}";
     else if (field === "tax_rate") current = "{{ estimate.tax_rate }}";
-
-    const value = prompt(
-      field === "title" ? "Estimate title:" :
-      field === "description" ? "Description:" :
-      "Tax rate (%):",
-      current.trim()
-    );
+    const value = prompt(field === "tax_rate" ? "Tax rate (%):" : (field.charAt(0).toUpperCase() + field.slice(1) + ":"), current);
     if (value === null) return;
-
     postJSON(`/panel/estimates/${EST_ID}/ajax/update-header/`, { field, value }).then(r => {
       if (r.ok) {
         if (field === "title") document.getElementById("est-title").textContent = value;
-        else if (field === "tax_rate") {
+        else if (field === "description") {
+          document.getElementById("est-desc-text").textContent = value || "+ Add description";
+        } else if (field === "tax_rate") {
           document.getElementById("sum-tax-rate").textContent = value + "%";
           location.reload();
         }
@@ -292,42 +880,727 @@
 
   // ── Components ──
   window.addComponent = async function() {
-    const name = prompt("Component name (e.g. Kitchen, Bathroom, Demolition):", "New Component");
-    if (name === null) return;
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/components/add/`, { name: trimmed });
-    if (data.ok && data.component.edit_url) {
-      window.location.href = data.component.edit_url;
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/components/add/`, { name: "New Component" });
+    if (data.ok && data.component && data.component.id) {
+      window.location.href = `/panel/estimates/${EST_ID}/components/${data.component.id}/edit/`;
     } else if (data.error) {
       alert(data.error);
     }
   };
 
+  window.renameComponent = async function(componentId) {
+    const card = document.querySelector(`.section-card[data-component-id="${componentId}"]`);
+    if (!card) return;
+    const isMain = card.getAttribute("data-main") === "1";
+    const nameEl = card.querySelector(".comp-name");
+    const current = isMain ? "" : nameEl.textContent.trim();
+    const next = prompt("Component name:", current);
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed) return;
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/components/${componentId}/update/`, { name: trimmed });
+    if (data.ok) {
+      if (!isMain) nameEl.textContent = trimmed;
+    } else { alert(data.error || "Could not rename."); }
+  };
+
   window.deleteComponent = async function(componentId) {
-    const row = document.querySelector(`.component-row[data-component-id="${componentId}"]`);
-    if (!row) return;
-    const itemCount = parseInt((row.querySelector(".col-meta").textContent.match(/\d+/) || ["0"])[0], 10);
+    const card = document.querySelector(`.section-card[data-component-id="${componentId}"]`);
+    if (!card) return;
+    const itemCount = card.querySelectorAll("tbody tr[data-item-id]").length;
     const msg = itemCount > 0
       ? `Delete this component and its ${itemCount} item${itemCount === 1 ? "" : "s"}?`
       : "Delete this component?";
     if (!confirm(msg)) return;
     const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/components/${componentId}/delete/`, {});
     if (data.ok) {
-      row.remove();
-      document.getElementById("sum-subtotal").textContent = "$" + parseFloat(data.subtotal).toFixed(2);
-      document.getElementById("sum-tax").textContent = "$" + parseFloat(data.tax).toFixed(2);
-      document.getElementById("sum-total").textContent = "$" + parseFloat(data.total).toFixed(2);
-      if (!document.querySelector(".component-row")) {
-        document.getElementById("components-list").innerHTML =
-          '<div class="empty-components">No components yet. Click "Add Component" to start building this estimate.</div>';
-      }
-    } else {
-      alert(data.error || "Could not delete component.");
+      card.remove();
+      updateGrandSummary(data);
+      recomputeAllColumnTotals();
+    } else { alert(data.error || "Could not delete component."); }
+  };
+
+  // ── Item rendering ──
+  function priceCellHTML(item, type) {
+    if (item.cost_type === type) {
+      return `<input type="text" class="editable-cell item-price" value="${item.unit_price}" data-field="unit_price" style="width:75px; text-align:right">`;
+    }
+    return `<span style="color:#d1d5db">—</span>`;
+  }
+
+  function addRowToTable(item, componentId) {
+    const tbody = document.querySelector(`.items-body[data-component-id="${componentId}"]`);
+    if (!tbody) return;
+    const empty = tbody.querySelector(".empty-row");
+    if (empty) empty.remove();
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-item-id", item.id);
+    tr.setAttribute("data-cost-type", item.cost_type || "material");
+    tr.innerHTML = `
+      <td style="font-weight:500">${escapeHtml(item.name)}</td>
+      <td style="color:#6b7280; font-size:12px">${escapeHtml(item.unit_label || "—")}</td>
+      <td><input type="text" class="editable-cell item-qty" value="${item.quantity}" data-field="quantity" style="width:55px"></td>
+      <td style="color:#6b7280; font-size:12px">${escapeHtml(item.category_label || "—")}</td>
+      <td class="cost-cell" style="text-align:right">${priceCellHTML(item, "material")}</td>
+      <td class="cost-cell" style="text-align:right">${priceCellHTML(item, "labor")}</td>
+      <td class="cost-cell" style="text-align:right">${priceCellHTML(item, "sub")}</td>
+      <td class="item-total" style="text-align:right; font-weight:500">$${parseFloat(item.line_total).toFixed(2)}</td>
+      <td style="text-align:right">
+        <div class="item-actions-cell">
+          <button class="item-action-btn item-edit-btn" onclick="editItem(${item.id})" title="Edit">&#9998;</button>
+          <button class="item-action-btn item-delete-btn" onclick="deleteItem(${item.id})" title="Delete">&#128465;</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    attachCellListeners(tr);
+    recomputeSectionForRow(tr);
+    recomputeAllColumnTotals();
+  }
+
+  function recomputeSectionForRow(tr) {
+    const card = tr.closest(".section-card");
+    if (card) recomputeSection(card);
+  }
+
+  function recomputeSection(card) {
+    let subtotal = 0;
+    card.querySelectorAll("tbody tr[data-item-id]").forEach(tr => {
+      const totalCell = tr.querySelector(".item-total");
+      if (!totalCell) return;
+      subtotal += parseFloat(totalCell.textContent.replace(/[^0-9.\-]/g, "")) || 0;
+    });
+    const sub = subtotal.toFixed(2);
+    card.querySelectorAll(".comp-subtotal, .comp-subtotal-foot").forEach(el => el.textContent = sub);
+    const cnt = card.querySelectorAll("tbody tr[data-item-id]").length;
+    card.querySelectorAll(".comp-item-count").forEach(el => el.textContent = cnt);
+  }
+
+  function recomputeAllColumnTotals() {
+    const totals = { material: 0, labor: 0, sub: 0 };
+    document.querySelectorAll(".items-body tr[data-item-id]").forEach(tr => {
+      const type = tr.getAttribute("data-cost-type") || "material";
+      const totalCell = tr.querySelector(".item-total");
+      if (!totalCell) return;
+      totals[type] = (totals[type] || 0) + (parseFloat(totalCell.textContent.replace(/[^0-9.\-]/g, "")) || 0);
+    });
+    const cost = totals.material + totals.labor + totals.sub;
+    document.getElementById("grand-mat").textContent = totals.material.toFixed(2);
+    document.getElementById("grand-lab").textContent = totals.labor.toFixed(2);
+    document.getElementById("grand-sub").textContent = totals.sub.toFixed(2);
+    document.getElementById("grand-cost").textContent = cost.toFixed(2);
+  }
+
+  function updateGrandSummary(data) {
+    if (data.subtotal != null) document.getElementById("sum-subtotal").textContent = parseFloat(data.subtotal).toFixed(2);
+    if (data.tax != null) document.getElementById("sum-tax").textContent = parseFloat(data.tax).toFixed(2);
+    if (data.total != null) document.getElementById("sum-total").textContent = parseFloat(data.total).toFixed(2);
+    if (data.markup_amount != null) document.getElementById("grand-markup").textContent = parseFloat(data.markup_amount).toFixed(2);
+    if (data.cost_subtotal != null) document.getElementById("grand-cost").textContent = parseFloat(data.cost_subtotal).toFixed(2);
+  }
+
+  function attachCellListeners(tr) {
+    const itemId = tr.getAttribute("data-item-id");
+    tr.querySelectorAll(".editable-cell").forEach(input => {
+      input.addEventListener("change", async () => {
+        const field = input.dataset.field;
+        const value = input.value;
+        const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { [field]: value });
+        if (data.ok) {
+          tr.querySelector(".item-total").textContent = "$" + parseFloat(data.item.line_total).toFixed(2);
+          recomputeSectionForRow(tr);
+          recomputeAllColumnTotals();
+          updateGrandSummary(data);
+        }
+      });
+    });
+  }
+  document.querySelectorAll(".items-body tr[data-item-id]").forEach(attachCellListeners);
+  document.querySelectorAll(".section-card").forEach(recomputeSection);
+  recomputeAllColumnTotals();
+
+  window.editItem = function(itemId) {
+    const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+    if (!row) return;
+    const nameCell = row.querySelector("td:first-child");
+    const newName = prompt("Item name:", nameCell.textContent.trim());
+    if (newName !== null && newName.trim() !== "") {
+      postJSON(`/panel/estimates/${EST_ID}/ajax/update-item/${itemId}/`, { name: newName.trim() }).then(data => {
+        if (data.ok) {
+          nameCell.textContent = newName.trim();
+          updateGrandSummary(data);
+        }
+      });
     }
   };
 
-  // ── Send to customer ──
+  window.deleteItem = async function(itemId) {
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/delete-item/${itemId}/`, {});
+    if (data.ok) {
+      const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+      const card = row && row.closest(".section-card");
+      if (row) row.remove();
+      if (card) {
+        const tbody = card.querySelector(".items-body");
+        if (tbody && !tbody.querySelector("tr[data-item-id]")) {
+          tbody.innerHTML = '<tr class="empty-row"><td colspan="9" class="empty-section">No items in this component yet.</td></tr>';
+        }
+        recomputeSection(card);
+      }
+      recomputeAllColumnTotals();
+      updateGrandSummary(data);
+    }
+  };
+
+  // ── New Add Part modal ──
+  const apModal = document.getElementById("modal-add-part");
+  function openApModal(tab) {
+    apModal.classList.add("show");
+    switchApTab(tab || "pane-custom");
+    if (tab === "pane-part") loadApLibrary();
+    if (tab === "pane-template") loadApTemplates();
+    setTimeout(() => { const d = document.getElementById("ap-desc"); if (d && tab !== "pane-template" && tab !== "pane-part") d.focus(); }, 60);
+  }
+  window.closeApModal = function() { apModal.classList.remove("show"); };
+  document.getElementById("ap-close").addEventListener("click", closeApModal);
+  document.getElementById("ap-cancel").addEventListener("click", closeApModal);
+
+  function switchApTab(paneId) {
+    apModal.querySelectorAll(".ap-tab").forEach(t => t.classList.toggle("active", t.dataset.pane === paneId));
+    apModal.querySelectorAll(".ap-pane").forEach(p => p.classList.toggle("active", p.id === paneId));
+    document.getElementById("ap-add").style.display = (paneId === "pane-custom" || paneId === "pane-part") ? "" : "none";
+  }
+  apModal.querySelectorAll(".ap-tab").forEach(t => t.addEventListener("click", () => {
+    const pane = t.dataset.pane;
+    switchApTab(pane);
+    if (pane === "pane-part") loadApLibrary();
+    if (pane === "pane-template") loadApTemplates();
+  }));
+
+  document.getElementById("btn-create-custom").addEventListener("click", () => { resetApForm(); openApModal("pane-custom"); });
+  document.getElementById("btn-browse-library").addEventListener("click", () => { resetApForm(); openApModal("pane-part"); });
+  document.getElementById("btn-add-template").addEventListener("click", () => openApModal("pane-template"));
+
+  // ── Custom form state + math ──
+  const apState = {
+    unit: "Piece",
+    qty: 1,
+    rows: {
+      material: { enabled: false, unit_price: 0, multiplier: 1, markup_pct: 0 },
+      labor:    { enabled: false, unit_price: 1, multiplier: 51.4265, markup_pct: 0 },
+      sub:      { enabled: false, unit_price: 0, multiplier: 1, markup_pct: 0 },
+    },
+  };
+  function resetApForm() {
+    document.getElementById("ap-desc").value = "";
+    document.getElementById("ap-category").selectedIndex = 0;
+    document.getElementById("ap-qty").value = "1";
+    apState.unit = "Piece"; apState.qty = 1;
+    apState.rows.material = { enabled: false, unit_price: 0, multiplier: 1, markup_pct: 0 };
+    apState.rows.labor    = { enabled: false, unit_price: 1, multiplier: 51.4265, markup_pct: 0 };
+    apState.rows.sub      = { enabled: false, unit_price: 0, multiplier: 1, markup_pct: 0 };
+    apModal.querySelectorAll(".ap-cost-enabled").forEach(cb => { cb.checked = false; });
+    apModal.querySelectorAll(".ap-input").forEach(inp => {
+      const f = inp.dataset.field;
+      const [ct, ...rest] = f.split("_");
+      const field = rest.join("_");
+      inp.value = apState.rows[ct][field];
+    });
+    apModal.querySelectorAll(".ap-unit-chip").forEach(c => c.classList.toggle("active", c.dataset.unit === "Piece"));
+    document.querySelectorAll("#pane-custom .unit-name").forEach(el => el.textContent = "Piece");
+    document.getElementById("ap-qty-unit-name").textContent = "Piece";
+    document.getElementById("pv-unit-name").textContent = "Piece";
+    apModal.querySelectorAll(".ap-cost-body").forEach(b => b.classList.remove("collapsed"));
+    apModal.querySelectorAll(".caret").forEach(c => c.innerHTML = "&#9650;");
+    recomputeApPreview();
+  }
+
+  function readApInputs() {
+    apState.qty = parseFloat(document.getElementById("ap-qty").value) || 0;
+    apModal.querySelectorAll(".ap-cost-enabled").forEach(cb => {
+      apState.rows[cb.dataset.cost].enabled = cb.checked;
+    });
+    apModal.querySelectorAll(".ap-input").forEach(inp => {
+      const [ct, ...rest] = inp.dataset.field.split("_");
+      const field = rest.join("_");
+      apState.rows[ct][field] = parseFloat(inp.value) || 0;
+    });
+  }
+
+  function recomputeApPreview() {
+    readApInputs();
+    const qty = apState.qty;
+    const fmt = v => "$" + (Math.round(v * 100) / 100).toFixed(2);
+    let mat = 0, lab = 0, sub = 0;
+    let matM = 0, labM = 0, subM = 0;
+    if (apState.rows.material.enabled) {
+      mat = qty * apState.rows.material.unit_price * apState.rows.material.multiplier;
+      matM = mat * (apState.rows.material.markup_pct / 100);
+    }
+    if (apState.rows.labor.enabled) {
+      lab = qty * apState.rows.labor.unit_price * apState.rows.labor.multiplier;
+      labM = lab * (apState.rows.labor.markup_pct / 100);
+    }
+    if (apState.rows.sub.enabled) {
+      sub = qty * apState.rows.sub.unit_price * apState.rows.sub.multiplier;
+      subM = sub * (apState.rows.sub.markup_pct / 100);
+    }
+    const totalCost = mat + lab + sub;
+    const totalMarkup = matM + labM + subM;
+    const baseBid = totalCost + totalMarkup;
+    document.getElementById("pv-mat-raw").textContent = fmt(mat);
+    document.getElementById("pv-mat-net").textContent = fmt(mat + matM);
+    document.getElementById("pv-lab-raw").textContent = fmt(lab);
+    document.getElementById("pv-lab-net").textContent = fmt(lab + labM);
+    document.getElementById("pv-sub-raw").textContent = fmt(sub);
+    document.getElementById("pv-sub-net").textContent = fmt(sub + subM);
+    document.getElementById("pv-total-raw").textContent = fmt(totalCost);
+    document.getElementById("pv-total-net").textContent = fmt(totalCost);
+    document.getElementById("pv-markup-raw").textContent = fmt(totalMarkup);
+    document.getElementById("pv-markup-net").textContent = fmt(totalMarkup);
+    document.getElementById("pv-bid-raw").textContent = fmt(baseBid);
+    document.getElementById("pv-bid-net").textContent = fmt(baseBid);
+    document.getElementById("pv-qty").textContent = qty.toFixed(2);
+    const laborHours = apState.rows.labor.enabled ? (qty * apState.rows.labor.unit_price) : 0;
+    document.getElementById("pv-lab-hrs").textContent = laborHours.toFixed(2);
+    const perUnit = qty > 0 ? baseBid / qty : 0;
+    document.getElementById("pv-per-unit").textContent = fmt(perUnit);
+  }
+
+  // Unit chips
+  apModal.querySelectorAll(".ap-unit-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      apModal.querySelectorAll(".ap-unit-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      apState.unit = chip.dataset.unit;
+      document.querySelectorAll("#pane-custom .unit-name").forEach(el => el.textContent = apState.unit);
+      document.getElementById("ap-qty-unit-name").textContent = apState.unit;
+      document.getElementById("pv-unit-name").textContent = apState.unit;
+    });
+  });
+
+  // Steppers
+  apModal.querySelectorAll("[data-step]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const field = btn.dataset.step;
+      const dir = parseFloat(btn.dataset.dir) || 1;
+      if (field === "qty") {
+        const inp = document.getElementById("ap-qty");
+        inp.value = Math.max(0, (parseFloat(inp.value) || 0) + dir);
+      } else {
+        const inp = apModal.querySelector(`.ap-input[data-field="${field}"]`);
+        if (!inp) return;
+        inp.value = Math.max(0, (parseFloat(inp.value) || 0) + dir);
+      }
+      recomputeApPreview();
+    });
+  });
+
+  // Live recompute
+  apModal.addEventListener("input", recomputeApPreview);
+  apModal.addEventListener("change", recomputeApPreview);
+
+  // Collapse carets
+  apModal.querySelectorAll(".caret").forEach(c => {
+    c.addEventListener("click", () => {
+      const card = c.closest(".ap-cost-card");
+      const body = card.querySelector(".ap-cost-body");
+      const collapsed = body.classList.toggle("collapsed");
+      c.innerHTML = collapsed ? "&#9660;" : "&#9650;";
+    });
+  });
+  document.getElementById("ap-collapse-all").addEventListener("click", () => {
+    apModal.querySelectorAll(".ap-cost-body").forEach(b => b.classList.add("collapsed"));
+    apModal.querySelectorAll(".caret").forEach(c => c.innerHTML = "&#9660;");
+  });
+
+  // Markup link → prompt for percentage
+  apModal.querySelectorAll(".cost-markup-link").forEach(link => {
+    link.addEventListener("click", () => {
+      const ct = link.dataset.cost;
+      const cur = apState.rows[ct].markup_pct || 0;
+      const v = prompt(`${ct.charAt(0).toUpperCase() + ct.slice(1)} markup (%):`, String(cur));
+      if (v === null) return;
+      const n = parseFloat(v);
+      if (isNaN(n) || n < 0) return;
+      apState.rows[ct].markup_pct = n;
+      link.textContent = n > 0 ? `Markup ${n}%` : "Markup";
+      recomputeApPreview();
+    });
+  });
+
+  // Submit
+  document.getElementById("ap-add").addEventListener("click", async () => {
+    readApInputs();
+    const name = document.getElementById("ap-desc").value.trim();
+    if (!name) { alert("Description is required."); return; }
+    const anyEnabled = ["material","labor","sub"].some(c => apState.rows[c].enabled);
+    if (!anyEnabled) { alert("Enable at least one cost type (Material, Labor, or Subcontractor)."); return; }
+    const payload = {
+      description: name,
+      category_label: document.getElementById("ap-category").value || "",
+      unit_label: apState.unit,
+      quantity: apState.qty,
+      component_id: getActiveComponentId() || "",
+    };
+    for (const ct of ["material","labor","sub"]) {
+      payload[`${ct}_enabled`] = apState.rows[ct].enabled ? "1" : "0";
+      payload[`${ct}_unit_price`] = apState.rows[ct].unit_price;
+      payload[`${ct}_multiplier`] = apState.rows[ct].multiplier;
+      payload[`${ct}_markup_pct`] = apState.rows[ct].markup_pct;
+    }
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-part/`, payload);
+    if (data.ok) {
+      const compId = getActiveComponentId();
+      data.items.forEach(it => addRowToTable(it, compId));
+      updateGrandSummary(data);
+      closeApModal();
+    } else if (data.error) {
+      alert(data.error);
+    }
+  });
+
+  // ADD PART tab: library
+  let apLibraryParts = [];
+  async function loadApLibrary() {
+    const list = document.getElementById("ap-lib-list");
+    list.innerHTML = '<div class="qa-empty">Loading parts…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?browse=1`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+    apLibraryParts = data.results || [];
+    renderApLibrary();
+  }
+  function renderApLibrary() {
+    const list = document.getElementById("ap-lib-list");
+    const search = document.getElementById("ap-lib-search").value.trim().toLowerCase();
+    const cat = document.getElementById("ap-lib-category").value;
+    let items = apLibraryParts;
+    if (cat) items = items.filter(p => (p.category || "") === cat);
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || (p.sku || "").toLowerCase().includes(search));
+    if (!items.length) { list.innerHTML = '<div class="qa-empty">No parts found.</div>'; return; }
+    let html = "";
+    items.forEach(p => {
+      html += `<div class="qa-part-row" data-part-id="${p.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(p.name)}</div>
+          <div class="qa-part-meta">${p.sku ? "SKU " + escapeHtml(p.sku) : ""}${p.unit ? (p.sku ? " · " : "") + escapeHtml(p.unit) : ""}${p.category ? ' · ' + escapeHtml(p.category) : ''}</div>
+        </div>
+        <div class="qa-part-price">$${parseFloat(p.unit_price).toFixed(2)}</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const part = apLibraryParts.find(p => String(p.id) === row.dataset.partId);
+        if (part) prefillFromPart(part);
+      });
+    });
+  }
+  document.getElementById("ap-lib-search").addEventListener("input", renderApLibrary);
+  document.getElementById("ap-lib-category").addEventListener("change", renderApLibrary);
+  function prefillFromPart(part) {
+    document.getElementById("ap-desc").value = part.name || "";
+    const catSel = document.getElementById("ap-category");
+    if (part.category) {
+      const opt = Array.from(catSel.options).find(o => o.value === part.category);
+      catSel.value = opt ? part.category : "";
+    }
+    const ct = part.cost_type || "material";
+    apState.rows[ct].enabled = true;
+    apState.rows[ct].unit_price = parseFloat(part.unit_price || 0) || 0;
+    apState.rows[ct].multiplier = 1;
+    apModal.querySelectorAll(".ap-cost-enabled").forEach(cb => { cb.checked = cb.dataset.cost === ct; });
+    apModal.querySelector(`.ap-input[data-field="${ct}_unit_price"]`).value = apState.rows[ct].unit_price;
+    apModal.querySelector(`.ap-input[data-field="${ct}_multiplier"]`).value = 1;
+    switchApTab("pane-custom");
+    recomputeApPreview();
+  }
+
+  // ADD TEMPLATE tab
+  async function loadApTemplates() {
+    const list = document.getElementById("ap-tpl-list");
+    list.innerHTML = '<div class="qa-empty">Loading templates…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/templates/`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+    if (!data.results || !data.results.length) { list.innerHTML = '<div class="qa-empty">No templates yet. Create one from the Parts page.</div>'; return; }
+    let html = "";
+    data.results.forEach(t => {
+      html += `<div class="qa-part-row" data-tpl-id="${t.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(t.name)}${t.is_global ? ' <span style="font-size:10px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:10px; margin-left:6px">Global</span>' : ''}</div>
+          <div class="qa-part-meta">${t.item_count} item${t.item_count===1?'':'s'} · $${parseFloat(t.total).toFixed(2)}${t.description ? ' · ' + escapeHtml(t.description) : ''}</div>
+        </div>
+        <div class="qa-part-price">Add &rsaquo;</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => row.addEventListener("click", async () => {
+      const compId = getActiveComponentId();
+      const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/templates/${row.dataset.tplId}/apply/`, { component_id: compId });
+      if (data.ok) {
+        data.items.forEach(item => addRowToTable(item, compId));
+        updateGrandSummary(data);
+        closeApModal();
+      }
+    }));
+  }
+
+  recomputeApPreview();
+  // ── Legacy (Package only) ──
+  document.getElementById("btn-add-package").addEventListener("click", openPackages);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      ["modal-library","modal-custom","modal-template","modal-package","modal-send"].forEach(closeModal);
+      closeApModal();
+    }
+  });
+
+  let libraryParts = [];
+  let pendingPart = null;
+
+  function showLibBrowse() {
+    document.getElementById("lib-modal-title").textContent = "Browse Part Library";
+    document.getElementById("lib-browse-view").style.display = "";
+    document.getElementById("lib-edit-view").style.display = "none";
+    document.getElementById("lib-edit-foot").style.display = "none";
+  }
+  function showLibEdit() {
+    document.getElementById("lib-modal-title").textContent = "Review & Add Part";
+    document.getElementById("lib-browse-view").style.display = "none";
+    document.getElementById("lib-edit-view").style.display = "";
+    document.getElementById("lib-edit-foot").style.display = "";
+  }
+
+  async function openLibrary() {
+    if (!getActiveComponentId()) { alert("Add a component first."); return; }
+    openModal("modal-library");
+    showLibBrowse();
+    document.getElementById("lib-search").value = "";
+    document.getElementById("lib-category").value = "";
+    const list = document.getElementById("lib-list");
+    list.innerHTML = '<div class="qa-empty">Loading parts…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/search-parts/?browse=1`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+    libraryParts = data.results || [];
+    renderLibrary();
+  }
+
+  function renderLibrary() {
+    const list = document.getElementById("lib-list");
+    const search = document.getElementById("lib-search").value.trim().toLowerCase();
+    const cat = document.getElementById("lib-category").value;
+    let items = libraryParts;
+    if (cat) items = items.filter(p => (p.category || "") === cat);
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || (p.sku || "").toLowerCase().includes(search));
+    if (!items.length) { list.innerHTML = '<div class="qa-empty">No parts found.</div>'; return; }
+    const groups = {};
+    items.forEach(p => { (groups[p.category || "Uncategorized"] = groups[p.category || "Uncategorized"] || []).push(p); });
+    let html = "";
+    Object.keys(groups).sort().forEach(c => {
+      html += `<div class="qa-cat-label">${escapeHtml(c)}</div>`;
+      groups[c].forEach(p => {
+        html += `<div class="qa-part-row" data-part-id="${p.id}">
+          <div style="min-width:0; flex:1">
+            <div style="font-weight:500; color:#111827">${escapeHtml(p.name)}</div>
+            <div class="qa-part-meta">${p.sku ? "SKU " + escapeHtml(p.sku) : ""}${p.unit ? (p.sku ? " · " : "") + escapeHtml(p.unit) : ""}</div>
+          </div>
+          <div class="qa-part-price">$${parseFloat(p.unit_price).toFixed(2)}</div>
+        </div>`;
+      });
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const part = libraryParts.find(p => String(p.id) === row.dataset.partId);
+        if (part) loadPartIntoEditor(part);
+      });
+    });
+  }
+
+  function loadPartIntoEditor(part) {
+    pendingPart = part;
+    document.getElementById("lib-edit-name").value = part.name || "";
+    document.getElementById("lib-edit-desc").value = "";
+    document.getElementById("lib-edit-qty").value = "1";
+    document.getElementById("lib-edit-price").value = parseFloat(part.unit_price || 0).toFixed(2);
+    document.getElementById("lib-edit-unit").value = part.unit || "";
+    const catSel = document.getElementById("lib-edit-category");
+    if (part.category) {
+      const opt = Array.from(catSel.options).find(o => o.value === part.category);
+      catSel.value = opt ? part.category : "";
+    } else { catSel.selectedIndex = 0; }
+    showLibEdit();
+    setTimeout(() => document.getElementById("lib-edit-name").focus(), 50);
+  }
+
+  document.getElementById("lib-search").addEventListener("input", renderLibrary);
+  document.getElementById("lib-category").addEventListener("change", renderLibrary);
+  document.getElementById("lib-edit-back").addEventListener("click", showLibBrowse);
+  document.getElementById("lib-edit-cancel").addEventListener("click", () => closeModal("modal-library"));
+  document.getElementById("lib-edit-add").addEventListener("click", async () => {
+    const name = document.getElementById("lib-edit-name").value.trim();
+    const category = document.getElementById("lib-edit-category").value;
+    if (!name) { alert("Item name is required."); return; }
+    const compId = getActiveComponentId();
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      part_id: pendingPart ? pendingPart.id : "",
+      name,
+      quantity: document.getElementById("lib-edit-qty").value || "1",
+      unit_price: document.getElementById("lib-edit-price").value || "0",
+      unit_label: document.getElementById("lib-edit-unit").value || "",
+      category_label: category,
+      component_id: compId,
+    });
+    if (data.ok) {
+      addRowToTable(data.item, compId);
+      updateGrandSummary(data);
+      closeModal("modal-library");
+    }
+  });
+
+  window.submitCustomPart = async function() {
+    const name = document.getElementById("custom-name").value.trim();
+    if (!name) { alert("Name is required."); return; }
+    const compId = getActiveComponentId();
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/add-item/`, {
+      name, quantity: document.getElementById("custom-qty").value || "1",
+      unit_price: document.getElementById("custom-price").value || "0",
+      unit_label: document.getElementById("custom-unit").value || "",
+      category_label: document.getElementById("custom-category").value || "",
+      cost_type: document.getElementById("custom-cost-type").value || "material",
+      component_id: compId,
+    });
+    if (data.ok) {
+      addRowToTable(data.item, compId);
+      updateGrandSummary(data);
+      closeModal("modal-custom");
+    }
+  };
+
+  async function openTemplates() {
+    if (!getActiveComponentId()) { alert("Add a component first."); return; }
+    openModal("modal-template");
+    const list = document.getElementById("tpl-list");
+    list.innerHTML = '<div class="qa-empty">Loading templates…</div>';
+    const res = await fetch(`/panel/estimates/${EST_ID}/ajax/templates/`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+    if (!data.results.length) { list.innerHTML = '<div class="qa-empty">No templates yet. Create one from the Parts page.</div>'; return; }
+    let html = "";
+    data.results.forEach(t => {
+      html += `<div class="qa-part-row" data-tpl-id="${t.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(t.name)}${t.is_global ? ' <span style="font-size:10px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:10px; margin-left:6px">Global</span>' : ''}</div>
+          <div class="qa-part-meta">${t.item_count} item${t.item_count===1?'':'s'} · $${parseFloat(t.total).toFixed(2)}${t.description ? ' · ' + escapeHtml(t.description) : ''}</div>
+        </div>
+        <div class="qa-part-price">Add &rsaquo;</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => row.addEventListener("click", () => applyTemplate(row.dataset.tplId)));
+  }
+
+  async function applyTemplate(id) {
+    const compId = getActiveComponentId();
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/templates/${id}/apply/`, { component_id: compId });
+    if (data.ok) {
+      data.items.forEach(item => addRowToTable(item, compId));
+      updateGrandSummary(data);
+      closeModal("modal-template");
+    }
+  }
+
+  let packagesCache = [];
+  let pendingPackage = null;
+
+  function showPkgPick() {
+    document.getElementById("pkg-pick-view").style.display = "";
+    document.getElementById("pkg-qty-view").style.display = "none";
+    document.getElementById("pkg-qty-foot").style.display = "none";
+    document.getElementById("pkg-modal-title").textContent = "Add Package";
+  }
+  function showPkgQty() {
+    document.getElementById("pkg-pick-view").style.display = "none";
+    document.getElementById("pkg-qty-view").style.display = "";
+    document.getElementById("pkg-qty-foot").style.display = "";
+    document.getElementById("pkg-modal-title").textContent = "Set Quantity";
+  }
+
+  async function openPackages() {
+    if (!getActiveComponentId()) { alert("Add a component first."); return; }
+    openModal("modal-package");
+    showPkgPick();
+    document.getElementById("pkg-pick-search").value = "";
+    const list = document.getElementById("pkg-pick-list");
+    list.innerHTML = '<div class="qa-empty">Loading packages…</div>';
+    const res = await fetch("/panel/parts/ajax/packages/", { headers: { "X-Requested-With": "XMLHttpRequest" } });
+    const data = await res.json();
+    packagesCache = data.results || [];
+    renderPackagesList();
+  }
+
+  function renderPackagesList() {
+    const list = document.getElementById("pkg-pick-list");
+    const search = document.getElementById("pkg-pick-search").value.trim().toLowerCase();
+    let items = packagesCache;
+    if (search) items = items.filter(p => p.name.toLowerCase().includes(search));
+    if (!items.length) { list.innerHTML = '<div class="qa-empty">No packages found. Create one from the Parts page.</div>'; return; }
+    let html = "";
+    items.forEach(p => {
+      const unitPart = p.unit_label ? ` / ${escapeHtml(p.unit_label)}` : "";
+      const globalBadge = p.is_global ? ' <span style="font-size:10px; color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:10px; margin-left:6px">Global</span>' : '';
+      html += `<div class="qa-part-row" data-pkg-id="${p.id}">
+        <div style="min-width:0; flex:1">
+          <div style="font-weight:500; color:#111827">${escapeHtml(p.name)}${globalBadge}</div>
+          <div class="qa-part-meta">$${parseFloat(p.unit_price).toFixed(2)}${unitPart} · ${escapeHtml(p.cost_type_label || "")}</div>
+        </div>
+        <div class="qa-part-price">Pick &rsaquo;</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+    list.querySelectorAll(".qa-part-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const pkg = packagesCache.find(p => String(p.id) === row.dataset.pkgId);
+        if (pkg) loadPackageQty(pkg);
+      });
+    });
+  }
+
+  document.getElementById("pkg-pick-search").addEventListener("input", renderPackagesList);
+  document.getElementById("pkg-qty-back").addEventListener("click", showPkgPick);
+
+  function loadPackageQty(pkg) {
+    pendingPackage = pkg;
+    document.getElementById("pkg-qty-name").textContent = pkg.name;
+    document.getElementById("pkg-qty-desc").textContent = pkg.description || "";
+    document.getElementById("pkg-qty-unit").textContent = pkg.unit_label || "qty";
+    document.getElementById("pkg-qty-price").textContent = `$${parseFloat(pkg.unit_price).toFixed(2)}` + (pkg.unit_label ? ` / ${pkg.unit_label}` : "");
+    document.getElementById("pkg-qty-input").value = "1";
+    recomputePkgLineTotal();
+    showPkgQty();
+    setTimeout(() => document.getElementById("pkg-qty-input").focus(), 50);
+  }
+  function recomputePkgLineTotal() {
+    if (!pendingPackage) return;
+    const qty = parseFloat(document.getElementById("pkg-qty-input").value) || 0;
+    document.getElementById("pkg-qty-total").textContent = `$${(qty * parseFloat(pendingPackage.unit_price)).toFixed(2)}`;
+  }
+  document.getElementById("pkg-qty-input").addEventListener("input", recomputePkgLineTotal);
+  document.getElementById("pkg-qty-add").addEventListener("click", async () => {
+    if (!pendingPackage) return;
+    const compId = getActiveComponentId();
+    const qty = document.getElementById("pkg-qty-input").value || "1";
+    const data = await postJSON(`/panel/estimates/${EST_ID}/ajax/packages/${pendingPackage.id}/apply/`, {
+      component_id: compId, quantity: qty,
+    });
+    if (data.ok) {
+      addRowToTable(data.item, compId);
+      updateGrandSummary(data);
+      closeModal("modal-package");
+    }
+  });
+
+  // ── Send ──
   document.getElementById("btn-send-customer").addEventListener("click", () => {
     document.getElementById("send-error").style.display = "none";
     openModal("modal-send");
@@ -355,10 +1628,6 @@
       btn.disabled = false;
       btn.textContent = "Send Email";
     }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal("modal-send");
   });
 })();
 </script>

@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation as DecimalInvalid
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.cache import never_cache
 
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -19,6 +20,7 @@ from .models import (
     Unit, SalesPointUnit, SalesPointPart,
     Estimate, EstimateItem, EstimateComponent,
     EstimateTemplate, EstimateTemplateItem,
+    EstimatePackage,
     Invoice, InvoiceItem,
     Transaction, TaskList, Task,
     GoogleCalendarCredential,
@@ -365,32 +367,33 @@ def estimate_create(request):
 
 @login_required
 def estimate_edit(request, pk):
-    """Interactive estimate builder — index of components."""
+    """Single-page estimate builder: all sections + line items inline."""
+    sp = _default_sp(request.user)
     estimate = get_object_or_404(
         _filter_by_sp(Estimate.objects.select_related("customer"), request.user), pk=pk
     )
     estimate.ensure_main_component()
     components = estimate.components.prefetch_related("items").all()
+    categories = _active_categories(sp)
     return render(request, "panel/estimates/edit.html", {
         "estimate": estimate,
         "components": components,
+        "categories": categories,
     })
 
 
 @login_required
 def estimate_component_edit(request, pk, component_pk):
-    """Sub-estimate editor for a single component within an estimate."""
+    """Per-component editor: add/edit parts scoped to a single non-main component."""
     sp = _default_sp(request.user)
     estimate = get_object_or_404(
         _filter_by_sp(Estimate.objects.select_related("customer"), request.user), pk=pk
     )
     component = get_object_or_404(EstimateComponent, pk=component_pk, estimate=estimate)
-    items = component.items.all()
     categories = _active_categories(sp)
     return render(request, "panel/estimates/component_edit.html", {
         "estimate": estimate,
         "component": component,
-        "items": items,
         "categories": categories,
     })
 
@@ -622,6 +625,7 @@ def ajax_estimate_add_item(request, pk):
 
     unit_label = (request.POST.get("unit_label") or "").strip()
     category_label = (request.POST.get("category_label") or "").strip()
+    cost_type = (request.POST.get("cost_type") or "").strip()
 
     sp = _default_sp(request.user)
 
@@ -641,11 +645,14 @@ def ajax_estimate_add_item(request, pk):
                 price = price or part.unit_price
                 unit_label = unit_label or (part.unit.abbreviation if part.unit else "")
             category_label = category_label or (part.category.name if part.category else "")
+            cost_type = cost_type or part.cost_type
     else:
         part = None
 
     if not name:
         return JsonResponse({"ok": False, "error": "Item name is required."}, status=400)
+    if cost_type not in {"material", "labor", "sub"}:
+        cost_type = "material"
 
     component = _resolve_component(estimate, request.POST.get("component_id"))
 
@@ -659,6 +666,7 @@ def ajax_estimate_add_item(request, pk):
         unit_price=price,
         unit_label=unit_label,
         category_label=category_label,
+        cost_type=cost_type,
         order=order,
     )
     estimate.recalc_totals()
@@ -672,6 +680,7 @@ def ajax_estimate_add_item(request, pk):
             "quantity": str(item.quantity),
             "category_label": item.category_label,
             "unit_price": str(item.unit_price),
+            "cost_type": item.cost_type,
             "line_total": str(item.line_total),
             "component_id": component.id if component else None,
         },
@@ -691,6 +700,85 @@ def _resolve_component(estimate, component_id):
     return estimate.ensure_main_component()
 
 
+def _dec(value, default="0"):
+    try:
+        return Decimal(str(value).strip() or default)
+    except (DecimalInvalid, AttributeError):
+        return Decimal(default)
+
+
+@require_POST
+@login_required
+def ajax_estimate_add_part(request, pk):
+    """Multi-row add: one click creates up to 3 EstimateItems (material/labor/sub)."""
+    estimate = get_object_or_404(
+        _filter_by_sp(Estimate.objects.all(), request.user), pk=pk,
+    )
+    name = (request.POST.get("description") or request.POST.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "Description is required."}, status=400)
+
+    category_label = (request.POST.get("category_label") or "").strip()
+    unit_label = (request.POST.get("unit_label") or "").strip()
+    quantity = _dec(request.POST.get("quantity"), "1")
+    component = _resolve_component(estimate, request.POST.get("component_id"))
+
+    rows = []
+    for ct in ("material", "labor", "sub"):
+        if (request.POST.get(f"{ct}_enabled") or "") not in ("1", "true", "on"):
+            continue
+        rows.append({
+            "cost_type": ct,
+            "unit_price": _dec(request.POST.get(f"{ct}_unit_price"), "0"),
+            "multiplier": _dec(request.POST.get(f"{ct}_multiplier"), "1"),
+            "markup_pct": _dec(request.POST.get(f"{ct}_markup_pct"), "0"),
+        })
+    if not rows:
+        return JsonResponse({"ok": False, "error": "Enable at least one cost type."}, status=400)
+
+    base_order = estimate.items.count()
+    created = []
+    for i, r in enumerate(rows):
+        item = EstimateItem.objects.create(
+            estimate=estimate,
+            component=component,
+            name=name,
+            quantity=quantity,
+            unit_price=r["unit_price"],
+            multiplier=r["multiplier"],
+            markup_pct=r["markup_pct"],
+            cost_type=r["cost_type"],
+            unit_label=unit_label,
+            category_label=category_label,
+            order=base_order + i,
+        )
+        created.append(item)
+    estimate.recalc_totals()
+
+    return JsonResponse({
+        "ok": True,
+        "items": [{
+            "id": it.id,
+            "name": it.name,
+            "unit_label": it.unit_label,
+            "quantity": str(it.quantity),
+            "category_label": it.category_label,
+            "unit_price": str(it.unit_price),
+            "multiplier": str(it.multiplier),
+            "markup_pct": str(it.markup_pct),
+            "cost_type": it.cost_type,
+            "line_total": str(it.line_total),
+            "component_id": component.id,
+        } for it in created],
+        "component_subtotal": str(component.subtotal),
+        "subtotal": str(estimate.subtotal),
+        "tax": str(estimate.tax),
+        "total": str(estimate.total),
+        "cost_subtotal": str(estimate.cost_subtotal),
+        "markup_amount": str(estimate.markup_amount),
+    })
+
+
 @require_POST
 @login_required
 def ajax_estimate_add_component(request, pk):
@@ -706,7 +794,6 @@ def ajax_estimate_add_component(request, pk):
             "id": comp.id,
             "name": comp.name,
             "subtotal": "0.00",
-            "edit_url": reverse("panel:estimate_component_edit", kwargs={"pk": estimate.pk, "component_pk": comp.pk}),
         },
     })
 
@@ -823,13 +910,59 @@ def ajax_estimate_template_apply(request, pk, template_pk):
         added.append({
             "id": item.id, "name": item.name, "unit_label": item.unit_label,
             "quantity": str(item.quantity), "category_label": item.category_label,
-            "unit_price": str(item.unit_price), "line_total": str(item.line_total),
+            "unit_price": str(item.unit_price), "cost_type": item.cost_type,
+            "line_total": str(item.line_total),
             "component_id": component.id if component else None,
         })
     estimate.recalc_totals()
 
     return JsonResponse({
         "ok": True, "items": added,
+        "component_id": component.id if component else None,
+        "component_subtotal": str(component.subtotal) if component else "0.00",
+        "subtotal": str(estimate.subtotal),
+        "tax": str(estimate.tax),
+        "total": str(estimate.total),
+    })
+
+
+@require_POST
+@login_required
+def ajax_estimate_package_apply(request, pk, package_pk):
+    """AJAX: add one EstimateItem to this estimate based on the given package."""
+    estimate = get_object_or_404(Estimate, pk=pk)
+    pkg = get_object_or_404(EstimatePackage, pk=package_pk)
+
+    if pkg.sales_point_id is not None:
+        sp = _default_sp(request.user)
+        if not (request.user.is_staff or request.user.is_superuser) and (not sp or pkg.sales_point_id != sp.id):
+            return JsonResponse({"ok": False, "error": "Package not available."}, status=403)
+
+    try:
+        qty = Decimal(request.POST.get("quantity") or "1")
+    except DecimalInvalid:
+        return JsonResponse({"ok": False, "error": "Quantity must be a number."}, status=400)
+
+    component = _resolve_component(estimate, request.POST.get("component_id"))
+    order = estimate.items.count()
+    item = EstimateItem.objects.create(
+        estimate=estimate, component=component,
+        name=pkg.name, description=pkg.description,
+        unit_label=pkg.unit.abbreviation if pkg.unit else "",
+        quantity=qty, unit_price=pkg.unit_price,
+        cost_type=pkg.cost_type, order=order,
+    )
+    estimate.recalc_totals()
+
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.id, "name": item.name, "unit_label": item.unit_label,
+            "quantity": str(item.quantity), "category_label": item.category_label,
+            "unit_price": str(item.unit_price), "cost_type": item.cost_type,
+            "line_total": str(item.line_total),
+            "component_id": component.id if component else None,
+        },
         "component_id": component.id if component else None,
         "component_subtotal": str(component.subtotal) if component else "0.00",
         "subtotal": str(estimate.subtotal),
@@ -875,6 +1008,9 @@ def ajax_estimate_update_item(request, pk, item_pk):
     cat = request.POST.get("category_label")
     if cat is not None:
         item.category_label = cat.strip()
+    cost_type = request.POST.get("cost_type")
+    if cost_type is not None and cost_type in {"material", "labor", "sub"}:
+        item.cost_type = cost_type
 
     item.save()
     item.estimate.recalc_totals()
@@ -889,6 +1025,7 @@ def ajax_estimate_update_item(request, pk, item_pk):
             "quantity": str(item.quantity),
             "category_label": item.category_label,
             "unit_price": str(item.unit_price),
+            "cost_type": item.cost_type,
             "line_total": str(item.line_total),
             "component_id": comp.id if comp else None,
         },
@@ -1084,18 +1221,14 @@ def _parts_table_context(sp, parts_qs):
 
 
 def _visible_parts(sales_point):
-    """Parts visible to a SalesPoint: enabled globals + local."""
+    """Parts visible to a SalesPoint: all active globals + this SP's local parts."""
     if sales_point is None:
         return Part.objects.filter(is_active=True).select_related("category", "unit").order_by("name")
-
-    enabled_global_ids = SalesPointPart.objects.filter(
-        sales_point=sales_point
-    ).values_list("part_id", flat=True)
 
     return Part.objects.filter(
         is_active=True
     ).filter(
-        Q(id__in=enabled_global_ids) |
+        Q(sales_point__isnull=True) |
         Q(sales_point=sales_point)
     ).select_related("category", "unit").order_by("name")
 
@@ -1162,6 +1295,8 @@ def ajax_parts_list(request):
 @login_required
 def ajax_parts_create(request):
     sp = _default_sp(request.user)
+    is_admin = request.user.is_staff or request.user.is_superuser
+    target_sp = None if is_admin else sp
 
     name = (request.POST.get("name") or "").strip()
     if not name:
@@ -1171,28 +1306,102 @@ def ajax_parts_create(request):
     category_id = (request.POST.get("category_id") or "").strip()
     unit_id = (request.POST.get("unit_id") or "").strip()
     notes = (request.POST.get("notes") or "").strip()
+    cost_type = (request.POST.get("cost_type") or "material").strip()
+    if cost_type not in {"material", "labor", "sub"}:
+        cost_type = "material"
 
     try:
         unit_price = Decimal(request.POST.get("unit_price") or "0")
     except DecimalInvalid:
         return JsonResponse({"ok": False, "error": "Unit price must be a number."}, status=400)
 
-    if Part.objects.filter(name__iexact=name, sales_point=sp).exists():
-        return JsonResponse({"ok": False, "error": "A part with this name already exists."}, status=400)
+    if Part.objects.filter(name__iexact=name, cost_type=cost_type, sales_point=target_sp).exists():
+        return JsonResponse({"ok": False, "error": "A part with this name and cost type already exists."}, status=400)
 
     Part.objects.create(
         name=name,
-        sales_point=sp,
+        sales_point=target_sp,
         sku=sku,
         category_id=category_id or None,
         unit_id=unit_id or None,
         unit_price=unit_price,
+        cost_type=cost_type,
         notes=notes,
     )
 
     qs = _visible_parts(sp)
     html = render_to_string("panel/parts/_parts_table.html", _parts_table_context(sp, qs), request=request)
     return JsonResponse({"ok": True, "html": html})
+
+
+@require_POST
+@login_required
+def ajax_parts_create_multi(request):
+    """Multi-row part creation: one click creates 1-3 Part records (one per enabled cost type)."""
+    sp = _default_sp(request.user)
+    is_admin = request.user.is_staff or request.user.is_superuser
+    target_sp = None if is_admin else sp
+
+    name = (request.POST.get("description") or request.POST.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "Description is required."}, status=400)
+    sku = (request.POST.get("sku") or "").strip()
+    category_id = (request.POST.get("category_id") or "").strip() or None
+    unit_label = (request.POST.get("unit_label") or "").strip()
+    notes = (request.POST.get("notes") or "").strip()
+
+    # Resolve unit FK by abbreviation or name match (best-effort; otherwise None).
+    unit_id = None
+    if unit_label:
+        u = Unit.objects.filter(
+            Q(sales_point=target_sp) | Q(sales_point__isnull=True),
+            Q(abbreviation__iexact=unit_label) | Q(name__iexact=unit_label),
+            is_active=True,
+        ).order_by("sales_point").first()
+        if u:
+            unit_id = u.id
+
+    rows = []
+    for ct in ("material", "labor", "sub"):
+        if (request.POST.get(f"{ct}_enabled") or "") not in ("1", "true", "on"):
+            continue
+        try:
+            unit_price = Decimal(request.POST.get(f"{ct}_unit_price") or "0")
+        except DecimalInvalid:
+            unit_price = Decimal("0")
+        try:
+            multiplier = Decimal(request.POST.get(f"{ct}_multiplier") or "1")
+        except DecimalInvalid:
+            multiplier = Decimal("1")
+        rows.append({
+            "cost_type": ct,
+            "unit_price": (unit_price * multiplier).quantize(Decimal("0.01")),
+        })
+    if not rows:
+        return JsonResponse({"ok": False, "error": "Enable at least one cost type."}, status=400)
+
+    for r in rows:
+        if Part.objects.filter(name__iexact=name, cost_type=r["cost_type"], sales_point=target_sp).exists():
+            return JsonResponse(
+                {"ok": False, "error": f"A {r['cost_type']} part named “{name}” already exists."},
+                status=400,
+            )
+
+    for r in rows:
+        Part.objects.create(
+            name=name,
+            sales_point=target_sp,
+            sku=sku,
+            category_id=category_id,
+            unit_id=unit_id,
+            unit_price=r["unit_price"],
+            cost_type=r["cost_type"],
+            notes=notes,
+        )
+
+    qs = _visible_parts(sp)
+    html = render_to_string("panel/parts/_parts_table.html", _parts_table_context(sp, qs), request=request)
+    return JsonResponse({"ok": True, "html": html, "created": len(rows)})
 
 
 def _active_units(sales_point):
@@ -1224,11 +1433,22 @@ def ajax_units(request):
 @require_POST
 @login_required
 def ajax_category_add(request):
-    """Add a custom category. If name matches a global, enable it instead."""
+    """Add a custom category. If name matches a global, enable it instead.
+
+    Admin/superuser additions always create a global category (sales_point=NULL).
+    """
     sp = _default_sp(request.user)
+    is_admin = request.user.is_staff or request.user.is_superuser
     name = (request.POST.get("name") or "").strip()
     if not name:
         return JsonResponse({"ok": False, "error": "Category name is required."}, status=400)
+
+    if is_admin:
+        PartCategory.objects.get_or_create(
+            name__iexact=name, sales_point__isnull=True,
+            defaults={"name": name, "is_active": True},
+        )
+        return _category_response(sp)
 
     global_cat = PartCategory.objects.filter(
         name__iexact=name, sales_point__isnull=True
@@ -1282,10 +1502,20 @@ def ajax_category_remove(request):
         return _category_response(sp)
 
     if cat.is_global and sp:
+        if Part.objects.filter(sales_point=sp, category=cat).exists():
+            return JsonResponse(
+                {"ok": False, "error": "Can't remove — parts in this category exist."},
+                status=400,
+            )
         SalesPointPartCategory.objects.filter(
             sales_point=sp, category=cat
         ).delete()
     elif not cat.is_global and cat.sales_point == sp:
+        if Part.objects.filter(category=cat).exists():
+            return JsonResponse(
+                {"ok": False, "error": "Can't remove — parts in this category exist."},
+                status=400,
+            )
         cat.is_active = False
         cat.save(update_fields=["is_active"])
 
@@ -1325,14 +1555,24 @@ def _category_response(sp):
 @require_POST
 @login_required
 def ajax_unit_add(request):
-    """Add a custom unit. If name matches a global, enable it instead."""
+    """Add a custom unit. If name matches a global, enable it instead.
+
+    Admin/superuser additions always create a global unit (sales_point=NULL).
+    """
     sp = _default_sp(request.user)
+    is_admin = request.user.is_staff or request.user.is_superuser
     name = (request.POST.get("name") or "").strip()
     abbr = (request.POST.get("abbreviation") or "").strip()
     if not name:
         return JsonResponse({"ok": False, "error": "Unit name is required."}, status=400)
     if not abbr:
         return JsonResponse({"ok": False, "error": "Abbreviation is required."}, status=400)
+
+    if is_admin:
+        if Unit.objects.filter(name__iexact=name, sales_point__isnull=True).exists():
+            return JsonResponse({"ok": False, "error": "A unit with this name already exists."}, status=400)
+        Unit.objects.create(name=name, abbreviation=abbr)
+        return _unit_response(request.user, sp)
 
     global_unit = Unit.objects.filter(name__iexact=name, sales_point__isnull=True).first()
 
@@ -1675,6 +1915,123 @@ def ajax_template_delete_item(request, pk, item_pk):
     })
 
 
+# ── Estimate packages (managed on Parts page) ───────────────────────
+def _user_visible_packages(user):
+    sp = _default_sp(user)
+    qs = EstimatePackage.objects.filter(is_active=True)
+    if sp:
+        qs = qs.filter(Q(sales_point__isnull=True) | Q(sales_point=sp))
+    elif not (user.is_staff or user.is_superuser):
+        qs = qs.filter(sales_point__isnull=True)
+    return qs
+
+
+def _can_edit_package(user, pkg):
+    if pkg.sales_point_id is None:
+        return user.is_staff or user.is_superuser
+    sp = _default_sp(user)
+    return user.is_staff or user.is_superuser or (sp and pkg.sales_point_id == sp.id)
+
+
+@login_required
+def ajax_packages_list(request):
+    """AJAX: list packages for the Parts → Packages tab."""
+    qs = _user_visible_packages(request.user).select_related("unit")
+    is_admin = request.user.is_staff or request.user.is_superuser
+    results = []
+    for p in qs:
+        results.append({
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "unit_id": p.unit_id,
+            "unit_label": p.unit.abbreviation if p.unit else "",
+            "unit_name": p.unit.name if p.unit else "",
+            "unit_price": str(p.unit_price),
+            "cost_type": p.cost_type,
+            "cost_type_label": p.get_cost_type_display(),
+            "is_global": p.sales_point_id is None,
+            "can_edit": _can_edit_package(request.user, p),
+            "can_delete": bool(is_admin or p.sales_point_id is not None),
+        })
+    return JsonResponse({"ok": True, "results": results})
+
+
+def _parse_package_post(request):
+    name = (request.POST.get("name") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    unit_id = (request.POST.get("unit_id") or "").strip() or None
+    unit_price_raw = (request.POST.get("unit_price") or "0").strip()
+    cost_type = (request.POST.get("cost_type") or "material").strip()
+    try:
+        unit_price = Decimal(unit_price_raw or "0")
+    except DecimalInvalid:
+        return None, "Unit price must be a number."
+    if not name:
+        return None, "Package name is required."
+    if cost_type not in {"material", "labor", "sub"}:
+        return None, "Cost type must be Material, Labor, or Subcontractor."
+    if unit_id:
+        if not Unit.objects.filter(pk=unit_id).exists():
+            return None, "Unknown unit."
+    return {
+        "name": name,
+        "description": description,
+        "unit_id": unit_id,
+        "unit_price": unit_price,
+        "cost_type": cost_type,
+    }, None
+
+
+@require_POST
+@login_required
+def ajax_package_create(request):
+    data, err = _parse_package_post(request)
+    if err:
+        return JsonResponse({"ok": False, "error": err}, status=400)
+
+    sp = _default_sp(request.user)
+    scope = (request.POST.get("scope") or "location").strip()
+    use_sp = sp
+    if scope == "global" and (request.user.is_staff or request.user.is_superuser):
+        use_sp = None
+
+    pkg = EstimatePackage.objects.create(
+        sales_point=use_sp, created_by=request.user, **data,
+    )
+    return JsonResponse({"ok": True, "id": pkg.id})
+
+
+@require_POST
+@login_required
+def ajax_package_update(request, pk):
+    pkg = get_object_or_404(EstimatePackage, pk=pk)
+    if not _can_edit_package(request.user, pkg):
+        return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
+
+    data, err = _parse_package_post(request)
+    if err:
+        return JsonResponse({"ok": False, "error": err}, status=400)
+
+    for field, value in data.items():
+        setattr(pkg, field, value)
+    pkg.save(update_fields=list(data.keys()) + ["updated_at"])
+    return JsonResponse({"ok": True, "id": pkg.id})
+
+
+@require_POST
+@login_required
+def ajax_package_delete(request, pk):
+    pkg = get_object_or_404(EstimatePackage, pk=pk)
+    is_admin = request.user.is_staff or request.user.is_superuser
+    if pkg.sales_point_id is None and not is_admin:
+        return JsonResponse({"ok": False, "error": "Only admins can delete global packages."}, status=403)
+    if not _can_edit_package(request.user, pkg):
+        return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
+    pkg.delete()
+    return JsonResponse({"ok": True})
+
+
 @require_POST
 @login_required
 def ajax_parts_delete(request):
@@ -1884,6 +2241,7 @@ def task_toggle(request, pk):
 
 
 # ── Leads ───────────────────────────────────────────────────────────
+@never_cache
 @login_required
 def lead_list(request):
     qs = _lead_queryset(request.user)

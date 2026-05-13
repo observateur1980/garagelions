@@ -3,6 +3,13 @@ from django.db import models
 from django.conf import settings
 
 
+COST_TYPE_CHOICES = [
+    ("material", "Material"),
+    ("labor", "Labor"),
+    ("sub", "Subcontractor"),
+]
+
+
 # ── Customer ────────────────────────────────────────────────────────
 class Customer(models.Model):
     sales_point = models.ForeignKey(
@@ -233,6 +240,9 @@ class Part(models.Model):
     category = models.ForeignKey(
         PartCategory, on_delete=models.SET_NULL, null=True, blank=True
     )
+    cost_type = models.CharField(
+        max_length=10, choices=COST_TYPE_CHOICES, default="material",
+    )
     unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True)
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
@@ -278,7 +288,13 @@ class Estimate(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     description = models.TextField(blank=True)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    material_markup_pct = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    labor_markup_pct = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    sub_markup_pct = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    subtotal = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        help_text="Marked-up subtotal (cost + markup), customer-facing.",
+    )
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -302,9 +318,38 @@ class Estimate(models.Model):
     def is_editable(self):
         return self.status == "draft"
 
+    def _cost_split(self):
+        """Raw (un-marked) cost grouped by cost_type."""
+        mat = lab = sub = Decimal("0")
+        for it in self.items.all():
+            lt = it.line_total
+            if it.cost_type == "labor":
+                lab += lt
+            elif it.cost_type == "sub":
+                sub += lt
+            else:
+                mat += lt
+        return mat, lab, sub
+
+    @property
+    def cost_subtotal(self):
+        return sum(self._cost_split()).quantize(Decimal("0.01"))
+
+    def _marked_subtotal(self):
+        """Sum of per-item marked cost (line_total + effective markup)."""
+        total = Decimal("0")
+        for it in self.items.all():
+            total += it.line_marked
+        return total
+
+    @property
+    def markup_amount(self):
+        return (self.subtotal - self.cost_subtotal).quantize(Decimal("0.01"))
+
     def recalc_totals(self):
-        self.subtotal = sum(item.line_total for item in self.items.all())
-        self.tax = self.subtotal * self.tax_rate / 100
+        marked = self._marked_subtotal()
+        self.subtotal = marked.quantize(Decimal("0.01"))
+        self.tax = (self.subtotal * self.tax_rate / Decimal("100")).quantize(Decimal("0.01"))
         self.total = self.subtotal + self.tax
         self.save(update_fields=["subtotal", "tax", "total"])
 
@@ -352,6 +397,17 @@ class EstimateItem(models.Model):
     unit_label = models.CharField(max_length=50, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    multiplier = models.DecimalField(
+        max_digits=10, decimal_places=4, default=1,
+        help_text="Per-item multiplier (e.g. labor rate for labor rows).",
+    )
+    markup_pct = models.DecimalField(
+        max_digits=6, decimal_places=2, default=0,
+        help_text="Per-item markup % override. 0 = use estimate-level markup for this cost_type.",
+    )
+    cost_type = models.CharField(
+        max_length=10, choices=COST_TYPE_CHOICES, default="material",
+    )
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -362,7 +418,24 @@ class EstimateItem(models.Model):
 
     @property
     def line_total(self):
-        return self.quantity * self.unit_price
+        return self.quantity * self.unit_price * self.multiplier
+
+    def effective_markup_pct(self):
+        if self.markup_pct and self.markup_pct > 0:
+            return self.markup_pct
+        if not self.estimate_id:
+            return Decimal("0")
+        est = self.estimate
+        if self.cost_type == "labor":
+            return est.labor_markup_pct or Decimal("0")
+        if self.cost_type == "sub":
+            return est.sub_markup_pct or Decimal("0")
+        return est.material_markup_pct or Decimal("0")
+
+    @property
+    def line_marked(self):
+        m = self.effective_markup_pct()
+        return self.line_total * (Decimal("1") + m / Decimal("100"))
 
 
 # ── Estimate Templates ──────────────────────────────────────────────
@@ -403,6 +476,41 @@ class EstimateTemplateItem(models.Model):
 
     class Meta:
         ordering = ["order"]
+
+    def __str__(self):
+        return self.name
+
+
+# ── Estimate Packages ───────────────────────────────────────────────
+class EstimatePackage(models.Model):
+    """Named, reusable scope-of-work block. Adds one rich line item to an estimate."""
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    unit = models.ForeignKey(
+        Unit, on_delete=models.SET_NULL, null=True, blank=True,
+        help_text="Unit (e.g. sq ft, lump sum). Optional.",
+    )
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Cost per unit. Markup is applied at the estimate level by cost type.",
+    )
+    cost_type = models.CharField(
+        max_length=10, choices=COST_TYPE_CHOICES, default="material",
+    )
+    sales_point = models.ForeignKey(
+        "home.SalesPoint", on_delete=models.CASCADE,
+        null=True, blank=True, related_name="estimate_packages",
+        help_text="NULL = global package, set = local to this location.",
+    )
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
