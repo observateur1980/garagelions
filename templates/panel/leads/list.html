@@ -147,6 +147,12 @@
     </div>
     {% endif %}
     <button type="submit" class="btn-panel-outline">Search</button>
+    <a href="{% url 'panel:in_operation_list' %}"
+       class="btn-panel-outline"
+       style="background:#fff7ed; color:#c2410c; border-color:#c2410c; font-weight:600">
+      In Operation
+      {% if in_op_count %}({{ in_op_count }}{% if in_op_tasks_count %} · {{ in_op_tasks_count }} task{{ in_op_tasks_count|pluralize }}{% endif %}){% endif %}
+    </a>
   </form>
 </div>
 

@@ -1902,7 +1902,9 @@ def lead_list(request):
     if status:
         qs = qs.filter(status=status)
     else:
-        qs = qs.exclude(status__in=["closed_lost", "disqualified", "may_come_back"])
+        qs = qs.exclude(status__in=[
+            "closed_lost", "disqualified", "may_come_back", "in_operation",
+        ])
 
     can_filter_location = (
         request.user.is_staff or request.user.is_superuser
@@ -1956,7 +1958,7 @@ def lead_list(request):
 
     quick_filters = [
         {"code": s.code, "label": s.label, "bg": s.bg_hex, "fg": s.fg_hex}
-        for s in LeadStatus.objects.filter(is_quick_filter=True)
+        for s in LeadStatus.objects.filter(is_quick_filter=True).exclude(code="in_operation")
     ]
 
     bottom_codes = ["closed_lost", "disqualified", "may_come_back"]
@@ -1968,6 +1970,13 @@ def lead_list(request):
     ]
 
     view_mode = "grid" if request.GET.get("view", "").strip() == "grid" else "table"
+
+    # In Operation badge counts (visible-to-user leads only).
+    in_op_qs = _lead_queryset(request.user).filter(status="in_operation")
+    in_op_count = in_op_qs.count()
+    in_op_tasks_count = LeadTodo.objects.filter(
+        lead__in=in_op_qs, is_completed=False
+    ).count()
 
     return render(request, "panel/leads/list.html", {
         "page_obj": page_obj,
@@ -1982,6 +1991,8 @@ def lead_list(request):
         "can_manage_statuses": request.user.is_superuser,
         "sort": sort,
         "view_mode": view_mode,
+        "in_op_count": in_op_count,
+        "in_op_tasks_count": in_op_tasks_count,
     })
 
 
@@ -2202,6 +2213,61 @@ def closed_lost_list(request):
         "sales_points": sales_points,
         "can_filter_location": can_filter_location,
         "total_lost": qs.count(),
+    })
+
+
+@login_required
+def in_operation_list(request):
+    """Dedicated page for leads with status='in_operation'.
+
+    Kept off the main pipeline so active conversations stay in focus.
+    Same scoping rules as the main list — users only see leads they're
+    allowed to see.
+    """
+    qs = _lead_queryset(request.user).filter(status="in_operation")
+    pm = _get_pm(request.user)
+
+    q = request.GET.get("q", "").strip()
+    sales_point_id = request.GET.get("sales_point", "").strip()
+
+    if q:
+        qs = qs.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+            Q(email__icontains=q) | Q(phone__icontains=q) | Q(zip_code__icontains=q)
+        )
+
+    can_filter_location = (
+        request.user.is_staff or request.user.is_superuser
+        or (pm and pm.role in (ProjectManager.LOCATION_MANAGER, ProjectManager.TERRITORY_MANAGER))
+    )
+    if sales_point_id and can_filter_location:
+        qs = qs.filter(sales_point_id=sales_point_id)
+
+    qs = qs.annotate(
+        pending_todos_count=Subquery(
+            LeadTodo.objects.filter(lead=OuterRef("pk"), is_completed=False)
+            .order_by()
+            .values("lead")
+            .annotate(c=Count("pk"))
+            .values("c")[:1],
+            output_field=IntegerField(),
+        ),
+    ).order_by("-created_at")
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    sales_points = []
+    if can_filter_location:
+        sales_points = SalesPoint.objects.filter(is_active=True).order_by("name")
+
+    return render(request, "panel/leads/in_operation.html", {
+        "page_obj": page_obj,
+        "q": q,
+        "sales_point_id": sales_point_id,
+        "sales_points": sales_points,
+        "can_filter_location": can_filter_location,
+        "total_in_op": qs.count(),
     })
 
 

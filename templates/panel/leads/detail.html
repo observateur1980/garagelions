@@ -24,6 +24,10 @@
         {% endif %}
       </button>
     {% endif %}
+    {% if lead.status == "in_operation" %}
+    <a href="{% url 'panel:in_operation_list' %}" class="btn-panel-outline"
+       style="background:#fff7ed; color:#c2410c; border-color:#c2410c; font-weight:600">← In Operation</a>
+    {% endif %}
     <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">All Leads</a>
   </div>
 </div>
