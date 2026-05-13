@@ -123,6 +123,7 @@ urlpatterns = [
 
     # Google Calendar sync
     path("calendar/sync/", views.gcal_sync, name="gcal_sync"),
+    path("calendar/sync/link/", views.gcal_link_event, name="gcal_link_event"),
     path("calendar/oauth/connect/", views.gcal_connect, name="gcal_connect"),
     path("calendar/oauth/callback/", views.gcal_callback, name="gcal_callback"),
     path("calendar/disconnect/", views.gcal_disconnect, name="gcal_disconnect"),

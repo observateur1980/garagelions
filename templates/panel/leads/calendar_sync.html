@@ -100,13 +100,38 @@
               {{ ev.description|truncatechars:240 }}
             </div>
             {% endif %}
+            {% if ev.existing_lead %}
+            <div style="margin-top:8px; padding:8px 10px; border-radius:6px;
+                        background:#fffbeb; border:1px solid #fde68a;
+                        color:#92400e; font-size:12.5px">
+              ⚠ Possible match:
+              <a href="{% url 'panel:lead_detail' pk=ev.existing_lead.pk %}"
+                 style="color:#92400e; font-weight:600; text-decoration:underline">
+                {{ ev.existing_lead.first_name }} {{ ev.existing_lead.last_name }}
+              </a>
+              (existing lead, status: {{ ev.existing_lead.status }})
+            </div>
+            {% endif %}
           </div>
-          <div style="display:flex; gap:8px; align-items:center">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
             {% if ev.html_link %}
             <a href="{{ ev.html_link }}" target="_blank" rel="noopener"
                class="btn-panel-outline" style="font-size:13px">View</a>
             {% endif %}
-            <a href="{{ ev.create_url }}" class="btn-panel">+ Create Lead</a>
+            {% if ev.existing_lead %}
+              <form method="post" action="{% url 'panel:gcal_link_event' %}" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="lead_id" value="{{ ev.existing_lead.pk }}">
+                <input type="hidden" name="event_id" value="{{ ev.id }}">
+                <input type="hidden" name="event_start" value="{{ ev.start_dt }}">
+                <button type="submit" class="btn-panel">↪ Link to existing</button>
+              </form>
+              <a href="{{ ev.create_url }}" class="btn-panel-outline" style="font-size:13px">
+                + Create new anyway
+              </a>
+            {% else %}
+              <a href="{{ ev.create_url }}" class="btn-panel">+ Create Lead</a>
+            {% endif %}
           </div>
         </div>
       </div>

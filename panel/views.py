@@ -2986,6 +2986,10 @@ def _extract_phone(text):
     return m.group(1).strip() if m else ""
 
 
+def _digits_only(s):
+    return "".join(ch for ch in (s or "") if ch.isdigit())
+
+
 def _event_guest(event):
     """Return (display_name, email) for the first non-self attendee.
     Either field may be empty if the calendar event didn't include it."""
@@ -3082,6 +3086,23 @@ def gcal_sync(request):
             .values_list("source_page", flat=True)
         )
 
+        # Build email/phone → existing visible lead lookup so we can offer
+        # "link to existing lead" instead of duplicating someone who already
+        # came in through the website / manual entry.
+        visible_leads = (
+            _lead_queryset(request.user)
+            .exclude(email="", phone="")
+            .order_by("-created_at")
+        )
+        by_email, by_phone_tail = {}, {}
+        for ld in visible_leads:
+            em = (ld.email or "").strip().lower()
+            if em and em not in by_email:
+                by_email[em] = ld
+            digits = _digits_only(ld.phone)
+            if len(digits) >= 7 and digits[-7:] not in by_phone_tail:
+                by_phone_tail[digits[-7:]] = ld
+
         for ev in raw_events:
             event_id = ev.get("id", "")
             source_tag = _gcal.event_source_tag(event_id)
@@ -3098,6 +3119,16 @@ def gcal_sync(request):
             else:
                 first, last = _split_event_title(summary)
             phone = _extract_phone(description) or _extract_phone(location)
+
+            # Match against an existing lead (email first, then phone tail).
+            existing_lead = None
+            em = (attendee_email or "").strip().lower()
+            if em:
+                existing_lead = by_email.get(em)
+            if not existing_lead:
+                digits = _digits_only(phone)
+                if len(digits) >= 7:
+                    existing_lead = by_phone_tail.get(digits[-7:])
 
             prefill = {
                 "first_name": first,
@@ -3122,12 +3153,14 @@ def gcal_sync(request):
                 "description": description,
                 "location": location,
                 "start": start,
+                "start_dt": start_dt,
                 "html_link": ev.get("htmlLink", ""),
                 "attendee_email": attendee_email,
                 "first_name": first,
                 "last_name": last,
                 "phone": phone,
                 "create_url": create_url,
+                "existing_lead": existing_lead,
             })
 
     google_email = ""
@@ -3142,6 +3175,51 @@ def gcal_sync(request):
         "events": events_ctx,
         "error": error,
     })
+
+
+@require_POST
+@login_required
+def gcal_link_event(request):
+    """Attach a Google Calendar event to an existing lead instead of
+    creating a duplicate. Stamps source_page with the gcal tag (so the
+    event drops off the sync page on next load) and copies the event
+    start time into appointment_at."""
+    from django.utils.dateparse import parse_datetime
+
+    lead_pk = request.POST.get("lead_id")
+    event_id = (request.POST.get("event_id") or "").strip()
+    event_start = (request.POST.get("event_start") or "").strip()
+
+    if not lead_pk or not event_id:
+        _messages.error(request, "Missing lead or event id.")
+        return redirect("panel:gcal_sync")
+
+    lead = get_object_or_404(_lead_queryset(request.user), pk=lead_pk)
+
+    prior_source = lead.source_page or ""
+    lead.source_page = _gcal.event_source_tag(event_id)
+
+    update_fields = ["source_page"]
+    if event_start:
+        appt = parse_datetime(event_start)
+        if appt:
+            lead.appointment_at = appt
+            update_fields.append("appointment_at")
+    lead.save(update_fields=update_fields)
+
+    detail = "Linked to Google Calendar event."
+    if prior_source and not prior_source.startswith("google_calendar:"):
+        detail += f" Original source: {prior_source}"
+    LeadActivity.objects.create(
+        lead=lead, user=request.user,
+        action=LeadActivity.ACTION_NOTES,
+        detail=detail,
+    )
+    _messages.success(
+        request,
+        f"Linked event to existing lead: {lead.first_name} {lead.last_name}.",
+    )
+    return redirect("panel:gcal_sync")
 
 
 @login_required
