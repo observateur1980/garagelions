@@ -379,10 +379,6 @@ class SalesPointAdmin(admin.ModelAdmin):
     )
     list_display_links = ("name", "internal_code_display")
     list_editable = ("is_active", "is_featured", "order")
-    list_filter = (
-        "region__state", "region", "location_type",
-        "is_active", "is_featured",
-    )
     search_fields = (
         "name", "code", "base_city", "local_email", "lead_notification_email",
         "region__code", "region__name", "region__state__code", "region__state__name",
