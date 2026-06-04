@@ -109,17 +109,18 @@ def _pick_calendar_id(service):
     return "primary", "primary"
 
 
-def fetch_upcoming_events(user, days_ahead=30, max_results=50):
+def fetch_upcoming_events(user, days_ahead=30, days_back=14, max_results=100):
     creds = credentials_for_user(user)
     if creds is None:
         return [], ""
     service = build("calendar", "v3", credentials=creds, cache_discovery=False)
     calendar_id, calendar_name = _pick_calendar_id(service)
     now = timezone.now()
+    start = now - timedelta(days=days_back)
     end = now + timedelta(days=days_ahead)
     resp = service.events().list(
         calendarId=calendar_id,
-        timeMin=now.isoformat(),
+        timeMin=start.isoformat(),
         timeMax=end.isoformat(),
         singleEvents=True,
         orderBy="startTime",
