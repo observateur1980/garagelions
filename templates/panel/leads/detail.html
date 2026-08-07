@@ -28,6 +28,24 @@
     <a href="{% url 'panel:in_operation_list' %}" class="btn-panel-outline"
        style="background:#fff7ed; color:#c2410c; border-color:#c2410c; font-weight:600">← In Operation</a>
     {% endif %}
+    {% with cab=lead.cabinet_projects.all.0 %}
+      {% if cab %}
+        <a href="{% url 'customlux:project_detail' cab.pk %}" class="btn-panel-outline"
+           style="background:#fffbeb; color:#92400e; border-color:#c9a227; font-weight:600"
+           title="A cabinets copy of this lead already exists on the CustomLux board">
+          ✓ On CustomLux
+        </a>
+      {% else %}
+        <form method="post" action="{% url 'customlux:send_lead' lead.pk %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn-panel-outline"
+                  style="background:#14161a; color:#fff; border-color:#14161a; font-weight:600"
+                  title="Copy this lead to the cabinets board. The lead stays here unchanged.">
+            Send to CustomLux
+          </button>
+        </form>
+      {% endif %}
+    {% endwith %}
     <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">All Leads</a>
   </div>
 </div>

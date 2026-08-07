@@ -1,0 +1,95 @@
+{% extends "customlux/base.html" %}
+{% block title %}Sharing{% endblock %}
+
+{% block content %}
+<div class="cl-head">
+  <div>
+    <h1>Sharing</h1>
+    <div class="muted" style="font-size:13px;">
+      People here can open <strong>/customlux</strong> only — never the main CRM.
+    </div>
+  </div>
+  <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="cl-card p-3">
+      <div class="fw-semibold mb-2">Invite someone</div>
+      <form method="post">
+        {% csrf_token %}
+        <label class="form-label small fw-semibold">Email address</label>
+        {{ form.email }}
+        <div class="form-check mt-2">
+          {{ form.can_edit }}
+          <label class="form-check-label small" for="{{ form.can_edit.id_for_label }}">
+            Can edit projects (uncheck for read-only)
+          </label>
+        </div>
+        {% if form.errors %}
+          <div class="alert alert-danger mt-2 py-2 small">{{ form.errors }}</div>
+        {% endif %}
+        <button class="btn btn-dark btn-sm mt-3">Send invite</button>
+      </form>
+      <div class="small muted mt-3" style="line-height:1.5;">
+        If the address has no Garage Lions login yet, one is created and a
+        temporary password is shown to you <strong>once</strong> — pass it along.
+        If they already have a login, they keep their current password.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="cl-card p-3">
+      <div class="fw-semibold mb-2">Who has access</div>
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr class="small text-muted">
+            <th>Email</th><th>Login</th><th>Access</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="small"><strong>{{ owner_email }}</strong></td>
+            <td class="small muted">{{ request.user.username }}</td>
+            <td><span class="badge bg-dark">owner</span></td>
+            <td></td>
+          </tr>
+          {% for m in members %}
+            <tr>
+              <td class="small">{{ m.email }}</td>
+              <td class="small muted">{{ m.user.username|default:"—" }}</td>
+              <td>
+                {% if not m.is_active %}
+                  <span class="badge bg-secondary">suspended</span>
+                {% elif m.can_edit %}
+                  <span class="badge bg-success">can edit</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">read-only</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <form method="post" action="{% url 'customlux:member_toggle' m.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary">
+                    {% if m.is_active %}Suspend{% else %}Re-enable{% endif %}
+                  </button>
+                </form>
+                <form method="post" action="{% url 'customlux:member_remove' m.pk %}" class="d-inline"
+                      onsubmit="return confirm('Remove {{ m.email }} from CustomLux? Their login stays, but the board closes to them.');">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="small muted py-3">
+              Nobody else yet — the board is private to you.
+            </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

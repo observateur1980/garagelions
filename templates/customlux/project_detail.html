@@ -1,0 +1,131 @@
+{% extends "customlux/base.html" %}
+{% block title %}{{ project.display_name }}{% endblock %}
+
+{% block content %}
+<div class="cl-head">
+  <div>
+    <h1>{{ project.display_name }}</h1>
+    <div class="muted" style="font-size:13px;">
+      <span class="cl-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ project.stage.color }}"></span>
+      {{ project.stage.label }}
+      {% if project.lead_id %}
+        · copied from panel lead #{{ project.lead_id }} on {{ project.created_at|date:"M j, Y" }}
+      {% else %}
+        · created here {{ project.created_at|date:"M j, Y" }}
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+    {% if can_edit %}
+      <form method="post" action="{% url 'customlux:project_archive' project.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-danger">
+          {% if project.archived %}Restore{% else %}Archive{% endif %}
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="cl-card p-3">
+      {% if not can_edit %}
+        <div class="alert alert-warning py-2">Your access to this board is read-only.</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Project title</label>
+            {{ form.title }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Stage</label>
+            {{ form.stage }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Customer</label>
+            {{ form.customer_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Phone</label>
+            {{ form.phone }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Address</label>
+            {{ form.address }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">ZIP</label>
+            {{ form.zip_code }}
+          </div>
+
+          <div class="col-12"><hr class="my-1"></div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Quoted amount</label>
+            {{ form.quoted_amount }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Linear feet</label>
+            {{ form.linear_feet }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Finish / colour</label>
+            {{ form.finish }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Measure date</label>
+            {{ form.measure_date }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Install date</label>
+            {{ form.install_date }}
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Notes</label>
+            {{ form.notes }}
+          </div>
+        </div>
+        {% if form.errors %}
+          <div class="alert alert-danger mt-3 py-2 small">
+            {{ form.errors }}
+          </div>
+        {% endif %}
+        {% if can_edit %}
+          <button class="btn btn-dark mt-3">Save</button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    {% if project.source_notes %}
+      <div class="cl-card p-3 mb-3">
+        <div class="fw-semibold small mb-2">Original lead message</div>
+        <div class="small muted" style="white-space:pre-wrap;">{{ project.source_notes }}</div>
+      </div>
+    {% endif %}
+
+    <div class="cl-card p-3">
+      <div class="fw-semibold small mb-2">History</div>
+      {% for a in activities %}
+        <div class="small mb-2 pb-2" style="border-bottom:1px solid #f3f4f6;">
+          <div>{{ a.detail }}</div>
+          <div class="muted" style="font-size:11px;">
+            {{ a.created_at|date:"M j, Y g:i A" }}{% if a.user %} · {{ a.user.email }}{% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="small muted">Nothing yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

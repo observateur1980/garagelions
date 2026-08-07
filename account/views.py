@@ -15,7 +15,17 @@ User = get_user_model()
 
 
 def _dashboard_url(user):
-    """Return the panel dashboard URL."""
+    """Where to send someone after login.
+
+    Normally the panel dashboard. CustomLux-only accounts (the cabinets board
+    owner, and invited members) have no ProjectManager and therefore see an
+    empty panel, so they land on their own board instead.
+    """
+    from customlux.access import access_level
+
+    if access_level(user) and not user.is_staff:
+        if not ProjectManager.objects.filter(user=user).exists():
+            return reverse('customlux:board')
     return reverse('panel:dashboard')
 
 

@@ -1,0 +1,73 @@
+{% extends "customlux/base.html" %}
+{% block title %}New cabinets project{% endblock %}
+
+{% block content %}
+<div class="cl-head">
+  <h1>New cabinets project</h1>
+  <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+</div>
+
+<div class="cl-card p-3" style="max-width:840px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Project title</label>
+        {{ form.title }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Stage</label>
+        {{ form.stage }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Customer</label>
+        {{ form.customer_name }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Phone</label>
+        {{ form.phone }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Email</label>
+        {{ form.email }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Address</label>
+        {{ form.address }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">ZIP</label>
+        {{ form.zip_code }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Quoted amount</label>
+        {{ form.quoted_amount }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Linear feet</label>
+        {{ form.linear_feet }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Finish / colour</label>
+        {{ form.finish }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Measure date</label>
+        {{ form.measure_date }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Install date</label>
+        {{ form.install_date }}
+      </div>
+      <div class="col-12">
+        <label class="form-label small fw-semibold">Notes</label>
+        {{ form.notes }}
+      </div>
+    </div>
+    {% if form.errors %}
+      <div class="alert alert-danger mt-3 py-2 small">{{ form.errors }}</div>
+    {% endif %}
+    <button class="btn btn-dark mt-3">Create project</button>
+  </form>
+</div>
+{% endblock %}

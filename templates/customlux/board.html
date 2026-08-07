@@ -1,0 +1,156 @@
+{% extends "customlux/base.html" %}
+{% block title %}Cabinets Board{% endblock %}
+
+{% block extra_css %}
+<style>
+  .cl-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:14px;
+              align-items:flex-start; }
+  .cl-col { flex:0 0 288px; background:#eef0f3; border-radius:10px;
+            padding:10px; min-height:120px; }
+  .cl-col.drag-over { background:#e0e7ff; outline:2px dashed #6366f1; }
+  .cl-col-head { display:flex; align-items:center; justify-content:space-between;
+                 margin-bottom:10px; padding:0 4px; }
+  .cl-col-title { display:flex; align-items:center; gap:8px;
+                  font-weight:600; font-size:13px; text-transform:uppercase;
+                  letter-spacing:.5px; }
+  .cl-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .cl-count { background:#fff; border-radius:20px; padding:1px 9px;
+              font-size:12px; color:#4b5563; }
+  .cl-col-total { font-size:11px; color:#6b7280; padding:0 4px 8px; }
+
+  .cl-cardlet { background:#fff; border:1px solid #e5e7eb; border-radius:8px;
+                padding:10px 12px; margin-bottom:8px; display:block;
+                text-decoration:none; color:inherit;
+                box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .cl-cardlet:hover { border-color:#c9a227; }
+  .cl-cardlet[draggable="true"] { cursor:grab; }
+  .cl-cardlet.dragging { opacity:.4; }
+  .cl-cardlet .nm { font-weight:600; font-size:14px; }
+  .cl-cardlet .mt { font-size:12px; color:#6b7280; margin-top:3px; }
+  .cl-cardlet .amt { font-weight:600; font-size:13px; color:#065f46; }
+  .cl-from-lead { font-size:10px; background:#eef2ff; color:#4338ca;
+                  border-radius:4px; padding:1px 6px; }
+  .cl-empty { font-size:12px; color:#9ca3af; text-align:center; padding:14px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cl-head">
+  <div>
+    <h1>Cabinets Board</h1>
+    <div class="muted" style="font-size:13px;">
+      {{ total_open }} active project{{ total_open|pluralize }} — separate from the main CRM.
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="get" class="d-flex gap-2">
+      <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm"
+             placeholder="Search name, phone, address…" style="min-width:230px;">
+      <button class="btn btn-sm btn-outline-secondary">Search</button>
+      {% if q %}<a href="{% url 'customlux:board' %}" class="btn btn-sm btn-link">Clear</a>{% endif %}
+    </form>
+    {% if can_edit %}
+      <a href="{% url 'customlux:project_create' %}" class="btn btn-sm btn-dark">+ New project</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cl-board">
+  {% for col in columns %}
+    <div class="cl-col" data-stage="{{ col.stage.pk }}">
+      <div class="cl-col-head">
+        <span class="cl-col-title">
+          <span class="cl-dot" style="background:{{ col.stage.color }}"></span>
+          {{ col.stage.label }}
+        </span>
+        <span class="cl-count">{{ col.count }}</span>
+      </div>
+      {% if col.total %}
+        <div class="cl-col-total">${{ col.total|floatformat:0 }} quoted</div>
+      {% endif %}
+
+      <div class="cl-col-body">
+        {% for p in col.projects %}
+          <a class="cl-cardlet" href="{% url 'customlux:project_detail' p.pk %}"
+             {% if can_edit %}draggable="true"{% endif %} data-id="{{ p.pk }}">
+            <div class="nm">{{ p.display_name }}</div>
+            {% if p.phone %}<div class="mt">{{ p.phone }}</div>{% endif %}
+            {% if p.address %}<div class="mt">{{ p.address }}</div>{% endif %}
+            <div class="mt d-flex justify-content-between align-items-center">
+              <span>
+                {% if p.install_date %}Install {{ p.install_date|date:"M j" }}{% endif %}
+              </span>
+              {% if p.quoted_amount %}<span class="amt">${{ p.quoted_amount|floatformat:0 }}</span>{% endif %}
+            </div>
+            {% if p.lead_id %}<div style="margin-top:6px;"><span class="cl-from-lead">from lead #{{ p.lead_id }}</span></div>{% endif %}
+          </a>
+        {% empty %}
+          <div class="cl-empty">—</div>
+        {% endfor %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="cl-card p-4">
+      No stages configured yet. Add them in Django admin under
+      <strong>CustomLux Cabinets → Cabinet stages</strong>.
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if can_edit %}
+<script>
+(function () {
+  const csrf = "{{ csrf_token }}";
+  let dragged = null;
+
+  document.querySelectorAll('.cl-cardlet[draggable="true"]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      dragged = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Firefox needs data set for the drag to start at all.
+      e.dataTransfer.setData('text/plain', card.dataset.id);
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      dragged = null;
+    });
+    // A card is an <a>; suppress navigation that a drag would otherwise trigger.
+    card.addEventListener('click', e => {
+      if (card.dataset.justDragged) { e.preventDefault(); delete card.dataset.justDragged; }
+    });
+  });
+
+  document.querySelectorAll('.cl-col').forEach(col => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if (!dragged) return;
+      const card = dragged;
+      const stage = col.dataset.stage;
+      card.dataset.justDragged = '1';
+      col.querySelector('.cl-col-body').appendChild(card);
+
+      const body = new FormData();
+      body.append('stage', stage);
+      fetch(`/customlux/p/${card.dataset.id}/move/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf },
+        body: body,
+      }).then(r => {
+        if (!r.ok) { alert('Could not move that card — reloading.'); location.reload(); }
+        else { location.reload(); }   // refresh counts and column totals
+      }).catch(() => location.reload());
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

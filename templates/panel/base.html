@@ -317,6 +317,11 @@
         </span>
         <span class="text">Leads</span>
       </a>
+      {% if is_customlux_owner %}
+        <a href="{% url 'customlux:board' %}" title="Cabinets board">
+          <span class="icon">&#128715;</span><span class="text">CustomLux</span>
+        </a>
+      {% endif %}
       <a href="{% url 'panel:help' %}" class="{% if request.resolver_match.url_name == 'help' %}active{% endif %}">
         <span class="icon">&#10067;</span><span class="text">Help</span>
       </a>

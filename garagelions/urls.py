@@ -31,6 +31,9 @@ urlpatterns = [
     # ── Task Board (standalone) ──────────────────────────────────────────
     path('taskboard/', include('taskboard.urls', namespace='taskboard')),
 
+    # ── CustomLux (cabinets-only board, separate access rules) ───────────
+    path('customlux/', include('customlux.urls', namespace='customlux')),
+
     # SEO sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap'),

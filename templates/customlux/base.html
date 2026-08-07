@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CustomLux{% endblock %} — Cabinets</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root { --cl-ink: #14161a; --cl-line: #e5e7eb; --cl-muted: #6b7280; }
+    body { margin:0; background:#f6f7f9; color:var(--cl-ink);
+           font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+    .cl-nav { background:var(--cl-ink); color:#fff; padding:12px 22px;
+              display:flex; align-items:center; justify-content:space-between; }
+    .cl-brand { color:#fff; text-decoration:none; font-weight:700;
+                font-size:19px; letter-spacing:.4px; }
+    .cl-brand span { color:#c9a227; }
+    .cl-nav-links a { color:#d1d5db; text-decoration:none; margin-left:18px;
+                      font-size:14px; }
+    .cl-nav-links a:hover, .cl-nav-links a.active { color:#fff; }
+    .cl-who { font-size:12px; color:#9ca3af; margin-left:18px; }
+
+    .cl-wrap { padding:22px; }
+    .cl-head { display:flex; align-items:center; justify-content:space-between;
+               flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+    .cl-head h1 { font-size:22px; font-weight:700; margin:0; }
+
+    .cl-card { background:#fff; border:1px solid var(--cl-line);
+               border-radius:10px; }
+    .muted { color:var(--cl-muted); }
+    .badge-ro { background:#fef3c7; color:#92400e; border-radius:20px;
+                padding:2px 10px; font-size:11px; font-weight:600; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="cl-nav">
+    <div>
+      <a class="cl-brand" href="{% url 'customlux:board' %}">CUSTOM<span>LUX</span></a>
+      <span class="cl-nav-links">
+        <a href="{% url 'customlux:board' %}">Board</a>
+        <a href="{% url 'customlux:archived' %}">Archived</a>
+        {% if is_owner %}<a href="{% url 'customlux:members' %}">Sharing</a>{% endif %}
+      </span>
+    </div>
+    <div class="cl-nav-links">
+      {% if not can_edit %}<span class="badge-ro">read-only</span>{% endif %}
+      <span class="cl-who">{{ request.user.email }}</span>
+      {% if is_customlux_owner or request.user.is_staff or request.user.project_manager %}
+        <a href="{% url 'panel:dashboard' %}">Panel</a>
+      {% endif %}
+      <a href="{% url 'logout_shortcut' %}">Log out</a>
+    </div>
+  </div>
+
+  <div class="cl-wrap">
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-{% if m.tags == 'error' %}danger{% elif m.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show">
+          {{ m }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

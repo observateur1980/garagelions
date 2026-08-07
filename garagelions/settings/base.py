@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "home.apps.HomeConfig",
     "panel",
     "taskboard",
+    "customlux",
 
     "django.contrib.sitemaps",
 ]
@@ -37,6 +38,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Must sit after AuthenticationMiddleware — it reads request.user.
+    "customlux.middleware.CustomLuxScopeMiddleware",
 ]
 
 ROOT_URLCONF = "garagelions.urls"
@@ -55,6 +58,7 @@ TEMPLATES = [
                 "home.context_processors.footer_video_reviews",
                 "home.context_processors.selected_city",
                 "panel.context_processors.new_leads_badge",
+                "customlux.context_processors.customlux_owner",
             ],
         },
     },
@@ -118,6 +122,14 @@ GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
 GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
     "GOOGLE_OAUTH_REDIRECT_URI",
     "http://127.0.0.1:8000/panel/calendar/oauth/callback/",
+)
+
+# ── CustomLux (cabinets-only board at /customlux/) ──────────────────
+# The single account that owns the board: may invite/remove members and edit
+# everything. Superusers are always let in too, so a typo here can't lock
+# everyone out. Everyone else needs a CabinetMember invite.
+CUSTOMLUX_OWNER_EMAIL = os.environ.get(
+    "CUSTOMLUX_OWNER_EMAIL", "admin@garagelions.com"
 )
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

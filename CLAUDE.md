@@ -49,6 +49,7 @@ Three Django apps own most of the code, plus one standalone:
 | `home/` | Public website + territory model (`State` → `Region` → `SalesPoint` → `ZipCoverage`), `LeadModel` and its satellites (`LeadStatus`, `LeadActivity`, `LeadFollowUp`, `LeadTodo`, `LeadAttachment`), `Estimate`+`EstimateLineItem`, `Gallery`, `Testimonial`, `VideoReview`, `PushSubscription`, notifications dispatcher, sitemaps. |
 | `panel/` | Internal CRM at `/panel/...` — lead list/detail/edit/create, dashboards, estimates UI, customers, parts, invoices, transactions, taskboard, Google Calendar sync, mobile PWA shell at `/panel/m/`. Also owns `Customer`, `Project`, `Part`/`PartCategory`, `Unit`, `Estimate`(panel-side), `Invoice`, `Task`, `GoogleCalendarCredential`. |
 | `taskboard/` | Standalone kanban-style task board at `/taskboard/`. |
+| `customlux/` | Cabinets-only project board at `/customlux/`, deliberately outside panel's territory scoping. `CabinetStage` (columns), `CabinetProject` (a *copy* of a lead), `CabinetMember` (email-based sharing), `CabinetActivity`. |
 
 `panel/views.py` is large (~2700 lines) — most CRM functionality is there, organized by `# ── Section ──` comment blocks (Leads, Estimates, Customers, Parts, Invoices, Google Calendar sync, Mobile/PWA). Skim those comments before searching.
 
@@ -67,6 +68,8 @@ The same scoping is duplicated in `ProjectManager.get_visible_sales_points()` fo
 **`ManualLeadForm` disables `sales_point` widget for non-staff** (`widget.attrs['disabled']`). Disabled inputs don't submit, so `form.save()` writes `sales_point=None`, which can drop the lead out of a LocationManager's queryset and 404 the post-save redirect. `lead_edit` falls back to `lead_list` when this happens — preserve that pattern when adding edit flows.
 
 **Google Calendar source tagging.** Leads sourced from a calendar event carry `source_page = "google_calendar:<event_id>"`. `lead_create` (a) preserves that prefix when source_page is otherwise blank, (b) redirects to `lead_list` (not detail) so the event drops off the sync page (`panel/views.py:2407-2414`). Use `panel.google_calendar.event_source_tag(event_id)` to build the value.
+
+**CustomLux access is separate from every other permission rule.** `/customlux/` does *not* use `ProjectManager`/`Role`. Access is: `settings.CUSTOMLUX_OWNER_EMAIL` (or any superuser, as break-glass) → owner; an active `CabinetMember` → editor or viewer. See `customlux/access.py`. Because panel views are `@login_required` only — and `_filter_by_sp()` falls back to `sales_point__isnull=True` for a user with no `ProjectManager` — `customlux/middleware.py` bounces CustomLux-only accounts away from `/panel/`, `/taskboard/` and `/admin/`. Keep that middleware in place when adding internal tools, or invited outsiders will see them. A `CabinetProject` is a **snapshot copy** of a lead: editing it never writes back to `LeadModel`, and the `lead` FK exists only for provenance and duplicate detection.
 
 **Settings module structure.** `garagelions/settings/__init__.py` is the entry point. It always loads `base.py`, then prefers `local.py` (gitignored, dev-only) over `production.py`. Don't add settings to `__init__.py`.
 
