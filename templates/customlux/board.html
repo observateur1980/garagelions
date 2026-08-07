@@ -1,105 +1,349 @@
-{% extends "customlux/base.html" %}
-{% block title %}Cabinets Board{% endblock %}
-
-{% block extra_css %}
-<style>
-  .cl-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:14px;
-              align-items:flex-start; }
-  .cl-col { flex:0 0 288px; background:#eef0f3; border-radius:10px;
-            padding:10px; min-height:120px; }
-  .cl-col.drag-over { background:#e0e7ff; outline:2px dashed #6366f1; }
-  .cl-col-head { display:flex; align-items:center; justify-content:space-between;
-                 margin-bottom:10px; padding:0 4px; }
-  .cl-col-title { display:flex; align-items:center; gap:8px;
-                  font-weight:600; font-size:13px; text-transform:uppercase;
-                  letter-spacing:.5px; }
-  .cl-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
-  .cl-count { background:#fff; border-radius:20px; padding:1px 9px;
-              font-size:12px; color:#4b5563; }
-  .cl-col-total { font-size:11px; color:#6b7280; padding:0 4px 8px; }
-
-  .cl-cardlet { background:#fff; border:1px solid #e5e7eb; border-radius:8px;
-                padding:10px 12px; margin-bottom:8px; display:block;
-                text-decoration:none; color:inherit;
-                box-shadow:0 1px 2px rgba(0,0,0,.04); }
-  .cl-cardlet:hover { border-color:#c9a227; }
-  .cl-cardlet[draggable="true"] { cursor:grab; }
-  .cl-cardlet.dragging { opacity:.4; }
-  .cl-cardlet .nm { font-weight:600; font-size:14px; }
-  .cl-cardlet .mt { font-size:12px; color:#6b7280; margin-top:3px; }
-  .cl-cardlet .amt { font-weight:600; font-size:13px; color:#065f46; }
-  .cl-from-lead { font-size:10px; background:#eef2ff; color:#4338ca;
-                  border-radius:4px; padding:1px 6px; }
-  .cl-empty { font-size:12px; color:#9ca3af; text-align:center; padding:14px 0; }
-</style>
-{% endblock %}
+{% extends parent_template %}
+{% block title %}CustomLux{% endblock %}
 
 {% block content %}
-<div class="cl-head">
+<div class="page-header">
   <div>
-    <h1>Cabinets Board</h1>
-    <div class="muted" style="font-size:13px;">
-      {{ total_open }} active project{{ total_open|pluralize }} — separate from the main CRM.
-    </div>
+    <h2>CustomLux</h2>
+    {% if sum_total %}
+      <div style="font-size:12px; color:#6b7280; margin-top:3px">
+        {{ total_open }} project{{ total_open|pluralize }} ·
+        ${{ sum_total|floatformat:0 }} in deals ·
+        <strong style="color:#065f46">${{ sum_commission|floatformat:0 }} commission</strong>
+        at {{ conf.commission_rate|floatformat:"-2" }}%
+        {% if sum_to_collect %}
+          · <strong style="color:#b45309">${{ sum_to_collect|floatformat:0 }} to collect</strong>
+        {% endif %}
+        {% if sum_to_pay %}
+          · <strong style="color:#7c3aed">${{ sum_to_pay|floatformat:0 }} to pay out</strong>
+        {% endif %}
+        {% if not sum_to_collect and not sum_to_pay %}
+          · <strong style="color:#065f46">all settled</strong>
+        {% endif %}
+      </div>
+    {% endif %}
   </div>
-  <div class="d-flex gap-2">
-    <form method="get" class="d-flex gap-2">
-      <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm"
-             placeholder="Search name, phone, address…" style="min-width:230px;">
-      <button class="btn btn-sm btn-outline-secondary">Search</button>
-      {% if q %}<a href="{% url 'customlux:board' %}" class="btn btn-sm btn-link">Clear</a>{% endif %}
-    </form>
+  <div style="display:flex; gap:8px; align-items:center">
+    <div class="view-toggle" role="group" aria-label="Switch view">
+      <a href="?{% if q %}q={{ q }}&{% endif %}{% if stage_code %}stage={{ stage_code }}{% endif %}"
+         class="view-toggle-btn {% if view_mode == 'table' %}active{% endif %}"
+         title="Table view" aria-label="Table view">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </a>
+      <a href="?view=grid{% if q %}&q={{ q }}{% endif %}{% if stage_code %}&stage={{ stage_code }}{% endif %}"
+         class="view-toggle-btn {% if view_mode == 'grid' %}active{% endif %}"
+         title="Grid view" aria-label="Grid view">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
+      </a>
+      <a href="?view=board{% if q %}&q={{ q }}{% endif %}{% if stage_code %}&stage={{ stage_code }}{% endif %}"
+         class="view-toggle-btn {% if view_mode == 'board' %}active{% endif %}"
+         title="Board view — drag between stages" aria-label="Board view">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="5" height="18"></rect>
+          <rect x="10" y="3" width="5" height="12"></rect>
+          <rect x="17" y="3" width="5" height="15"></rect>
+        </svg>
+      </a>
+    </div>
+    {% if is_owner %}
+      <a href="{% url 'customlux:settings' %}" class="btn-panel-outline">⚙ Settings</a>
+      <a href="{% url 'customlux:members' %}" class="btn-panel-outline">Sharing</a>
+    {% endif %}
+    <a href="{% url 'customlux:archived' %}" class="btn-panel-outline">Archived</a>
     {% if can_edit %}
-      <a href="{% url 'customlux:project_create' %}" class="btn btn-sm btn-dark">+ New project</a>
+      <a href="{% url 'customlux:project_create' %}" class="btn-panel">+ New Project</a>
     {% endif %}
   </div>
 </div>
 
-<div class="cl-board">
-  {% for col in columns %}
-    <div class="cl-col" data-stage="{{ col.stage.pk }}">
-      <div class="cl-col-head">
-        <span class="cl-col-title">
-          <span class="cl-dot" style="background:{{ col.stage.color }}"></span>
-          {{ col.stage.label }}
-        </span>
-        <span class="cl-count">{{ col.count }}</span>
-      </div>
-      {% if col.total %}
-        <div class="cl-col-total">${{ col.total|floatformat:0 }} quoted</div>
-      {% endif %}
+<style>
+  .view-toggle { display:inline-flex; border:1px solid #d1d5db; border-radius:6px; overflow:hidden; }
+  .view-toggle-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:7px 10px; background:#fff; color:#6b7280;
+    text-decoration:none; border:0; cursor:pointer;
+    border-right:1px solid #e5e7eb;
+  }
+  .view-toggle-btn:last-child { border-right:0; }
+  .view-toggle-btn:hover { background:#f9fafb; color:#111827; }
+  .view-toggle-btn.active { background:#374151; color:#fff; }
 
-      <div class="cl-col-body">
-        {% for p in col.projects %}
-          <a class="cl-cardlet" href="{% url 'customlux:project_detail' p.pk %}"
-             {% if can_edit %}draggable="true"{% endif %} data-id="{{ p.pk }}">
-            <div class="nm">{{ p.display_name }}</div>
-            {% if p.phone %}<div class="mt">{{ p.phone }}</div>{% endif %}
-            {% if p.address %}<div class="mt">{{ p.address }}</div>{% endif %}
-            <div class="mt d-flex justify-content-between align-items-center">
-              <span>
-                {% if p.install_date %}Install {{ p.install_date|date:"M j" }}{% endif %}
-              </span>
-              {% if p.quoted_amount %}<span class="amt">${{ p.quoted_amount|floatformat:0 }}</span>{% endif %}
-            </div>
-            {% if p.lead_id %}<div style="margin-top:6px;"><span class="cl-from-lead">from lead #{{ p.lead_id }}</span></div>{% endif %}
-          </a>
-        {% empty %}
-          <div class="cl-empty">—</div>
-        {% endfor %}
-      </div>
-    </div>
-  {% empty %}
-    <div class="cl-card p-4">
-      No stages configured yet. Add them in Django admin under
-      <strong>CustomLux Cabinets → Cabinet stages</strong>.
-    </div>
+  .cl-card-item {
+    display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+    padding:16px 18px; text-decoration:none; color:inherit; height:100%;
+    transition: box-shadow .15s, transform .15s, border-color .15s;
+  }
+  .cl-card-item:hover {
+    box-shadow:0 4px 14px rgba(0,0,0,0.07); border-color:#d1d5db;
+    color:inherit; text-decoration:none; transform:translateY(-1px);
+  }
+  .cl-card-header { display:flex; align-items:flex-start; justify-content:space-between;
+                    gap:8px; margin-bottom:10px; }
+  .cl-card-name { font-size:15px; font-weight:600; color:#111827; line-height:1.2; }
+  .cl-card-row { font-size:13px; color:#374151; display:flex; align-items:center;
+                 gap:6px; margin:4px 0; }
+  .cl-card-row .cl-ic { color:#9ca3af; flex-shrink:0; }
+  .cl-card-footer { display:flex; justify-content:space-between; align-items:center;
+                    margin-top:12px; padding-top:10px; border-top:1px solid #f3f4f6;
+                    font-size:12px; color:#6b7280; }
+  .cl-amt { font-weight:600; color:#065f46; }
+  .cl-from-lead { font-size:11px; background:#eef2ff; color:#4338ca;
+                  border-radius:4px; padding:2px 7px; }
+  .cl-pill-paid { font-size:10px; font-weight:700; color:#065f46; background:#ecfdf5;
+                  border:1px solid #a7f3d0; border-radius:999px; padding:0 6px; }
+  .cl-pill-part { font-size:10px; font-weight:700; color:#b45309; background:#fffbeb;
+                  border:1px solid #fde68a; border-radius:999px; padding:0 6px; }
+
+  .main-content { min-width: 0; }
+
+  .cl-board-wrap {
+    max-width:100%; overflow-x:auto; overflow-y:hidden;
+    padding-bottom:4px;
+    scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;
+  }
+  .cl-board-wrap::-webkit-scrollbar { height:10px; }
+  .cl-board-wrap::-webkit-scrollbar-track { background:transparent; }
+  .cl-board-wrap::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:999px; }
+  .cl-board-wrap::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+
+  .cl-board { display:inline-flex; gap:14px; padding-bottom:10px; align-items:flex-start; }
+  .cl-col { flex:0 0 272px; background:#f1f3f5; border:1px solid #e5e7eb;
+            border-radius:12px; padding:10px; min-height:160px; }
+  .cl-col.drag-over { background:#eef2ff; border-color:#818cf8; }
+  .cl-col-head { display:flex; align-items:center; justify-content:space-between;
+                 gap:8px; margin-bottom:2px; padding:2px 6px 0; }
+  .cl-col-title { display:flex; align-items:center; gap:7px; min-width:0;
+                  font-weight:600; font-size:12px; color:#374151;
+                  text-transform:uppercase; letter-spacing:.5px;
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .cl-count { background:#fff; border:1px solid #e5e7eb; border-radius:999px;
+              padding:1px 8px; font-size:11px; font-weight:600; color:#6b7280;
+              flex-shrink:0; }
+  .cl-col-total { font-size:11px; color:#9ca3af; padding:2px 6px 8px; }
+  .cl-col-body { padding-top:8px; }
+
+  .cl-cardlet { background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+                padding:11px 13px; margin-bottom:8px; display:block;
+                text-decoration:none; color:inherit;
+                box-shadow:0 1px 2px rgba(0,0,0,.04);
+                transition:box-shadow .15s, border-color .15s, transform .15s; }
+  .cl-cardlet:hover { border-color:#cbd5e1; color:inherit; text-decoration:none;
+                      box-shadow:0 4px 12px rgba(0,0,0,.07); transform:translateY(-1px); }
+  .cl-cardlet[draggable="true"] { cursor:grab; }
+  .cl-cardlet[draggable="true"]:active { cursor:grabbing; }
+  .cl-cardlet.dragging { opacity:.45; transform:none; box-shadow:none; }
+  .cl-cardlet .nm { font-weight:600; font-size:14px; color:#111827;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-cardlet .mt { font-size:12px; color:#6b7280; margin-top:3px;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-cardlet .foot { display:flex; justify-content:space-between; align-items:center;
+                      gap:8px; margin-top:8px; padding-top:8px;
+                      border-top:1px solid #f3f4f6; font-size:12px; color:#6b7280; }
+  .cl-empty { font-size:12px; color:#b0b7c3; text-align:center; padding:18px 0;
+              border:1px dashed #dde1e7; border-radius:8px; }
+</style>
+
+{% include "customlux/_messages.html" %}
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px">
+  <a href="?{% if q %}q={{ q }}&{% endif %}{% if view_mode != 'table' %}view={{ view_mode }}{% endif %}"
+     class="btn-panel-outline"
+     style="{% if not stage_code %}background:#374151; color:#fff; border-color:#374151{% endif %}">All</a>
+  {% for f in quick_filters %}
+    <a href="?stage={{ f.code }}{% if q %}&q={{ q }}{% endif %}{% if view_mode != 'table' %}&view={{ view_mode }}{% endif %}"
+       class="btn-panel-outline"
+       style="background:{{ f.color }}1a; color:{{ f.color }}; border-color:{{ f.color }}{% if stage_code == f.code %}; box-shadow:0 0 0 2px {{ f.color }}33; font-weight:600{% endif %}">{{ f.label }}{% if f.count %} ({{ f.count }}){% endif %}</a>
   {% endfor %}
 </div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px">
+  <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:end">
+    {% if view_mode != "table" %}<input type="hidden" name="view" value="{{ view_mode }}">{% endif %}
+    <div>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, phone, zip..."
+             style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; width:260px">
+    </div>
+    <div>
+      <select name="stage" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px" onchange="this.form.submit()">
+        <option value="">All stages</option>
+        {% for s in stages %}
+          <option value="{{ s.code }}" {% if stage_code == s.code %}selected{% endif %}>{{ s.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-panel-outline">Search</button>
+  </form>
+</div>
+
+{% if view_mode == "board" %}
+  <div class="cl-board-wrap">
+  <div class="cl-board">
+    {% for col in columns %}
+      <div class="cl-col" data-stage="{{ col.stage.pk }}">
+        <div class="cl-col-head">
+          <span class="cl-col-title">
+            <span class="cl-dot" style="background:{{ col.stage.color }}"></span>
+            {{ col.stage.label }}
+          </span>
+          <span class="cl-count">{{ col.count }}</span>
+        </div>
+        {% if col.total %}<div class="cl-col-total">${{ col.total|floatformat:0 }} · <span style="color:#065f46; font-weight:600">${{ col.commission|floatformat:0 }} comm.</span></div>{% endif %}
+        <div class="cl-col-body">
+          {% for p in col.projects %}
+            <a class="cl-cardlet" href="{% url 'customlux:project_detail' p.pk %}"
+               {% if can_edit %}draggable="true"{% endif %} data-id="{{ p.pk }}">
+              <div class="nm">{{ p.display_name }}</div>
+              {% if p.phone %}<div class="mt">{{ p.phone }}</div>{% endif %}
+              {% if p.address %}<div class="mt">{{ p.address }}</div>{% endif %}
+              {% if p.install_date or p.quoted_amount %}
+                <div class="foot">
+                  <span>{% if p.install_date %}Install {{ p.install_date|date:"M j" }}{% endif %}</span>
+                  {% if p.quoted_amount %}<span><span style="color:#9ca3af">${{ p.quoted_amount|floatformat:0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|floatformat:0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}</span>{% endif %}
+                </div>
+              {% endif %}
+            </a>
+          {% empty %}
+            <div class="cl-empty">—</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% empty %}
+      <div style="color:#6b7280; padding:32px; text-align:center; background:#f9fafb; border-radius:10px; width:100%">
+        No stages configured yet.
+      </div>
+    {% endfor %}
+  </div>
+  </div>
+
+{% elif view_mode == "grid" %}
+  <div class="row g-3">
+    {% for p in page_obj %}
+      <div class="col-md-6 col-lg-4 col-xl-3">
+        <a href="{% url 'customlux:project_detail' p.pk %}" class="cl-card-item">
+          <div class="cl-card-header">
+            <div class="cl-card-name">{{ p.display_name }}</div>
+            <span class="badge-status" style="background:{{ p.stage.color }}1a; color:{{ p.stage.color }}; font-size:11px; padding:3px 9px; flex-shrink:0">{{ p.stage.label }}</span>
+          </div>
+          <div class="cl-card-row">
+            <svg class="cl-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>{{ p.phone|default:"—" }}</span>
+          </div>
+          <div class="cl-card-row">
+            <svg class="cl-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ p.email|default:"—" }}</span>
+          </div>
+          <div class="cl-card-row">
+            <svg class="cl-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span>{{ p.address|default:"No address" }}{% if p.zip_code %} · {{ p.zip_code }}{% endif %}</span>
+          </div>
+          {% if p.install_date %}
+            <div class="cl-card-row" style="color:#1d4ed8; font-weight:500">
+              <svg class="cl-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>Install {{ p.install_date|date:"M j, Y" }}</span>
+            </div>
+          {% endif %}
+          <div class="cl-card-footer">
+            <span>{% if p.lead_id %}<span class="cl-from-lead">lead #{{ p.lead_id }}</span>{% else %}Created here{% endif %}</span>
+            <span>{% if p.quoted_amount %}<span style="color:#9ca3af">${{ p.quoted_amount|floatformat:0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|floatformat:0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}{{ p.created_at|date:"M j, Y" }}{% endif %}</span>
+          </div>
+        </a>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div style="color:#6b7280; padding:32px; text-align:center; background:#f9fafb; border-radius:10px">No cabinet projects found.</div>
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="card dashboard-card">
+    <div class="card-body" style="padding:0; overflow-x:auto">
+      <table class="panel-table" style="margin:0">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Stage</th>
+            <th>Deal total</th>
+            <th>Tax</th>
+            <th>Commission</th>
+            <th>Install</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in page_obj %}
+            <tr>
+              <td><a href="{% url 'customlux:project_detail' p.pk %}">{{ p.display_name }}</a></td>
+              <td>{{ p.email|default:"—" }}</td>
+              <td>{{ p.phone|default:"—" }}</td>
+              <td>{{ p.address|default:"—" }}{% if p.zip_code %} · {{ p.zip_code }}{% endif %}</td>
+              <td><span class="badge-status" style="background:{{ p.stage.color }}1a; color:{{ p.stage.color }}; font-size:11px; padding:3px 9px">{{ p.stage.label }}</span></td>
+              <td>{% if p.quoted_amount %}${{ p.quoted_amount|floatformat:2 }}{% else %}—{% endif %}</td>
+              <td>{% if p.tax_amount %}<span style="color:#9ca3af">− ${{ p.tax_amount|floatformat:2 }}</span>{% else %}—{% endif %}</td>
+              <td>{% if p.quoted_amount %}<span class="cl-amt">${{ p.commission_amount|floatformat:2 }}</span><span style="color:#9ca3af; font-size:11px"> @ {{ p.effective_commission_rate|floatformat:"-2" }}%{% if p.has_custom_rate %}*{% endif %}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}—{% endif %}</td>
+              <td>{% if p.install_date %}{{ p.install_date|date:"M j, Y" }}{% else %}—{% endif %}</td>
+              <td>{% if p.lead_id %}<span class="cl-from-lead">lead #{{ p.lead_id }}</span>{% else %}<span style="color:#9ca3af">manual</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="10" style="color:#6b7280; padding:32px; text-align:center">No cabinet projects found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+{% if page_obj.has_other_pages %}
+{% with base_qs="q="|add:q|add:"&stage="|add:stage_code %}
+<style>
+  .pager { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:20px; flex-wrap:wrap; }
+  .pager a, .pager span.page, .pager span.gap {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:34px; height:34px; padding:0 10px;
+    border:1px solid #d1d5db; border-radius:6px;
+    background:#fff; color:#374151; text-decoration:none; font-size:13px;
+  }
+  .pager a:hover { background:#f9fafb; border-color:#9ca3af; color:#111827; }
+  .pager span.page.current { background:#374151; color:#fff; border-color:#374151; font-weight:600; }
+  .pager span.gap { border-color:transparent; color:#9ca3af; }
+  .pager .nav-btn { padding:0 14px; }
+</style>
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a class="nav-btn" href="?page={{ page_obj.previous_page_number }}&{{ base_qs }}{% if view_mode != 'table' %}&view={{ view_mode }}{% endif %}">‹ Previous</a>
+  {% endif %}
+  {% for n in page_obj.paginator.page_range %}
+    {% if n == page_obj.number %}
+      <span class="page current">{{ n }}</span>
+    {% elif n == 1 or n == page_obj.paginator.num_pages or n >= page_obj.number|add:'-2' and n <= page_obj.number|add:'2' %}
+      <a href="?page={{ n }}&{{ base_qs }}{% if view_mode != 'table' %}&view={{ view_mode }}{% endif %}">{{ n }}</a>
+    {% elif n == page_obj.number|add:'-3' or n == page_obj.number|add:'3' %}
+      <span class="gap">…</span>
+    {% endif %}
+  {% endfor %}
+  {% if page_obj.has_next %}
+    <a class="nav-btn" href="?page={{ page_obj.next_page_number }}&{{ base_qs }}{% if view_mode != 'table' %}&view={{ view_mode }}{% endif %}">Next ›</a>
+  {% endif %}
+</div>
+{% endwith %}
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-{% if can_edit %}
+{% if can_edit and view_mode == "board" %}
 <script>
 (function () {
   const csrf = "{{ csrf_token }}";
@@ -110,43 +354,35 @@
       dragged = card;
       card.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
-      // Firefox needs data set for the drag to start at all.
       e.dataTransfer.setData('text/plain', card.dataset.id);
     });
     card.addEventListener('dragend', () => {
       card.classList.remove('dragging');
       dragged = null;
     });
-    // A card is an <a>; suppress navigation that a drag would otherwise trigger.
     card.addEventListener('click', e => {
       if (card.dataset.justDragged) { e.preventDefault(); delete card.dataset.justDragged; }
     });
   });
 
   document.querySelectorAll('.cl-col').forEach(col => {
-    col.addEventListener('dragover', e => {
-      e.preventDefault();
-      col.classList.add('drag-over');
-    });
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
     col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
     col.addEventListener('drop', e => {
       e.preventDefault();
       col.classList.remove('drag-over');
       if (!dragged) return;
       const card = dragged;
-      const stage = col.dataset.stage;
       card.dataset.justDragged = '1';
       col.querySelector('.cl-col-body').appendChild(card);
 
       const body = new FormData();
-      body.append('stage', stage);
+      body.append('stage', col.dataset.stage);
       fetch(`/customlux/p/${card.dataset.id}/move/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': csrf },
-        body: body,
+        method: 'POST', headers: { 'X-CSRFToken': csrf }, body: body,
       }).then(r => {
-        if (!r.ok) { alert('Could not move that card — reloading.'); location.reload(); }
-        else { location.reload(); }   // refresh counts and column totals
+        if (!r.ok) alert('Could not move that card — reloading.');
+        location.reload();
       }).catch(() => location.reload());
     });
   });

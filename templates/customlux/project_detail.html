@@ -1,10 +1,72 @@
-{% extends "customlux/base.html" %}
+{% extends parent_template %}
 {% block title %}{{ project.display_name }}{% endblock %}
 
 {% block content %}
-<div class="cl-head">
+{% include "customlux/_styles.html" %}
+{% include "customlux/_messages.html" %}
+
+<style>
+  .cl-todo { display:flex; align-items:flex-start; gap:8px; padding:7px 0;
+             border-bottom:1px solid #f6f7f8; font-size:13px; }
+  .cl-todo:last-of-type { border-bottom:0; }
+  .cl-todo.done .cl-todo-text { color:#9ca3af; text-decoration:line-through; }
+  .cl-tick { width:18px; height:18px; flex-shrink:0; margin-top:1px;
+             border:1px solid #d1d5db; border-radius:5px; background:#fff;
+             color:#059669; font-size:12px; line-height:1; padding:0;
+             display:inline-flex; align-items:center; justify-content:center;
+             cursor:pointer; }
+  .cl-tick:hover { border-color:#059669; }
+  .cl-todo-text { flex:1; min-width:0; word-break:break-word; }
+  .cl-due { font-size:11px; color:#b45309; background:#fffbeb;
+            border-radius:4px; padding:1px 6px; margin-left:6px;
+            white-space:nowrap; }
+  .cl-todo-badge { font-size:11px; font-weight:600; color:#b45309;
+                   background:#fffbeb; border:1px solid #fde68a;
+                   border-radius:999px; padding:1px 9px; }
+  .cl-x { border:0; background:none; color:#d1d5db; font-size:17px; line-height:1;
+          padding:0 2px; cursor:pointer; }
+  .cl-x:hover { color:#b91c1c; }
+  .cl-file { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+             padding:8px 0; border-bottom:1px solid #f6f7f8; }
+  .cl-file:last-of-type { border-bottom:0; }
+  .cl-file-name { flex:1; min-width:0; font-size:13px; font-weight:500;
+                  color:#1d4ed8; text-decoration:none; word-break:break-all; }
+  .cl-file-name:hover { text-decoration:underline; }
+  .cl-file-meta { width:100%; font-size:11px; color:#9ca3af; }
+
+  .cl-paid { font-size:11px; font-weight:600; color:#065f46; background:#ecfdf5;
+             border:1px solid #a7f3d0; border-radius:999px; padding:1px 9px; }
+  .cl-part { font-size:11px; font-weight:600; color:#b45309; background:#fffbeb;
+             border:1px solid #fde68a; border-radius:999px; padding:1px 9px; }
+  .cl-unpaid { font-size:11px; font-weight:600; color:#6b7280; background:#f3f4f6;
+               border:1px solid #e5e7eb; border-radius:999px; padding:1px 9px; }
+  .cl-owed { font-weight:700; color:#b45309; }
+  .cl-pay-sum { font-size:13px; color:#4b5563; margin-bottom:6px; }
+  .cl-pay-sum > div { display:flex; justify-content:space-between; padding:3px 0; }
+  .cl-pay-sum > div span:last-child { font-variant-numeric:tabular-nums; color:#111827; }
+  .cl-pay-sum .tot { border-top:1px solid #e5e7eb; margin-top:4px; padding-top:7px;
+                     font-weight:600; }
+  .cl-pay { display:flex; align-items:flex-start; gap:8px; padding:8px 0;
+            border-top:1px solid #f6f7f8; }
+  .cl-pay-amt { font-weight:600; font-size:13px; color:#065f46; white-space:nowrap; }
+  .cl-pay-amt.out { color:#b45309; }
+  .cl-flow { font-size:11px; color:#6b7280; background:#f9fafb; border-radius:6px;
+             padding:7px 9px; margin-bottom:9px; line-height:1.5; }
+  .cl-bar { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden;
+            margin-top:8px; }
+  .cl-bar span { display:block; height:100%; background:#059669; border-radius:999px; }
+  .cl-bar-lbl { font-size:11px; color:#9ca3af; margin-top:4px; }
+  .cl-pay-meta { flex:1; min-width:0; font-size:11px; color:#9ca3af; line-height:1.5; }
+
+  .cl-act { padding:8px 0; border-bottom:1px solid #f6f7f8; }
+  .cl-act:last-of-type { border-bottom:0; }
+  .cl-act-who { font-size:12px; font-weight:600; color:#111827; }
+  .cl-act-what { font-size:13px; color:#4b5563; margin-top:1px; word-break:break-word; }
+  .cl-act-when { font-size:11px; color:#b0b7c3; margin-top:2px; }
+</style>
+<div class="page-header">
   <div>
-    <h1>{{ project.display_name }}</h1>
+    <h2>{{ project.display_name }}</h2>
     <div class="muted" style="font-size:13px;">
       <span class="cl-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ project.stage.color }}"></span>
       {{ project.stage.label }}
@@ -16,11 +78,11 @@
     </div>
   </div>
   <div class="d-flex gap-2">
-    <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+    <a href="{% url 'customlux:board' %}" class="btn-panel-outline">← Board</a>
     {% if can_edit %}
       <form method="post" action="{% url 'customlux:project_archive' project.pk %}">
         {% csrf_token %}
-        <button class="btn btn-sm btn-outline-danger">
+        <button class="btn-panel-outline cl-danger">
           {% if project.archived %}Restore{% else %}Archive{% endif %}
         </button>
       </form>
@@ -68,17 +130,26 @@
 
           <div class="col-12"><hr class="my-1"></div>
 
-          <div class="col-md-3">
-            <label class="form-label small fw-semibold">Quoted amount</label>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Deal total (incl. tax)</label>
             {{ form.quoted_amount }}
           </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-semibold">Linear feet</label>
-            {{ form.linear_feet }}
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Sales tax in that total</label>
+            {{ form.tax_amount }}
           </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Finish / colour</label>
-            {{ form.finish }}
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Commission rate %</label>
+            {{ form.commission_rate }}
+            <div class="form-text" style="font-size:11px">Blank = board rate ({{ conf.commission_rate|floatformat:"-2" }}%)</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Who the customer pays</label>
+            {{ form.collected_by }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Deposit %</label>
+            {{ form.deposit_percent }}
           </div>
           <div class="col-md-6">
             <label class="form-label small fw-semibold">Measure date</label>
@@ -99,28 +170,343 @@
           </div>
         {% endif %}
         {% if can_edit %}
-          <button class="btn btn-dark mt-3">Save</button>
+          <button class="btn-panel" style="margin-top:16px">Save</button>
         {% endif %}
       </form>
     </div>
   </div>
 
   <div class="col-lg-4">
-    {% if project.source_notes %}
-      <div class="cl-card p-3 mb-3">
-        <div class="fw-semibold small mb-2">Original lead message</div>
-        <div class="small muted" style="white-space:pre-wrap;">{{ project.source_notes }}</div>
+    <div class="mb-3">
+      {% include "customlux/_commission.html" %}
+    </div>
+
+    <div class="cl-card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold small">Customer payments</div>
+        {% if project.customer_paid_in_full %}
+          <span class="cl-paid">paid in full</span>
+        {% elif project.deposit_covered %}
+          <span class="cl-part">deposit in</span>
+        {% elif project.current_total %}
+          <span class="cl-unpaid">nothing yet</span>
+        {% endif %}
       </div>
-    {% endif %}
+
+      {% if project.current_total %}
+        <div class="cl-pay-sum">
+          <div><span>Contract total</span><span>${{ project.current_total|floatformat:2 }}</span></div>
+          <div>
+            <span>Deposit ({{ project.effective_deposit_percent|floatformat:"-2" }}%)</span>
+            <span>${{ project.deposit_amount|floatformat:2 }}</span>
+          </div>
+          <div><span>Paid so far</span><span class="cl-amt">${{ project.customer_paid|floatformat:2 }}</span></div>
+          <div class="tot">
+            <span>Balance due</span>
+            <span class="{% if project.customer_balance > 0 %}cl-owed{% else %}cl-amt{% endif %}">
+              ${{ project.customer_balance|floatformat:2 }}
+            </span>
+          </div>
+        </div>
+        <div class="cl-bar"><span style="width:{{ project.customer_percent_paid }}%"></span></div>
+        <div class="cl-bar-lbl">{{ project.customer_percent_paid|floatformat:0 }}% of the contract collected</div>
+      {% else %}
+        <div class="small muted">Enter a deal total first.</div>
+      {% endif %}
+
+      {% for pay in customer_payments %}
+        <div class="cl-pay">
+          <span class="cl-pay-amt">${{ pay.amount|floatformat:2 }}</span>
+          <span class="cl-pay-meta">
+            {% if pay.is_deposit %}<strong>Deposit</strong> · {% endif %}{{ pay.received_on|date:"M j, Y" }}{% if pay.method %} · {{ pay.get_method_display }}{% endif %}{% if pay.reference %} · {{ pay.reference }}{% endif %}
+            {% if pay.recorded_by %}<br>logged by {{ pay.recorded_by.get_full_name|default:pay.recorded_by.email }}{% endif %}
+          </span>
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:customer_payment_delete' project.pk pay.pk %}"
+                  onsubmit="return confirm('Remove this ${{ pay.amount|floatformat:2 }} customer payment?');">
+              {% csrf_token %}
+              <button type="submit" class="cl-x" title="Remove">×</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {% if can_edit and project.current_total %}
+        <form method="post" action="{% url 'customlux:customer_payment_add' project.pk %}" class="mt-3">
+          {% csrf_token %}
+          <div class="d-flex gap-2">
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Amount</label>
+              {{ customer_payment_form.amount }}
+            </div>
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Received on</label>
+              {{ customer_payment_form.received_on }}
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <div style="flex:1">{{ customer_payment_form.method }}</div>
+            <div style="flex:1">{{ customer_payment_form.reference }}</div>
+          </div>
+          <div class="form-check mt-2">
+            {{ customer_payment_form.is_deposit }}
+            <label class="form-check-label small" for="{{ customer_payment_form.is_deposit.id_for_label }}"
+                   style="font-size:12px">
+              This is the deposit (${{ project.deposit_amount|floatformat:2 }})
+            </label>
+          </div>
+          <button class="btn-panel" style="margin-top:8px; padding:6px 14px; font-size:13px">
+            Record customer payment
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="cl-card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold small">Change orders</div>
+        {% if project.change_total %}
+          <span class="{% if project.change_total > 0 %}cl-part{% else %}cl-unpaid{% endif %}">
+            {{ project.change_total|floatformat:2 }}
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="cl-flow">
+        Adding a change order re-prices the job — commission, deposit and
+        balances all follow automatically.
+      </div>
+
+      {% if project.has_changes %}
+        <div class="cl-pay-sum">
+          <div><span>Original contract</span><span>${{ project.quoted_amount|floatformat:2 }}</span></div>
+          <div><span>Changes</span><span>${{ project.change_total|floatformat:2 }}</span></div>
+          <div class="tot"><span>Now</span><span>${{ project.current_total|floatformat:2 }}</span></div>
+        </div>
+      {% endif %}
+
+      {% for co in change_orders %}
+        <div class="cl-pay">
+          <span class="cl-pay-amt {% if not co.is_increase %}out{% endif %}">
+            {% if co.is_increase %}+{% endif %}${{ co.amount|floatformat:2 }}
+          </span>
+          <span class="cl-pay-meta">
+            {{ co.description }}<br>
+            {{ co.dated|date:"M j, Y" }}{% if co.created_by %} · {{ co.created_by.get_full_name|default:co.created_by.email }}{% endif %}
+          </span>
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:change_order_delete' project.pk co.pk %}"
+                  onsubmit="return confirm('Remove this change order? The deal total will go back.');">
+              {% csrf_token %}
+              <button type="submit" class="cl-x" title="Remove">×</button>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="small muted">No changes to the original contract.</div>
+      {% endfor %}
+
+      {% if can_edit and project.quoted_amount %}
+        <form method="post" action="{% url 'customlux:change_order_add' project.pk %}" class="mt-3">
+          {% csrf_token %}
+          {{ change_order_form.description }}
+          <div class="d-flex gap-2 mt-2">
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Amount (− to reduce)</label>
+              {{ change_order_form.amount }}
+            </div>
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Dated</label>
+              {{ change_order_form.dated }}
+            </div>
+          </div>
+          <button class="btn-panel" style="margin-top:8px; padding:6px 14px; font-size:13px">
+            Add change order
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="cl-card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold small">Settlement</div>
+        {% if project.is_settled %}
+          <span class="cl-paid">settled</span>
+        {% elif project.is_part_paid %}
+          <span class="cl-part">part settled</span>
+        {% elif project.settlement_expected %}
+          <span class="cl-unpaid">{% if project.we_collect %}not paid out{% else %}not received{% endif %}</span>
+        {% endif %}
+      </div>
+
+      {% if project.settlement_expected %}
+        <div class="cl-flow">
+          {% if project.we_collect %}
+            Customer pays <strong>Garage Lions</strong> ${{ project.current_total|floatformat:2 }} —
+            you owe CustomLux their share.
+          {% else %}
+            Customer pays <strong>CustomLux</strong> ${{ project.current_total|floatformat:2 }} —
+            they owe you your markup.
+          {% endif %}
+        </div>
+        <div class="cl-pay-sum">
+          <div>
+            <span>{% if project.we_collect %}You owe CustomLux{% else %}CustomLux owes you{% endif %}</span>
+            <span>${{ project.settlement_expected|floatformat:2 }}</span>
+          </div>
+          <div>
+            <span>{% if project.we_collect %}Paid out{% else %}Received{% endif %}</span>
+            <span class="cl-amt">${{ project.settlement_transferred|floatformat:2 }}</span>
+          </div>
+          <div class="tot">
+            <span>Outstanding</span>
+            <span class="{% if project.settlement_outstanding > 0 %}cl-owed{% else %}cl-amt{% endif %}">
+              ${{ project.settlement_outstanding|floatformat:2 }}
+            </span>
+          </div>
+        </div>
+      {% else %}
+        <div class="small muted">Enter a deal total first.</div>
+      {% endif %}
+
+      {% for pay in payments %}
+        <div class="cl-pay">
+          <span class="cl-pay-amt {% if pay.direction == 'out' %}out{% endif %}">
+            {% if pay.direction == 'out' %}−{% else %}+{% endif %}${{ pay.amount|floatformat:2 }}
+          </span>
+          <span class="cl-pay-meta">
+            {{ pay.get_direction_display }}<br>
+            {{ pay.received_on|date:"M j, Y" }}{% if pay.method %} · {{ pay.get_method_display }}{% endif %}{% if pay.reference %} · {{ pay.reference }}{% endif %}
+            {% if pay.recorded_by %}<br>logged by {{ pay.recorded_by.get_full_name|default:pay.recorded_by.email }}{% endif %}
+          </span>
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:payment_delete' project.pk pay.pk %}"
+                  onsubmit="return confirm('Remove this ${{ pay.amount|floatformat:2 }} payment?');">
+              {% csrf_token %}
+              <button type="submit" class="cl-x" title="Remove">×</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {% if can_edit and project.settlement_expected %}
+        <form method="post" action="{% url 'customlux:payment_add' project.pk %}" class="mt-3">
+          {% csrf_token %}
+          <div class="mb-2">{{ payment_form.direction }}</div>
+          <div class="d-flex gap-2">
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Amount</label>
+              {{ payment_form.amount }}
+            </div>
+            <div style="flex:1">
+              <label class="form-label small fw-semibold" style="font-size:11px">Received on</label>
+              {{ payment_form.received_on }}
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <div style="flex:1">{{ payment_form.method }}</div>
+            <div style="flex:1">{{ payment_form.reference }}</div>
+          </div>
+          <button class="btn-panel" style="margin-top:8px; padding:6px 14px; font-size:13px">
+            Record transfer
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="cl-card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold small">To Do</div>
+        {% if open_todos %}<span class="cl-todo-badge">{{ open_todos }} open</span>{% endif %}
+      </div>
+
+      {% for t in todos %}
+        <div class="cl-todo {% if t.is_completed %}done{% endif %}">
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:todo_toggle' project.pk t.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="cl-tick" title="{% if t.is_completed %}Mark as not done{% else %}Mark as done{% endif %}">
+                {% if t.is_completed %}✓{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <span class="cl-tick">{% if t.is_completed %}✓{% endif %}</span>
+          {% endif %}
+          <span class="cl-todo-text">
+            {{ t.title }}
+            {% if t.due_date %}<span class="cl-due">due {{ t.due_date|date:"M j" }}</span>{% endif %}
+          </span>
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:todo_delete' project.pk t.pk %}"
+                  onsubmit="return confirm('Delete this task?');">
+              {% csrf_token %}
+              <button type="submit" class="cl-x" title="Delete">×</button>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="small muted">Nothing on the list yet.</div>
+      {% endfor %}
+
+      {% if can_edit %}
+        <form method="post" action="{% url 'customlux:todo_add' project.pk %}" class="mt-3">
+          {% csrf_token %}
+          {{ todo_form.title }}
+          <div class="d-flex gap-2 mt-2">
+            {{ todo_form.due_date }}
+            <button class="btn-panel" style="padding:6px 14px; font-size:13px">Add</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="cl-card p-3 mb-3">
+      <div class="fw-semibold small mb-2">Estimate</div>
+
+      {% for e in estimates %}
+        <div class="cl-file">
+          <a href="{{ e.file.url }}" target="_blank" rel="noopener" class="cl-file-name">
+            {{ e.filename }}
+          </a>
+          <div class="cl-file-meta">
+            {{ e.uploaded_at|date:"M j, Y" }}{% if e.size_display %} · {{ e.size_display }}{% endif %}
+            {% if e.label %} · {{ e.label }}{% endif %}
+          </div>
+          {% if can_edit %}
+            <form method="post" action="{% url 'customlux:estimate_delete' project.pk e.pk %}"
+                  onsubmit="return confirm('Remove {{ e.filename|escapejs }}?');">
+              {% csrf_token %}
+              <button type="submit" class="cl-x" title="Remove">×</button>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="small muted">No estimate uploaded yet.</div>
+      {% endfor %}
+
+      {% if can_edit %}
+        <form method="post" action="{% url 'customlux:estimate_upload' project.pk %}"
+              enctype="multipart/form-data" class="mt-3">
+          {% csrf_token %}
+          {{ estimate_form.file }}
+          <div class="mt-2">{{ estimate_form.label }}</div>
+          <button class="btn-panel" style="margin-top:8px; padding:6px 14px; font-size:13px">Upload</button>
+          <div class="small muted" style="font-size:11px; margin-top:6px">
+            PDF, image, Word/Excel, CSV or text · up to 20 MB
+          </div>
+        </form>
+      {% endif %}
+    </div>
 
     <div class="cl-card p-3">
-      <div class="fw-semibold small mb-2">History</div>
+      <div class="fw-semibold small mb-2">Activity</div>
       {% for a in activities %}
-        <div class="small mb-2 pb-2" style="border-bottom:1px solid #f3f4f6;">
-          <div>{{ a.detail }}</div>
-          <div class="muted" style="font-size:11px;">
-            {{ a.created_at|date:"M j, Y g:i A" }}{% if a.user %} · {{ a.user.email }}{% endif %}
+        <div class="cl-act">
+          <div class="cl-act-who">
+            {% if a.user %}{{ a.user.get_full_name|default:a.user.email }}{% else %}System{% endif %}
           </div>
+          <div class="cl-act-what">{{ a.detail }}</div>
+          <div class="cl-act-when">{{ a.created_at|date:"M j, Y · g:i A" }}</div>
         </div>
       {% empty %}
         <div class="small muted">Nothing yet.</div>

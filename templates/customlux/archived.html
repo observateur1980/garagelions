@@ -1,10 +1,12 @@
-{% extends "customlux/base.html" %}
+{% extends parent_template %}
 {% block title %}Archived{% endblock %}
 
 {% block content %}
-<div class="cl-head">
-  <h1>Archived projects</h1>
-  <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+{% include "customlux/_styles.html" %}
+{% include "customlux/_messages.html" %}
+<div class="page-header">
+  <h2>Archived projects</h2>
+  <a href="{% url 'customlux:board' %}" class="btn-panel-outline">← Board</a>
 </div>
 
 <div class="cl-card p-3">
@@ -25,7 +27,7 @@
             {% if can_edit %}
               <form method="post" action="{% url 'customlux:project_archive' p.pk %}">
                 {% csrf_token %}
-                <button class="btn btn-sm btn-outline-secondary">Restore</button>
+                <button class="btn-panel-outline">Restore</button>
               </form>
             {% endif %}
           </td>

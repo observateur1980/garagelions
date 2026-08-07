@@ -1,10 +1,12 @@
-{% extends "customlux/base.html" %}
+{% extends parent_template %}
 {% block title %}New cabinets project{% endblock %}
 
 {% block content %}
-<div class="cl-head">
-  <h1>New cabinets project</h1>
-  <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+{% include "customlux/_styles.html" %}
+{% include "customlux/_messages.html" %}
+<div class="page-header">
+  <h2>New cabinets project</h2>
+  <a href="{% url 'customlux:board' %}" class="btn-panel-outline">← Board</a>
 </div>
 
 <div class="cl-card p-3" style="max-width:840px;">
@@ -39,26 +41,44 @@
         <label class="form-label small fw-semibold">ZIP</label>
         {{ form.zip_code }}
       </div>
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">Quoted amount</label>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Deal total (incl. tax)</label>
         {{ form.quoted_amount }}
       </div>
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">Linear feet</label>
-        {{ form.linear_feet }}
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Sales tax in that total</label>
+        {{ form.tax_amount }}
       </div>
-      <div class="col-md-6">
-        <label class="form-label small fw-semibold">Finish / colour</label>
-        {{ form.finish }}
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Commission rate %</label>
+        {{ form.commission_rate }}
+        <div class="form-text" style="font-size:11px">Blank = board rate ({{ conf.commission_rate|floatformat:"-2" }}%)</div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label small fw-semibold">Measure date</label>
-        {{ form.measure_date }}
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Who the customer pays</label>
+        {{ form.collected_by }}
       </div>
-      <div class="col-md-6">
-        <label class="form-label small fw-semibold">Install date</label>
-        {{ form.install_date }}
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Deposit %</label>
+        {{ form.deposit_percent }}
       </div>
+
+      <div class="col-md-7">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Measure date</label>
+            {{ form.measure_date }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Install date</label>
+            {{ form.install_date }}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        {% include "customlux/_commission.html" %}
+      </div>
+
       <div class="col-12">
         <label class="form-label small fw-semibold">Notes</label>
         {{ form.notes }}
@@ -67,7 +87,7 @@
     {% if form.errors %}
       <div class="alert alert-danger mt-3 py-2 small">{{ form.errors }}</div>
     {% endif %}
-    <button class="btn btn-dark mt-3">Create project</button>
+    <button class="btn-panel" style="margin-top:16px">Create project</button>
   </form>
 </div>
 {% endblock %}

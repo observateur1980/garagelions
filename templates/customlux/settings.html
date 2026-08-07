@@ -1,0 +1,226 @@
+{% extends parent_template %}
+{% block title %}CustomLux settings{% endblock %}
+
+{% block content %}
+{% include "customlux/_styles.html" %}
+{% include "customlux/_messages.html" %}
+
+<div class="page-header">
+  <h2>CustomLux settings</h2>
+  <a href="{% url 'customlux:board' %}" class="btn-panel-outline">← Board</a>
+</div>
+
+<style>
+  .cl-set-grid { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr);
+                 gap:18px; align-items:start; }
+  @media (max-width: 900px) { .cl-set-grid { grid-template-columns:1fr; } }
+  .cl-panel { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:18px; }
+  .cl-panel h3 { font-size:15px; font-weight:600; margin:0 0 4px; color:#111827; }
+  .cl-panel .sub { font-size:12px; color:#6b7280; margin-bottom:16px; line-height:1.5; }
+  .cl-stage-row { display:flex; align-items:center; gap:10px; padding:9px 0;
+                  border-bottom:1px solid #f3f4f6; }
+  .cl-stage-row:last-of-type { border-bottom:0; }
+  .cl-stage-row input[type=text] { min-width:0; }
+  .cl-grip { color:#d1d5db; font-size:15px; cursor:default; }
+  .cl-inuse { font-size:11px; color:#9ca3af; white-space:nowrap; }
+  .cl-flags { display:flex; gap:12px; font-size:11px; color:#6b7280; white-space:nowrap; }
+  .cl-flags label { display:flex; align-items:center; gap:4px; margin:0; }
+  .cl-th { font-size:11px; text-transform:uppercase; letter-spacing:.4px;
+           color:#9ca3af; font-weight:600; }
+</style>
+
+<div class="cl-set-grid">
+
+  <div>
+    <div class="cl-panel">
+      <h3>Commission</h3>
+      <div class="sub">
+        What the subcontractor owes you on every deal. Applies to all projects
+        that don't carry their own rate.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="settings">
+
+        <label class="form-label small fw-semibold">Who usually collects from the customer</label>
+        {{ settings_form.default_collected_by }}
+        <div class="form-text" style="font-size:11px">
+          Whoever banks the customer's cheque owes the other side their share.
+          This sets the default; any deal can be switched on its own card.
+        </div>
+
+        <label class="form-label small fw-semibold" style="margin-top:14px">How the percentage works</label>
+        {{ settings_form.commission_basis }}
+        <div class="form-text" style="font-size:11px">
+          <strong>Markup</strong> — CustomLux quotes their price and adds the
+          percentage on top; the customer pays the sum. This is how their
+          invoices are actually written.<br>
+          <strong>Share</strong> — the percentage comes out of the deal total.
+        </div>
+
+        <label class="form-label small fw-semibold" style="margin-top:14px">
+          Commission rate (%)
+        </label>
+        {{ settings_form.commission_rate }}
+        <div class="form-text" style="font-size:11px">
+          Always applied <strong>after</strong> sales tax is taken out.
+        </div>
+
+        <label class="form-label small fw-semibold" style="margin-top:14px">
+          Default sales tax (%)
+        </label>
+        {{ settings_form.default_tax_rate }}
+        <div class="form-text" style="font-size:11px">
+          Only used for the “calculate tax” shortcut on a deal. Leave at 0 if
+          you always type the tax figure yourself.
+        </div>
+
+        <label class="form-label small fw-semibold" style="margin-top:14px">
+          Default deposit (%)
+        </label>
+        {{ settings_form.default_deposit_percent }}
+        <div class="form-text" style="font-size:11px">
+          Pre-fills the down payment on a new deal. Any deal can override it.
+        </div>
+
+        {% if settings_form.errors %}
+          <div class="alert alert-danger mt-3 py-2 small">{{ settings_form.errors }}</div>
+        {% endif %}
+        <button class="btn-panel" style="margin-top:16px">Save commission</button>
+      </form>
+    </div>
+
+    <div class="cl-panel" style="margin-top:18px">
+      <h3>How a deal is split</h3>
+      <div class="sub" style="margin-bottom:10px">
+        A $5,200 sale with no tax, at your current settings.
+      </div>
+      <div style="font-size:13px; color:#4b5563">
+        {% if conf.commission_basis == "markup" %}
+          <div style="display:flex; justify-content:space-between; padding:4px 0">
+            <span>CustomLux's price</span>
+            <span>${{ example.their_price|floatformat:2 }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:4px 0">
+            <span>+ {{ conf.commission_rate|floatformat:"-2" }}% of their price</span>
+            <span style="color:#065f46; font-weight:600">${{ example.commission|floatformat:2 }}</span>
+          </div>
+        {% else %}
+          <div style="display:flex; justify-content:space-between; padding:4px 0">
+            <span>Deal total</span>
+            <span>${{ example.total|floatformat:2 }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:4px 0">
+            <span>− {{ conf.commission_rate|floatformat:"-2" }}% to you</span>
+            <span style="color:#065f46; font-weight:600">${{ example.commission|floatformat:2 }}</span>
+          </div>
+        {% endif %}
+        <div style="display:flex; justify-content:space-between; padding:8px 0 4px;
+                    border-top:1px solid #f3f4f6; font-weight:500">
+          <span>Customer pays</span><span>${{ example.total|floatformat:2 }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 0 4px;
+                    border-top:1px solid #e5e7eb; font-weight:700; color:#065f46">
+          <span>You get</span><span>${{ example.commission|floatformat:2 }}</span>
+        </div>
+        <div style="font-size:11px; color:#9ca3af; margin-top:8px; line-height:1.5">
+          That's <strong>{{ example.share_pct }}%</strong> of what the customer pays.
+          {% if conf.commission_basis == "markup" %}
+            A markup is calculated on the smaller number, so it always works out
+            to less than the headline rate.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cl-panel">
+    <h3>Stages</h3>
+    <div class="sub">
+      The columns on the board. Reorder with the number field — lower shows
+      first. Untick <strong>Active</strong> to hide a stage without losing the
+      projects in it.
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="stages">
+      {{ stage_formset.management_form }}
+
+      <div class="cl-stage-row cl-th">
+        <span style="width:14px"></span>
+        <span style="width:46px">Colour</span>
+        <span style="flex:1">Name</span>
+        <span style="width:120px">Code</span>
+        <span style="width:80px">Order</span>
+        <span style="width:150px">Flags</span>
+        <span style="width:90px; text-align:right">Delete</span>
+      </div>
+
+      {% for f in stage_formset %}
+        <div class="cl-stage-row">
+          {{ f.id }}
+          <span class="cl-grip">⋮⋮</span>
+          <span style="width:46px">{{ f.color }}</span>
+          <span style="flex:1">{{ f.label }}</span>
+          <span style="width:120px">{{ f.code }}</span>
+          <span style="width:80px">{{ f.order }}</span>
+          <span class="cl-flags" style="width:150px">
+            <label>{{ f.is_active }} Active</label>
+            <label>{{ f.is_won }} Won</label>
+            <label>{{ f.is_lost }} Lost</label>
+          </span>
+          <span style="width:90px; text-align:right">
+            {% with used=stage_usage|default_if_none:0 %}{% endwith %}
+            {% if f.instance.pk and f.instance.projects.count %}
+              <span class="cl-inuse">{{ f.instance.projects.count }} in use</span>
+            {% else %}
+              <label class="cl-flags" style="justify-content:flex-end">{{ f.DELETE }}</label>
+            {% endif %}
+          </span>
+        </div>
+        {% if f.errors %}
+          <div class="alert alert-danger py-1 px-2 small" style="margin:4px 0">{{ f.errors }}</div>
+        {% endif %}
+      {% endfor %}
+
+      {% if stage_formset.non_form_errors %}
+        <div class="alert alert-danger py-2 small mt-2">{{ stage_formset.non_form_errors }}</div>
+      {% endif %}
+
+      <button class="btn-panel" style="margin-top:16px">Save stages</button>
+    </form>
+
+    <hr style="margin:22px 0 18px; border:0; border-top:1px solid #f3f4f6">
+
+    <h3>Add a stage</h3>
+    <div class="sub">The code is the stable identifier — leave it blank and it's built from the name.</div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="new_stage">
+      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+        <div style="width:46px">
+          <label class="form-label small fw-semibold">Colour</label>
+          {{ new_stage_form.color }}
+        </div>
+        <div style="flex:1; min-width:160px">
+          <label class="form-label small fw-semibold">Name</label>
+          {{ new_stage_form.label }}
+        </div>
+        <div style="width:150px">
+          <label class="form-label small fw-semibold">Code</label>
+          {{ new_stage_form.code }}
+        </div>
+        <div style="width:90px">
+          <label class="form-label small fw-semibold">Order</label>
+          {{ new_stage_form.order }}
+        </div>
+        <button class="btn-panel-outline">Add</button>
+      </div>
+      {% if new_stage_form.errors %}
+        <div class="alert alert-danger mt-2 py-2 small">{{ new_stage_form.errors }}</div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

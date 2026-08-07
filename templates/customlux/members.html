@@ -1,15 +1,17 @@
-{% extends "customlux/base.html" %}
+{% extends parent_template %}
 {% block title %}Sharing{% endblock %}
 
 {% block content %}
-<div class="cl-head">
+{% include "customlux/_styles.html" %}
+{% include "customlux/_messages.html" %}
+<div class="page-header">
   <div>
-    <h1>Sharing</h1>
+    <h2>Sharing</h2>
     <div class="muted" style="font-size:13px;">
       People here can open <strong>/customlux</strong> only — never the main CRM.
     </div>
   </div>
-  <a href="{% url 'customlux:board' %}" class="btn btn-sm btn-outline-secondary">← Board</a>
+  <a href="{% url 'customlux:board' %}" class="btn-panel-outline">← Board</a>
 </div>
 
 <div class="row g-3">
@@ -29,7 +31,7 @@
         {% if form.errors %}
           <div class="alert alert-danger mt-2 py-2 small">{{ form.errors }}</div>
         {% endif %}
-        <button class="btn btn-dark btn-sm mt-3">Send invite</button>
+        <button class="btn-panel" style="margin-top:16px">Send invite</button>
       </form>
       <div class="small muted mt-3" style="line-height:1.5;">
         If the address has no Garage Lions login yet, one is created and a
@@ -71,14 +73,14 @@
               <td class="text-end">
                 <form method="post" action="{% url 'customlux:member_toggle' m.pk %}" class="d-inline">
                   {% csrf_token %}
-                  <button class="btn btn-sm btn-outline-secondary">
+                  <button class="btn-panel-outline">
                     {% if m.is_active %}Suspend{% else %}Re-enable{% endif %}
                   </button>
                 </form>
                 <form method="post" action="{% url 'customlux:member_remove' m.pk %}" class="d-inline"
                       onsubmit="return confirm('Remove {{ m.email }} from CustomLux? Their login stays, but the board closes to them.');">
                   {% csrf_token %}
-                  <button class="btn btn-sm btn-outline-danger">Remove</button>
+                  <button class="btn-panel-outline cl-danger">Remove</button>
                 </form>
               </td>
             </tr>

@@ -17,15 +17,19 @@ User = get_user_model()
 def _dashboard_url(user):
     """Where to send someone after login.
 
-    Normally the panel dashboard. CustomLux-only accounts (the cabinets board
-    owner, and invited members) have no ProjectManager and therefore see an
-    empty panel, so they land on their own board instead.
-    """
-    from customlux.access import access_level
+    Normally the panel dashboard — including for the CustomLux owner, who
+    reaches the board via the sidebar link like any other section.
 
-    if access_level(user) and not user.is_staff:
-        if not ProjectManager.objects.filter(user=user).exists():
-            return reverse('customlux:board')
+    Invited CustomLux members are the exception: the middleware bars them from
+    /panel/, so sending them there would just bounce.
+    """
+    from customlux.access import OWNER, access_level
+
+    if not user.is_staff and not user.is_superuser:
+        level = access_level(user)
+        if level and level != OWNER:
+            if not ProjectManager.objects.filter(user=user).exists():
+                return reverse('customlux:board')
     return reverse('panel:dashboard')
 
 

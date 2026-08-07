@@ -22,9 +22,25 @@
     .cl-who { font-size:12px; color:#9ca3af; margin-left:18px; }
 
     .cl-wrap { padding:22px; }
-    .cl-head { display:flex; align-items:center; justify-content:space-between;
-               flex-wrap:wrap; gap:12px; margin-bottom:18px; }
-    .cl-head h1 { font-size:22px; font-weight:700; margin:0; }
+    .page-header { display:flex; align-items:center; justify-content:space-between;
+                   flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+    .page-header h2 { margin:0; color:#111827; font-size:22px; font-weight:700; }
+    .btn-panel { display:inline-block; padding:8px 16px; background:#111827; color:#fff;
+                 border:1px solid #111827; border-radius:6px; text-decoration:none;
+                 font-size:14px; cursor:pointer; }
+    .btn-panel:hover { background:#1f2937; color:#fff; }
+    .btn-panel-outline { display:inline-block; padding:8px 16px; background:#fff;
+                         color:#374151; border:1px solid #d1d5db; border-radius:6px;
+                         text-decoration:none; font-size:14px; cursor:pointer; }
+    .btn-panel-outline:hover { background:#f9fafb; color:#111827; }
+    .panel-table { width:100%; border-collapse:collapse; }
+    .panel-table th { text-align:left; padding:12px 14px; font-size:12px;
+                      text-transform:uppercase; letter-spacing:.4px; color:#6b7280;
+                      border-bottom:1px solid #e5e7eb; background:#f9fafb; }
+    .panel-table td { padding:12px 14px; border-bottom:1px solid #f3f4f6; font-size:14px; }
+    .panel-table tr:hover td { background:#f9fafb; }
+    .panel-table a { color:#111827; text-decoration:none; font-weight:500; }
+    .badge-status { display:inline-block; border-radius:999px; font-weight:600; }
 
     .cl-card { background:#fff; border:1px solid var(--cl-line);
                border-radius:10px; }
@@ -55,14 +71,6 @@
   </div>
 
   <div class="cl-wrap">
-    {% if messages %}
-      {% for m in messages %}
-        <div class="alert alert-{% if m.tags == 'error' %}danger{% elif m.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show">
-          {{ m }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
     {% block content %}{% endblock %}
   </div>
 
