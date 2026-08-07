@@ -146,9 +146,16 @@ def board(request):
     if stage_code:
         projects = projects.filter(stage__code=stage_code)
 
-    view_mode = request.GET.get("view") or "table"
-    if view_mode not in ("table", "grid", "board"):
-        view_mode = "table"
+    # The chosen view sticks. Picking one stores it on the session, and every
+    # later visit without an explicit ?view= reuses it — otherwise navigating
+    # back from a project would silently drop you into the table again.
+    view_mode = request.GET.get("view")
+    if view_mode in ("table", "grid", "board"):
+        request.session["customlux_view"] = view_mode
+    else:
+        view_mode = request.session.get("customlux_view") or "table"
+        if view_mode not in ("table", "grid", "board"):
+            view_mode = "table"
 
     # Counts for the chips reflect the search but not the stage filter —
     # otherwise every chip but the active one would read zero.

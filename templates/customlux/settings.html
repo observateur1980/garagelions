@@ -1,4 +1,5 @@
 {% extends parent_template %}
+{% load customlux_extras %}
 {% block title %}CustomLux settings{% endblock %}
 
 {% block content %}
@@ -99,29 +100,29 @@
         {% if conf.commission_basis == "markup" %}
           <div style="display:flex; justify-content:space-between; padding:4px 0">
             <span>CustomLux's price</span>
-            <span>${{ example.their_price|floatformat:2 }}</span>
+            <span>${{ example.their_price|money }}</span>
           </div>
           <div style="display:flex; justify-content:space-between; padding:4px 0">
             <span>+ {{ conf.commission_rate|floatformat:"-2" }}% of their price</span>
-            <span style="color:#065f46; font-weight:600">${{ example.commission|floatformat:2 }}</span>
+            <span style="color:#065f46; font-weight:600">${{ example.commission|money }}</span>
           </div>
         {% else %}
           <div style="display:flex; justify-content:space-between; padding:4px 0">
             <span>Deal total</span>
-            <span>${{ example.total|floatformat:2 }}</span>
+            <span>${{ example.total|money }}</span>
           </div>
           <div style="display:flex; justify-content:space-between; padding:4px 0">
             <span>− {{ conf.commission_rate|floatformat:"-2" }}% to you</span>
-            <span style="color:#065f46; font-weight:600">${{ example.commission|floatformat:2 }}</span>
+            <span style="color:#065f46; font-weight:600">${{ example.commission|money }}</span>
           </div>
         {% endif %}
         <div style="display:flex; justify-content:space-between; padding:8px 0 4px;
                     border-top:1px solid #f3f4f6; font-weight:500">
-          <span>Customer pays</span><span>${{ example.total|floatformat:2 }}</span>
+          <span>Customer pays</span><span>${{ example.total|money }}</span>
         </div>
         <div style="display:flex; justify-content:space-between; padding:8px 0 4px;
                     border-top:1px solid #e5e7eb; font-weight:700; color:#065f46">
-          <span>You get</span><span>${{ example.commission|floatformat:2 }}</span>
+          <span>You get</span><span>${{ example.commission|money }}</span>
         </div>
         <div style="font-size:11px; color:#9ca3af; margin-top:8px; line-height:1.5">
           That's <strong>{{ example.share_pct }}%</strong> of what the customer pays.

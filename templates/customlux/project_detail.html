@@ -1,4 +1,5 @@
 {% extends parent_template %}
+{% load customlux_extras %}
 {% block title %}{{ project.display_name }}{% endblock %}
 
 {% block content %}
@@ -6,6 +7,42 @@
 {% include "customlux/_messages.html" %}
 
 <style>
+  /* ── Summary strip ── */
+  .cl-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr));
+              gap:12px; margin-bottom:18px; }
+  @media (max-width: 900px) { .cl-stats { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .cl-stat { background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+             padding:12px 14px; min-width:0; }
+  .cl-stat .k { font-size:11px; text-transform:uppercase; letter-spacing:.4px;
+                color:#9ca3af; font-weight:600; white-space:nowrap;
+                overflow:hidden; text-overflow:ellipsis; }
+  .cl-stat .v { font-size:20px; font-weight:700; color:#111827; margin-top:3px;
+                font-variant-numeric:tabular-nums; }
+  .cl-stat .v.green { color:#065f46; }
+  .cl-stat .v.amber { color:#b45309; }
+  .cl-stat .s { font-size:11px; color:#9ca3af; margin-top:2px; }
+
+  /* ── Tabs ── */
+  .cl-tabs { display:flex; gap:2px; border-bottom:1px solid #e5e7eb;
+             margin-bottom:18px; overflow-x:auto; }
+  .cl-tab { border:0; background:none; padding:9px 16px; font-size:14px;
+            color:#6b7280; cursor:pointer; white-space:nowrap;
+            border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .cl-tab:hover { color:#111827; }
+  .cl-tab.on { color:#111827; font-weight:600; border-bottom-color:#111827; }
+  .cl-tab-n { background:#fffbeb; color:#b45309; border:1px solid #fde68a;
+              border-radius:999px; padding:0 6px; font-size:11px; font-weight:700; }
+  .cl-pane { display:none; }
+  .cl-pane.on { display:block; }
+
+  /* Panels sit two-up inside a tab instead of stacking in a narrow column. */
+  .cl-money { display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+              gap:16px; align-items:start; }
+  @media (max-width: 1100px) { .cl-money { grid-template-columns:1fr; } }
+  .cl-pad { padding:16px 18px; }
+  .cl-sec { font-size:12px; text-transform:uppercase; letter-spacing:.5px;
+            font-weight:700; color:#6b7280; margin:0 0 12px; }
+
   .cl-todo { display:flex; align-items:flex-start; gap:8px; padding:7px 0;
              border-bottom:1px solid #f6f7f8; font-size:13px; }
   .cl-todo:last-of-type { border-bottom:0; }
@@ -90,15 +127,58 @@
   </div>
 </div>
 
-<div class="row g-3">
-  <div class="col-lg-8">
-    <div class="cl-card p-3">
-      {% if not can_edit %}
-        <div class="alert alert-warning py-2">Your access to this board is read-only.</div>
-      {% endif %}
-      <form method="post">
-        {% csrf_token %}
-        <div class="row g-3">
+<div class="cl-stats">
+  <div class="cl-stat">
+    <div class="k">Deal total</div>
+    <div class="v">{% if project.current_total %}${{ project.current_total|money }}{% else %}—{% endif %}</div>
+    {% if project.has_changes %}
+      <div class="s">was ${{ project.quoted_amount|money0 }} · {{ project.change_orders.count }} change{{ project.change_orders.count|pluralize }}</div>
+    {% endif %}
+  </div>
+  <div class="cl-stat">
+    <div class="k">Your commission</div>
+    <div class="v green">{% if project.commission_amount %}${{ project.commission_amount|money }}{% else %}—{% endif %}</div>
+    <div class="s">{{ project.effective_commission_rate|floatformat:"-2" }}%{% if project.has_custom_rate %} (this deal){% endif %}</div>
+  </div>
+  <div class="cl-stat">
+    <div class="k">Customer</div>
+    <div class="v">{% if project.current_total %}${{ project.customer_balance|money }}{% else %}—{% endif %}</div>
+    <div class="s">{% if project.current_total %}${{ project.customer_paid|money0 }} of ${{ project.current_total|money0 }} paid{% else %}no amount yet{% endif %}</div>
+  </div>
+  <div class="cl-stat">
+    <div class="k">{% if project.we_collect %}You owe CustomLux{% else %}CustomLux owes you{% endif %}</div>
+    <div class="v {% if project.is_settled %}green{% elif project.settlement_outstanding %}amber{% endif %}">
+      {% if project.settlement_expected %}${{ project.settlement_outstanding|money }}{% else %}—{% endif %}
+    </div>
+    <div class="s">
+      {% if project.is_settled %}settled{% elif project.is_part_paid %}part settled{% elif project.settlement_expected %}of ${{ project.settlement_expected|money0 }}{% else %}—{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="cl-tabs" role="tablist">
+  <button type="button" class="cl-tab on" data-go="details">Details</button>
+  <button type="button" class="cl-tab" data-go="money">Money</button>
+  <button type="button" class="cl-tab" data-go="work">
+    Tasks &amp; files{% if open_todos %} <span class="cl-tab-n">{{ open_todos }}</span>{% endif %}
+  </button>
+  <button type="button" class="cl-tab" data-go="activity">Activity</button>
+</div>
+
+{% if not can_edit %}
+  <div class="alert alert-warning py-2">Your access to this board is read-only.</div>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  {% if form.errors %}
+    <div class="alert alert-danger py-2 small">{{ form.errors }}</div>
+  {% endif %}
+
+  <div class="cl-pane on" data-tab="details">
+    <div class="cl-card cl-pad">
+      <div class="cl-sec">Customer</div>
+      <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label small fw-semibold">Project title</label>
             {{ form.title }}
@@ -128,60 +208,65 @@
             {{ form.zip_code }}
           </div>
 
-          <div class="col-12"><hr class="my-1"></div>
+      </div>
 
-          <div class="col-md-4">
+      <div class="cl-sec">Schedule</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Measure date</label>
+          {{ form.measure_date }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Install date</label>
+          {{ form.install_date }}
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Notes</label>
+          {{ form.notes }}
+        </div>
+      </div>
+      {% if can_edit %}<button class="btn-panel" style="margin-top:18px">Save</button>{% endif %}
+    </div>
+  </div>
+
+  <div class="cl-pane" data-tab="money">
+    <div class="cl-money">
+      <div class="cl-card cl-pad">
+        <div class="cl-sec">Pricing</div>
+        <div class="row g-3">
+          <div class="col-md-6">
             <label class="form-label small fw-semibold">Deal total (incl. tax)</label>
             {{ form.quoted_amount }}
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label small fw-semibold">Sales tax in that total</label>
             {{ form.tax_amount }}
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label small fw-semibold">Commission rate %</label>
             {{ form.commission_rate }}
             <div class="form-text" style="font-size:11px">Blank = board rate ({{ conf.commission_rate|floatformat:"-2" }}%)</div>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Who the customer pays</label>
-            {{ form.collected_by }}
-          </div>
-          <div class="col-md-2">
+          <div class="col-md-6">
             <label class="form-label small fw-semibold">Deposit %</label>
             {{ form.deposit_percent }}
           </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Measure date</label>
-            {{ form.measure_date }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Install date</label>
-            {{ form.install_date }}
-          </div>
           <div class="col-12">
-            <label class="form-label small fw-semibold">Notes</label>
-            {{ form.notes }}
+            <label class="form-label small fw-semibold">Who the customer pays</label>
+            {{ form.collected_by }}
           </div>
         </div>
-        {% if form.errors %}
-          <div class="alert alert-danger mt-3 py-2 small">
-            {{ form.errors }}
-          </div>
-        {% endif %}
-        {% if can_edit %}
-          <button class="btn-panel" style="margin-top:16px">Save</button>
-        {% endif %}
-      </form>
-    </div>
-  </div>
+        {% if can_edit %}<button class="btn-panel" style="margin-top:18px">Save</button>{% endif %}
+      </div>
 
-  <div class="col-lg-4">
-    <div class="mb-3">
       {% include "customlux/_commission.html" %}
     </div>
+  </div>
+</form>
 
-    <div class="cl-card p-3 mb-3">
+<div class="cl-pane" data-tab="money">
+  <div class="cl-money">
+    <div class="cl-card cl-pad">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="fw-semibold small">Customer payments</div>
         {% if project.customer_paid_in_full %}
@@ -195,35 +280,35 @@
 
       {% if project.current_total %}
         <div class="cl-pay-sum">
-          <div><span>Contract total</span><span>${{ project.current_total|floatformat:2 }}</span></div>
+          <div><span>Contract total</span><span>${{ project.current_total|money }}</span></div>
           <div>
             <span>Deposit ({{ project.effective_deposit_percent|floatformat:"-2" }}%)</span>
-            <span>${{ project.deposit_amount|floatformat:2 }}</span>
+            <span>${{ project.deposit_amount|money }}</span>
           </div>
-          <div><span>Paid so far</span><span class="cl-amt">${{ project.customer_paid|floatformat:2 }}</span></div>
+          <div><span>Paid so far</span><span class="cl-amt">${{ project.customer_paid|money }}</span></div>
           <div class="tot">
             <span>Balance due</span>
             <span class="{% if project.customer_balance > 0 %}cl-owed{% else %}cl-amt{% endif %}">
-              ${{ project.customer_balance|floatformat:2 }}
+              ${{ project.customer_balance|money }}
             </span>
           </div>
         </div>
         <div class="cl-bar"><span style="width:{{ project.customer_percent_paid }}%"></span></div>
-        <div class="cl-bar-lbl">{{ project.customer_percent_paid|floatformat:0 }}% of the contract collected</div>
+        <div class="cl-bar-lbl">{{ project.customer_percent_paid|money0 }}% of the contract collected</div>
       {% else %}
         <div class="small muted">Enter a deal total first.</div>
       {% endif %}
 
       {% for pay in customer_payments %}
         <div class="cl-pay">
-          <span class="cl-pay-amt">${{ pay.amount|floatformat:2 }}</span>
+          <span class="cl-pay-amt">${{ pay.amount|money }}</span>
           <span class="cl-pay-meta">
             {% if pay.is_deposit %}<strong>Deposit</strong> · {% endif %}{{ pay.received_on|date:"M j, Y" }}{% if pay.method %} · {{ pay.get_method_display }}{% endif %}{% if pay.reference %} · {{ pay.reference }}{% endif %}
             {% if pay.recorded_by %}<br>logged by {{ pay.recorded_by.get_full_name|default:pay.recorded_by.email }}{% endif %}
           </span>
           {% if can_edit %}
             <form method="post" action="{% url 'customlux:customer_payment_delete' project.pk pay.pk %}"
-                  onsubmit="return confirm('Remove this ${{ pay.amount|floatformat:2 }} customer payment?');">
+                  onsubmit="return confirm('Remove this ${{ pay.amount|money }} customer payment?');">
               {% csrf_token %}
               <button type="submit" class="cl-x" title="Remove">×</button>
             </form>
@@ -252,7 +337,7 @@
             {{ customer_payment_form.is_deposit }}
             <label class="form-check-label small" for="{{ customer_payment_form.is_deposit.id_for_label }}"
                    style="font-size:12px">
-              This is the deposit (${{ project.deposit_amount|floatformat:2 }})
+              This is the deposit (${{ project.deposit_amount|money }})
             </label>
           </div>
           <button class="btn-panel" style="margin-top:8px; padding:6px 14px; font-size:13px">
@@ -262,12 +347,12 @@
       {% endif %}
     </div>
 
-    <div class="cl-card p-3 mb-3">
+    <div class="cl-card cl-pad">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="fw-semibold small">Change orders</div>
         {% if project.change_total %}
           <span class="{% if project.change_total > 0 %}cl-part{% else %}cl-unpaid{% endif %}">
-            {{ project.change_total|floatformat:2 }}
+            {{ project.change_total|money }}
           </span>
         {% endif %}
       </div>
@@ -279,16 +364,16 @@
 
       {% if project.has_changes %}
         <div class="cl-pay-sum">
-          <div><span>Original contract</span><span>${{ project.quoted_amount|floatformat:2 }}</span></div>
-          <div><span>Changes</span><span>${{ project.change_total|floatformat:2 }}</span></div>
-          <div class="tot"><span>Now</span><span>${{ project.current_total|floatformat:2 }}</span></div>
+          <div><span>Original contract</span><span>${{ project.quoted_amount|money }}</span></div>
+          <div><span>Changes</span><span>${{ project.change_total|money }}</span></div>
+          <div class="tot"><span>Now</span><span>${{ project.current_total|money }}</span></div>
         </div>
       {% endif %}
 
       {% for co in change_orders %}
         <div class="cl-pay">
           <span class="cl-pay-amt {% if not co.is_increase %}out{% endif %}">
-            {% if co.is_increase %}+{% endif %}${{ co.amount|floatformat:2 }}
+            {% if co.is_increase %}+{% endif %}${{ co.amount|money }}
           </span>
           <span class="cl-pay-meta">
             {{ co.description }}<br>
@@ -327,7 +412,7 @@
       {% endif %}
     </div>
 
-    <div class="cl-card p-3 mb-3">
+    <div class="cl-card cl-pad">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="fw-semibold small">Settlement</div>
         {% if project.is_settled %}
@@ -342,26 +427,26 @@
       {% if project.settlement_expected %}
         <div class="cl-flow">
           {% if project.we_collect %}
-            Customer pays <strong>Garage Lions</strong> ${{ project.current_total|floatformat:2 }} —
+            Customer pays <strong>Garage Lions</strong> ${{ project.current_total|money }} —
             you owe CustomLux their share.
           {% else %}
-            Customer pays <strong>CustomLux</strong> ${{ project.current_total|floatformat:2 }} —
+            Customer pays <strong>CustomLux</strong> ${{ project.current_total|money }} —
             they owe you your markup.
           {% endif %}
         </div>
         <div class="cl-pay-sum">
           <div>
             <span>{% if project.we_collect %}You owe CustomLux{% else %}CustomLux owes you{% endif %}</span>
-            <span>${{ project.settlement_expected|floatformat:2 }}</span>
+            <span>${{ project.settlement_expected|money }}</span>
           </div>
           <div>
             <span>{% if project.we_collect %}Paid out{% else %}Received{% endif %}</span>
-            <span class="cl-amt">${{ project.settlement_transferred|floatformat:2 }}</span>
+            <span class="cl-amt">${{ project.settlement_transferred|money }}</span>
           </div>
           <div class="tot">
             <span>Outstanding</span>
             <span class="{% if project.settlement_outstanding > 0 %}cl-owed{% else %}cl-amt{% endif %}">
-              ${{ project.settlement_outstanding|floatformat:2 }}
+              ${{ project.settlement_outstanding|money }}
             </span>
           </div>
         </div>
@@ -372,7 +457,7 @@
       {% for pay in payments %}
         <div class="cl-pay">
           <span class="cl-pay-amt {% if pay.direction == 'out' %}out{% endif %}">
-            {% if pay.direction == 'out' %}−{% else %}+{% endif %}${{ pay.amount|floatformat:2 }}
+            {% if pay.direction == 'out' %}−{% else %}+{% endif %}${{ pay.amount|money }}
           </span>
           <span class="cl-pay-meta">
             {{ pay.get_direction_display }}<br>
@@ -381,7 +466,7 @@
           </span>
           {% if can_edit %}
             <form method="post" action="{% url 'customlux:payment_delete' project.pk pay.pk %}"
-                  onsubmit="return confirm('Remove this ${{ pay.amount|floatformat:2 }} payment?');">
+                  onsubmit="return confirm('Remove this ${{ pay.amount|money }} payment?');">
               {% csrf_token %}
               <button type="submit" class="cl-x" title="Remove">×</button>
             </form>
@@ -414,9 +499,14 @@
       {% endif %}
     </div>
 
-    <div class="cl-card p-3 mb-3">
+  </div>
+</div>
+
+<div class="cl-pane" data-tab="work">
+  <div class="cl-money">
+    <div class="cl-card cl-pad">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="fw-semibold small">To Do</div>
+        <div class="cl-sec" style="margin:0">To Do</div>
         {% if open_todos %}<span class="cl-todo-badge">{{ open_todos }} open</span>{% endif %}
       </div>
 
@@ -460,7 +550,7 @@
       {% endif %}
     </div>
 
-    <div class="cl-card p-3 mb-3">
+    <div class="cl-card cl-pad">
       <div class="fw-semibold small mb-2">Estimate</div>
 
       {% for e in estimates %}
@@ -498,8 +588,12 @@
       {% endif %}
     </div>
 
-    <div class="cl-card p-3">
-      <div class="fw-semibold small mb-2">Activity</div>
+  </div>
+</div>
+
+<div class="cl-pane" data-tab="activity">
+  <div class="cl-card cl-pad">
+    <div class="cl-sec">Activity</div>
       {% for a in activities %}
         <div class="cl-act">
           <div class="cl-act-who">
@@ -508,10 +602,39 @@
           <div class="cl-act-what">{{ a.detail }}</div>
           <div class="cl-act-when">{{ a.created_at|date:"M j, Y · g:i A" }}</div>
         </div>
-      {% empty %}
-        <div class="small muted">Nothing yet.</div>
-      {% endfor %}
-    </div>
+    {% empty %}
+      <div class="small muted">Nothing yet.</div>
+    {% endfor %}
   </div>
 </div>
+
+<script>
+(function () {
+  var KEY = 'customluxTab';
+  var tabs  = document.querySelectorAll('.cl-tab');
+  var panes = document.querySelectorAll('.cl-pane');
+
+  function show(name) {
+    tabs.forEach(function (t) { t.classList.toggle('on', t.dataset.go === name); });
+    panes.forEach(function (p) { p.classList.toggle('on', p.dataset.tab === name); });
+    try { sessionStorage.setItem(KEY, name); } catch (e) {}
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () { show(t.dataset.go); });
+  });
+
+  // Saving redirects back here, so remember which tab the edit came from.
+  var saved = null;
+  try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+  if (saved && document.querySelector('.cl-pane[data-tab="' + saved + '"]')) show(saved);
+
+  // A form error is useless on a hidden tab — jump to whichever holds it.
+  var err = document.querySelector('.alert-danger');
+  if (err) {
+    var pane = err.closest('.cl-pane');
+    if (pane) show(pane.dataset.tab);
+  }
+})();
+</script>
 {% endblock %}

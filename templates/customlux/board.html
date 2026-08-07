@@ -1,4 +1,5 @@
 {% extends parent_template %}
+{% load customlux_extras %}
 {% block title %}CustomLux{% endblock %}
 
 {% block content %}
@@ -8,14 +9,14 @@
     {% if sum_total %}
       <div style="font-size:12px; color:#6b7280; margin-top:3px">
         {{ total_open }} project{{ total_open|pluralize }} ·
-        ${{ sum_total|floatformat:0 }} in deals ·
-        <strong style="color:#065f46">${{ sum_commission|floatformat:0 }} commission</strong>
+        ${{ sum_total|money0 }} in deals ·
+        <strong style="color:#065f46">${{ sum_commission|money0 }} commission</strong>
         at {{ conf.commission_rate|floatformat:"-2" }}%
         {% if sum_to_collect %}
-          · <strong style="color:#b45309">${{ sum_to_collect|floatformat:0 }} to collect</strong>
+          · <strong style="color:#b45309">${{ sum_to_collect|money0 }} to collect</strong>
         {% endif %}
         {% if sum_to_pay %}
-          · <strong style="color:#7c3aed">${{ sum_to_pay|floatformat:0 }} to pay out</strong>
+          · <strong style="color:#7c3aed">${{ sum_to_pay|money0 }} to pay out</strong>
         {% endif %}
         {% if not sum_to_collect and not sum_to_pay %}
           · <strong style="color:#065f46">all settled</strong>
@@ -25,7 +26,7 @@
   </div>
   <div style="display:flex; gap:8px; align-items:center">
     <div class="view-toggle" role="group" aria-label="Switch view">
-      <a href="?{% if q %}q={{ q }}&{% endif %}{% if stage_code %}stage={{ stage_code }}{% endif %}"
+      <a href="?view=table{% if q %}&q={{ q }}{% endif %}{% if stage_code %}&stage={{ stage_code }}{% endif %}"
          class="view-toggle-btn {% if view_mode == 'table' %}active{% endif %}"
          title="Table view" aria-label="Table view">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -197,7 +198,7 @@
           </span>
           <span class="cl-count">{{ col.count }}</span>
         </div>
-        {% if col.total %}<div class="cl-col-total">${{ col.total|floatformat:0 }} · <span style="color:#065f46; font-weight:600">${{ col.commission|floatformat:0 }} comm.</span></div>{% endif %}
+        {% if col.total %}<div class="cl-col-total">${{ col.total|money0 }} · <span style="color:#065f46; font-weight:600">${{ col.commission|money0 }} comm.</span></div>{% endif %}
         <div class="cl-col-body">
           {% for p in col.projects %}
             <a class="cl-cardlet" href="{% url 'customlux:project_detail' p.pk %}"
@@ -208,7 +209,7 @@
               {% if p.install_date or p.quoted_amount %}
                 <div class="foot">
                   <span>{% if p.install_date %}Install {{ p.install_date|date:"M j" }}{% endif %}</span>
-                  {% if p.quoted_amount %}<span><span style="color:#9ca3af">${{ p.quoted_amount|floatformat:0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|floatformat:0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}</span>{% endif %}
+                  {% if p.quoted_amount %}<span><span style="color:#9ca3af">${{ p.quoted_amount|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}</span>{% endif %}
                 </div>
               {% endif %}
             </a>
@@ -254,7 +255,7 @@
           {% endif %}
           <div class="cl-card-footer">
             <span>{% if p.lead_id %}<span class="cl-from-lead">lead #{{ p.lead_id }}</span>{% else %}Created here{% endif %}</span>
-            <span>{% if p.quoted_amount %}<span style="color:#9ca3af">${{ p.quoted_amount|floatformat:0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|floatformat:0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}{{ p.created_at|date:"M j, Y" }}{% endif %}</span>
+            <span>{% if p.quoted_amount %}<span style="color:#9ca3af">${{ p.quoted_amount|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}{{ p.created_at|date:"M j, Y" }}{% endif %}</span>
           </div>
         </a>
       </div>
@@ -291,9 +292,9 @@
               <td>{{ p.phone|default:"—" }}</td>
               <td>{{ p.address|default:"—" }}{% if p.zip_code %} · {{ p.zip_code }}{% endif %}</td>
               <td><span class="badge-status" style="background:{{ p.stage.color }}1a; color:{{ p.stage.color }}; font-size:11px; padding:3px 9px">{{ p.stage.label }}</span></td>
-              <td>{% if p.quoted_amount %}${{ p.quoted_amount|floatformat:2 }}{% else %}—{% endif %}</td>
-              <td>{% if p.tax_amount %}<span style="color:#9ca3af">− ${{ p.tax_amount|floatformat:2 }}</span>{% else %}—{% endif %}</td>
-              <td>{% if p.quoted_amount %}<span class="cl-amt">${{ p.commission_amount|floatformat:2 }}</span><span style="color:#9ca3af; font-size:11px"> @ {{ p.effective_commission_rate|floatformat:"-2" }}%{% if p.has_custom_rate %}*{% endif %}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}—{% endif %}</td>
+              <td>{% if p.quoted_amount %}${{ p.quoted_amount|money }}{% else %}—{% endif %}</td>
+              <td>{% if p.tax_amount %}<span style="color:#9ca3af">− ${{ p.tax_amount|money }}</span>{% else %}—{% endif %}</td>
+              <td>{% if p.quoted_amount %}<span class="cl-amt">${{ p.commission_amount|money }}</span><span style="color:#9ca3af; font-size:11px"> @ {{ p.effective_commission_rate|floatformat:"-2" }}%{% if p.has_custom_rate %}*{% endif %}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}—{% endif %}</td>
               <td>{% if p.install_date %}{{ p.install_date|date:"M j, Y" }}{% else %}—{% endif %}</td>
               <td>{% if p.lead_id %}<span class="cl-from-lead">lead #{{ p.lead_id }}</span>{% else %}<span style="color:#9ca3af">manual</span>{% endif %}</td>
             </tr>
