@@ -153,6 +153,13 @@ class CabinetProject(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Sales tax included in the total",
     )
+    # Card/online processing charge sitting inside the total. Treated exactly
+    # like tax: the customer pays it, but it is somebody else's money, so it
+    # never forms part of the amount the commission is split from.
+    online_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name="Online transaction fee included in the total",
+    )
     # Blank = use the board-wide rate from CabinetSettings. Set only when a
     # particular deal was agreed at a different split.
     commission_rate = models.DecimalField(
@@ -249,12 +256,35 @@ class CabinetProject(models.Model):
         return self.pk is not None and self.change_orders.exists()
 
     @property
+    def pass_through(self):
+        """Money inside the total that belongs to neither side.
+
+        Sales tax goes to the state; the online fee goes to the processor. Both
+        are collected from the customer and neither is ours to split.
+        """
+        return _money((self.tax_amount or 0) + (self.online_fee or 0))
+
+    @property
     def net_amount(self):
-        """Pre-tax amount the commission is calculated on."""
+        """The amount the commission is calculated on, pass-throughs removed."""
         total = self.current_total
         if total is None:
             return None
-        return _money(total - (self.tax_amount or 0))
+        return _money(total - self.pass_through)
+
+    @property
+    def pass_through_label(self):
+        """Names only what this deal actually carries — "tax", "fees", or both."""
+        parts = []
+        if self.tax_amount:
+            parts.append("tax")
+        if self.online_fee:
+            parts.append("fees")
+        return " and ".join(parts) or "tax and fees"
+
+    @property
+    def total_suffix(self):
+        return f"with {self.pass_through_label}"
 
     # ── Deposit ─────────────────────────────────────────────────────
     @property
@@ -314,6 +344,39 @@ class CabinetProject(models.Model):
             return _money(net * rate / (Decimal(100) + rate))
         return _money(net * rate / Decimal(100))
 
+    def commission_on(self, amount):
+        """Commission earned on `amount` of customer money.
+
+        The rate applies to the pre-tax value, so a part payment is stripped of
+        its share of the sales tax first: collecting half the contract earns
+        half the commission, not half plus a slice of the tax.
+
+        `commission_on(current_total)` is `commission_amount` — the difference
+        is only whether the money has actually come in yet.
+        """
+        total = self.current_total
+        if not total or not amount:
+            return _money(0)
+        net_share = Decimal(amount) * (self.net_amount or Decimal(0)) / total
+        rate = self.effective_commission_rate
+        if self.commission_basis == CabinetSettings.BASIS_MARKUP:
+            return _money(net_share * rate / (Decimal(100) + rate))
+        return _money(net_share * rate / Decimal(100))
+
+    @property
+    def commission_earned(self):
+        """Commission on the money collected so far — what is owed today.
+
+        `commission_amount` is what the deal is worth when the customer has
+        finished paying; this is the part of it that has actually been earned.
+        """
+        return self.commission_on(self.customer_paid)
+
+    @property
+    def commission_unearned(self):
+        """The rest of the commission, still sitting in the unpaid balance."""
+        return _money((self.commission_amount or 0) - self.commission_earned)
+
     @property
     def subcontractor_price(self):
         """CustomLux's own pre-tax price — the figure the markup sits on."""
@@ -335,14 +398,23 @@ class CabinetProject(models.Model):
         return self.commission_rate is not None
 
     # ── Settlement ──────────────────────────────────────────────────
-    # Whoever banks the customer's cheque owes the other side their share:
+    # Of every dollar the customer pays, the commission rate's share belongs to
+    # Garage Lions and the rest to CustomLux — no matter whose bank account it
+    # landed in. So the settlement is: how far is what Garage Lions banked from
+    # the commission earned on the money collected SO FAR?
     #
-    #   CustomLux collects  -> they owe us the commission        (money IN)
-    #   Garage Lions collects -> we owe them the rest of the deal (money OUT)
+    #   banked MORE than the earned commission -> Garage Lions owes CustomLux
+    #   banked LESS                            -> CustomLux owes Garage Lions
     #
-    # Either way we end up ahead by the commission; only the direction of the
-    # transfer differs, and getting it wrong would point "outstanding" the
-    # wrong way on half the deals.
+    # Measuring against `commission_earned` rather than the full contract
+    # commission is what keeps a part-paid deal honest: if CustomLux banked
+    # $13,200 of a $17,600 job at 30% markup, they owe the $3,046.15 earned on
+    # that $13,200 — not the $4,061.54 the whole job will eventually be worth.
+    # The remainder is owed only once the customer actually pays it.
+    #
+    # Only recorded payments count. Nothing here is driven by an intention or a
+    # default: the settlement follows money that has actually been banked, and
+    # the only way to change it is to record, edit or remove a payment.
 
     @property
     def effective_collected_by(self):
@@ -350,19 +422,76 @@ class CabinetProject(models.Model):
 
     @property
     def we_collect(self):
+        """Only reads the stored intention — see `effective_deposited_by`.
+
+        Kept because payments written before `deposited_by` existed carry no
+        depositor of their own and are read as belonging to this side. Nothing
+        in the UI sets it any more.
+        """
         return self.effective_collected_by == CabinetSettings.COLLECTED_GARAGELIONS
+
+    @property
+    def garagelions_collected(self):
+        """Customer money sitting in the Garage Lions account."""
+        if self.pk is None:
+            return _money(0)
+        # Resolve the project-level fallback once — `effective_deposited_by`
+        # would otherwise re-read CabinetSettings for every single payment.
+        fallback = self.effective_collected_by
+        return _money(sum(
+            p.amount for p in self.customer_payments.all()
+            if (p.deposited_by or fallback) == CabinetSettings.COLLECTED_GARAGELIONS
+        ))
+
+    @property
+    def customlux_collected(self):
+        """Customer money sitting in the CustomLux account."""
+        return _money(self.customer_paid - self.garagelions_collected)
+
+    @property
+    def payments_are_split(self):
+        """True when both sides banked some of the customer's money."""
+        return self.garagelions_collected > 0 and self.customlux_collected > 0
+
+    @property
+    def settlement_signed(self):
+        """+ve = Garage Lions banked too much, -ve = too little."""
+        if self.current_total is None:
+            return None
+        return _money(self.garagelions_collected - self.commission_earned)
 
     @property
     def settlement_direction(self):
         """'out' when we owe CustomLux, 'in' when they owe us."""
-        return "out" if self.we_collect else "in"
+        signed = self.settlement_signed
+        return "out" if signed is not None and signed > 0 else "in"
+
+    @property
+    def we_owe_customlux(self):
+        return self.settlement_direction == "out"
+
+    # Both sides read this board, so nothing about the settlement is phrased as
+    # "you" or "we" — every label names the party outright.
+    @property
+    def settlement_headline(self):
+        return ("Garage Lions owes CustomLux" if self.we_owe_customlux
+                else "CustomLux owes Garage Lions")
+
+    @property
+    def settlement_debtor(self):
+        return "Garage Lions" if self.we_owe_customlux else "CustomLux"
+
+    @property
+    def settlement_creditor(self):
+        return "CustomLux" if self.we_owe_customlux else "Garage Lions"
 
     @property
     def settlement_expected(self):
         """How much should change hands, in `settlement_direction`."""
-        if self.current_total is None:
+        signed = self.settlement_signed
+        if signed is None:
             return None
-        return self.subcontractor_amount if self.we_collect else self.commission_amount
+        return _money(abs(signed))
 
     @property
     def settlement_transferred(self):
@@ -377,7 +506,7 @@ class CabinetProject(models.Model):
             p.amount for p in self.payments.all()
             if p.direction == CabinetPayment.DIR_OUT
         )
-        net = sent - received if self.we_collect else received - sent
+        net = sent - received if self.we_owe_customlux else received - sent
         return _money(net)
 
     @property
@@ -390,9 +519,16 @@ class CabinetProject(models.Model):
     @property
     def is_settled(self):
         out = self.settlement_outstanding
-        return (
-            out is not None and out <= 0 and self.settlement_transferred > 0
-        )
+        if out is None or out > 0:
+            return False
+        # A deal nobody has paid into is square only in the trivial sense —
+        # calling it "settled" before any money exists would be misleading.
+        if self.customer_paid <= 0:
+            return False
+        # Square with nothing to transfer does count: once each side has banked
+        # exactly its own share there is nothing left to move, and requiring a
+        # transfer would leave the deal looking permanently open.
+        return True
 
     @property
     def is_part_paid(self):
@@ -404,7 +540,7 @@ class CabinetProject(models.Model):
     # Kept for the board summary: what we net on this deal either way.
     @property
     def commission_paid(self):
-        return self.settlement_transferred if not self.we_collect else _money(0)
+        return self.settlement_transferred if not self.we_owe_customlux else _money(0)
 
 
 class CabinetMember(models.Model):
@@ -520,9 +656,12 @@ class CabinetPayment(models.Model):
 
     DIR_IN = "in"
     DIR_OUT = "out"
+    # Named from neither side's point of view: the board is used for CustomLux's
+    # accounting as much as for Garage Lions', so "received"/"sent" would read
+    # backwards for half the people looking at it.
     DIRECTION_CHOICES = [
-        (DIR_IN, "Received from CustomLux"),
-        (DIR_OUT, "Sent to CustomLux"),
+        (DIR_IN, "CustomLux sent money to Garage Lions"),
+        (DIR_OUT, "Garage Lions sent money to CustomLux"),
     ]
 
     project = models.ForeignKey(
@@ -605,6 +744,19 @@ class CabinetCustomerPayment(models.Model):
         max_length=20, choices=CabinetPayment.METHOD_CHOICES, blank=True,
     )
     reference = models.CharField(max_length=120, blank=True)
+    # Which side actually banked THIS cheque. A job can be split: the customer
+    # hands the deposit to one of us and the balance to the other, so this can
+    # differ payment by payment and cannot live on the project alone.
+    # Blank = the project's own answer, which is what every row written before
+    # this field existed means.
+    DEPOSITED_CHOICES = [
+        (CabinetSettings.COLLECTED_CUSTOMLUX, "CustomLux deposited money"),
+        (CabinetSettings.COLLECTED_GARAGELIONS, "Garage Lions deposited money"),
+    ]
+    deposited_by = models.CharField(
+        max_length=20, blank=True, choices=DEPOSITED_CHOICES,
+        verbose_name="Who deposited this money",
+    )
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name="cabinet_customer_payments",
@@ -617,6 +769,19 @@ class CabinetCustomerPayment(models.Model):
 
     def __str__(self):
         return f"${self.amount} on {self.received_on}"
+
+    @property
+    def effective_deposited_by(self):
+        return self.deposited_by or self.project.effective_collected_by
+
+    @property
+    def banked_by_us(self):
+        """True when Garage Lions is holding this money."""
+        return self.effective_deposited_by == CabinetSettings.COLLECTED_GARAGELIONS
+
+    @property
+    def depositor_label(self):
+        return "Garage Lions" if self.banked_by_us else "CustomLux"
 
 
 class CabinetActivity(models.Model):

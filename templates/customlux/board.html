@@ -6,23 +6,9 @@
 <div class="page-header">
   <div>
     <h2>CustomLux</h2>
-    {% if sum_total %}
-      <div style="font-size:12px; color:#6b7280; margin-top:3px">
-        {{ total_open }} project{{ total_open|pluralize }} ·
-        ${{ sum_total|money0 }} in deals ·
-        <strong style="color:#065f46">${{ sum_commission|money0 }} commission</strong>
-        at {{ conf.commission_rate|floatformat:"-2" }}%
-        {% if sum_to_collect %}
-          · <strong style="color:#b45309">${{ sum_to_collect|money0 }} to collect</strong>
-        {% endif %}
-        {% if sum_to_pay %}
-          · <strong style="color:#7c3aed">${{ sum_to_pay|money0 }} to pay out</strong>
-        {% endif %}
-        {% if not sum_to_collect and not sum_to_pay %}
-          · <strong style="color:#065f46">all settled</strong>
-        {% endif %}
-      </div>
-    {% endif %}
+    <div style="font-size:12px; color:#6b7280; margin-top:3px">
+      {{ total_open }} open project{{ total_open|pluralize }}{% if n_unpriced %} · {{ n_unpriced }} with no deal total yet{% endif %}{% if q or stage_code %} · matching the current filter{% endif %}
+    </div>
   </div>
   <div style="display:flex; gap:8px; align-items:center">
     <div class="view-toggle" role="group" aria-label="Switch view">
@@ -66,7 +52,91 @@
   </div>
 </div>
 
+{% if n_priced %}
+<div class="cl-sum">
+  <div class="cl-sum-hero {% if net_direction == 'in' %}is-in{% elif net_direction == 'out' %}is-out{% else %}is-flat{% endif %}">
+    <div class="l">Where the two sides stand</div>
+    {% if net_direction == 'in' %}
+      <div class="v">CustomLux owes Garage Lions <span class="n">${{ net_amount|money0 }}</span></div>
+    {% elif net_direction == 'out' %}
+      <div class="v">Garage Lions owes CustomLux <span class="n">${{ net_amount|money0 }}</span></div>
+    {% else %}
+      <div class="v">The two sides are square</div>
+    {% endif %}
+    <div class="s">
+      net across {{ n_priced }} priced project{{ n_priced|pluralize }} ·
+      {{ n_settled }} already settled
+    </div>
+  </div>
+
+  <div class="cl-sum-tile t-in">
+    <div class="l">CustomLux owes Garage Lions</div>
+    <div class="v {% if sum_to_collect %}violet{% endif %}">${{ sum_to_collect|money0 }}</div>
+    <div class="s">on {{ n_to_collect }} project{{ n_to_collect|pluralize }}</div>
+  </div>
+
+  <div class="cl-sum-tile t-out">
+    <div class="l">Garage Lions owes CustomLux</div>
+    <div class="v {% if sum_to_pay %}violet{% endif %}">${{ sum_to_pay|money0 }}</div>
+    <div class="s">on {{ n_to_pay }} project{{ n_to_pay|pluralize }}</div>
+  </div>
+
+  <div class="cl-sum-tile">
+    <div class="l">Projects</div>
+    <div class="v">{{ total_open }}</div>
+    <div class="s">
+      {{ n_priced }} priced{% if n_unpriced %} · {{ n_unpriced }} without a total{% endif %}
+    </div>
+  </div>
+
+  <div class="cl-sum-tile t-comm">
+    <div class="l">In deals</div>
+    <div class="v">${{ sum_total|money0 }}</div>
+    <div class="s">
+      Garage Lions share <span class="green">${{ sum_commission|money0 }}</span> at {{ conf.commission_rate|floatformat:"-2" }}%
+    </div>
+  </div>
+
+  <div class="cl-sum-tile t-cust">
+    <div class="l">Collected from customers</div>
+    <div class="v amber">${{ sum_customer_paid|money0 }}</div>
+    <div class="s">
+      {% if sum_customer_due %}${{ sum_customer_due|money0 }} still due{% else %}nothing outstanding{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <style>
+  .cl-sum {
+    display:grid; gap:10px; margin:0 0 16px;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+  }
+  /* Same three colours as the project page: green = Garage Lions commission,
+     amber = customer money, violet = settlement between the two companies. */
+  .cl-sum-hero, .cl-sum-tile {
+    background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px;
+    border-left:3px solid #cbd5e1;
+  }
+  .cl-sum-tile.t-in     { border-left-color:#7c3aed; }
+  .cl-sum-tile.t-out    { border-left-color:#7c3aed; }
+  .cl-sum-tile.t-comm   { border-left-color:#059669; }
+  .cl-sum-tile.t-cust   { border-left-color:#d97706; }
+  .cl-sum-hero { grid-column:1 / -1; border-left-width:4px; }
+  .cl-sum-hero.is-in   { border-left-color:#7c3aed; background:#faf5ff; }
+  .cl-sum-hero.is-out  { border-left-color:#7c3aed; background:#faf5ff; }
+  .cl-sum-hero.is-flat { border-left-color:#059669; background:#ecfdf5; }
+  .cl-sum .l { font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+               color:#6b7280; font-weight:600; }
+  .cl-sum .v { font-size:19px; font-weight:700; color:#111827; margin-top:3px;
+               line-height:1.25; }
+  .cl-sum-hero .v { font-size:17px; font-weight:600; }
+  .cl-sum-hero .v .n { font-size:24px; font-weight:800; }
+  .cl-sum .s { font-size:11px; color:#6b7280; margin-top:3px; }
+  .cl-sum .green  { color:#065f46; }
+  .cl-sum .amber  { color:#b45309; }
+  .cl-sum .violet { color:#7c3aed; }
+
   .view-toggle { display:inline-flex; border:1px solid #d1d5db; border-radius:6px; overflow:hidden; }
   .view-toggle-btn {
     display:inline-flex; align-items:center; justify-content:center;

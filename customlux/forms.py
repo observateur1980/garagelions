@@ -16,8 +16,8 @@ class CabinetProjectForm(forms.ModelForm):
         model = CabinetProject
         fields = [
             "title", "customer_name", "email", "phone", "address", "zip_code",
-            "stage", "quoted_amount", "tax_amount", "commission_rate",
-            "collected_by", "deposit_percent",
+            "stage", "quoted_amount", "tax_amount", "online_fee",
+            "commission_rate", "deposit_percent",
             "measure_date", "install_date", "notes",
         ]
         widgets = {
@@ -36,11 +36,14 @@ class CabinetProjectForm(forms.ModelForm):
                 "class": _FC, "step": "0.01", "min": "0", "id": "cl-tax",
                 "placeholder": "0.00",
             }),
+            "online_fee": forms.NumberInput(attrs={
+                "class": _FC, "step": "0.01", "min": "0", "id": "cl-fee",
+                "placeholder": "0.00",
+            }),
             "commission_rate": forms.NumberInput(attrs={
                 "class": _FC, "step": "0.01", "min": "0", "max": "100",
                 "id": "cl-rate",
             }),
-            "collected_by": forms.Select(attrs={"class": _FS, "id": "cl-collected"}),
             "deposit_percent": forms.NumberInput(attrs={
                 "class": _FC, "step": "0.01", "min": "0", "max": "100",
                 "id": "cl-deposit",
@@ -66,6 +69,10 @@ class CabinetProjectForm(forms.ModelForm):
         self.fields["tax_amount"].help_text = (
             "Excluded from the commission base."
         )
+        self.fields["online_fee"].help_text = (
+            "Card/processing charge inside the total. Also excluded from "
+            "the commission base."
+        )
         self.fields["deposit_percent"].widget.attrs["placeholder"] = (
             f"{conf.default_deposit_percent:g} (board default)"
         )
@@ -74,9 +81,18 @@ class CabinetProjectForm(forms.ModelForm):
         cleaned = super().clean()
         total = cleaned.get("quoted_amount")
         tax = cleaned.get("tax_amount")
+        fee = cleaned.get("online_fee")
         if total is not None and tax is not None and tax > total:
             self.add_error(
                 "tax_amount", "Tax can't be more than the deal total."
+            )
+        # Together they can swallow the total even when neither does alone,
+        # which would leave nothing for either side to split.
+        if total is not None and (tax or 0) + (fee or 0) > total:
+            self.add_error(
+                "online_fee",
+                "Tax and the online fee together can't be more than the "
+                "deal total.",
             )
         return cleaned
 
@@ -144,6 +160,21 @@ class CabinetEstimateForm(forms.ModelForm):
         return f
 
 
+def _require_method(form):
+    """Make the payment-method box a deliberate choice.
+
+    The model still allows a blank method so rows recorded before this rule
+    are left alone — it is the entry forms that insist, which is where the
+    information is actually available.
+    """
+    field = form.fields["method"]
+    field.required = True
+    field.choices = [("", "— Select a payment method —")] + [
+        (code, label) for code, label in CabinetPayment.METHOD_CHOICES if code
+    ]
+    field.error_messages["required"] = "Choose how the money was paid."
+
+
 class CabinetPaymentForm(forms.ModelForm):
     """Register commission received. Defaults to today so the common case is
     one number and a click."""
@@ -167,6 +198,7 @@ class CabinetPaymentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if not self.is_bound and not self.initial.get("received_on"):
             self.initial["received_on"] = timezone.localdate()
+        _require_method(self)
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]
@@ -178,12 +210,14 @@ class CabinetPaymentForm(forms.ModelForm):
 class CustomerPaymentForm(forms.ModelForm):
     class Meta:
         model = CabinetCustomerPayment
-        fields = ["amount", "received_on", "is_deposit", "method", "reference"]
+        fields = ["amount", "received_on", "deposited_by", "is_deposit",
+                  "method", "reference"]
         widgets = {
             "amount": forms.NumberInput(attrs={
                 "class": _FC, "step": "0.01", "min": "0.01", "placeholder": "0.00",
             }),
             "received_on": forms.DateInput(attrs={"class": _FC, "type": "date"}),
+            "deposited_by": forms.Select(attrs={"class": _FS}),
             "is_deposit": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "method": forms.Select(attrs={"class": _FS}),
             "reference": forms.TextInput(attrs={
@@ -191,10 +225,18 @@ class CustomerPaymentForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, project=None, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.is_bound and not self.initial.get("received_on"):
             self.initial["received_on"] = timezone.localdate()
+        # The model keeps blank ("inherit the project") for rows written before
+        # the field existed; new rows always say outright who banked the money.
+        dep = self.fields["deposited_by"]
+        dep.choices = CabinetCustomerPayment.DEPOSITED_CHOICES
+        dep.required = True
+        _require_method(self)
+        if project is not None and not self.is_bound:
+            self.initial["deposited_by"] = project.effective_collected_by
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]

@@ -28,7 +28,7 @@ from .forms import (
 from .models import (
     CabinetActivity, CabinetChangeOrder, CabinetCustomerPayment, CabinetEstimate,
     CabinetMember, CabinetPayment, CabinetProject, CabinetSettings, CabinetStage,
-    CabinetTodo,
+    CabinetTodo, _money,
 )
 
 User = get_user_model()
@@ -46,8 +46,8 @@ _TRACKED = [
     ("stage", "Stage", "stage"),
     ("quoted_amount", "Deal total", "money"),
     ("tax_amount", "Sales tax", "money"),
+    ("online_fee", "Online transaction fee", "money"),
     ("commission_rate", "Commission rate", "pct"),
-    ("collected_by", "Who the customer pays", "collect"),
     ("deposit_percent", "Deposit", "pct"),
     ("customer_name", "Customer", "text"),
     ("phone", "Phone", "text"),
@@ -63,6 +63,71 @@ _TRACKED = [
 
 def _collect_label(value):
     return "Garage Lions" if value == CabinetSettings.COLLECTED_GARAGELIONS else "CustomLux"
+
+
+def _board_summary(projects):
+    """Money and counts for the strip at the top of the board.
+
+    Deliberately a single pass: settlement figures are Python properties over
+    the payment rows, so touching them per project inside several generator
+    expressions would re-walk the same rows again and again.
+    """
+    n = n_priced = n_settled = 0
+    n_to_collect = n_to_pay = 0
+    total = commission = _money(0)
+    paid = due = to_collect = to_pay = _money(0)
+
+    for p in projects:
+        n += 1
+        deal = p.current_total
+        if deal is None:
+            continue
+        n_priced += 1
+        total += deal
+        commission += p.commission_amount or 0
+        paid += p.customer_paid
+        balance = p.customer_balance or 0
+        if balance > 0:
+            due += balance
+        outstanding = p.settlement_outstanding or 0
+        if outstanding <= 0:
+            n_settled += 1
+        elif p.we_owe_customlux:
+            to_pay += outstanding
+            n_to_pay += 1
+        else:
+            to_collect += outstanding
+            n_to_collect += 1
+
+    return {
+        "sum_total": total,
+        "sum_commission": commission,
+        "sum_customer_paid": paid,
+        "sum_customer_due": due,
+        "sum_to_collect": to_collect,
+        "sum_to_pay": to_pay,
+        "n_to_collect": n_to_collect,
+        "n_to_pay": n_to_pay,
+        "n_settled": n_settled,
+        "n_priced": n_priced,
+        "n_unpriced": n - n_priced,
+        # One number for "where do we stand overall". Split into a direction
+        # and a positive amount because the template has no abs filter, and a
+        # headline reading "-$1,200" would be ambiguous anyway.
+        "net_amount": abs(to_collect - to_pay),
+        "net_direction": (
+            "" if to_collect == to_pay
+            else "in" if to_collect > to_pay else "out"
+        ),
+    }
+
+
+def _settlement_sentence(project):
+    """Who owes whom right now — one sentence, or nothing if it doesn't apply."""
+    outstanding = project.settlement_outstanding
+    if not outstanding or outstanding <= 0:
+        return "Nothing left to settle." if project.current_total else ""
+    return f"{project.settlement_headline} ${outstanding:,.2f}."
 
 
 def _fmt(value, kind):
@@ -212,16 +277,11 @@ def board(request):
         ctx["page_obj"] = paginator.get_page(request.GET.get("page"))
 
     # Totals across everything the current filters match, not just this page.
-    ctx["sum_total"] = sum((p.current_total or 0) for p in projects)
-    ctx["sum_commission"] = sum((p.commission_amount or 0) for p in projects)
-    ctx["sum_to_collect"] = sum(
-        (p.settlement_outstanding or 0) for p in projects
-        if not p.we_collect and (p.settlement_outstanding or 0) > 0
-    )
-    ctx["sum_to_pay"] = sum(
-        (p.settlement_outstanding or 0) for p in projects
-        if p.we_collect and (p.settlement_outstanding or 0) > 0
-    )
+    # One pass with the money rows prefetched: every figure below reads several
+    # properties per project, and each of those walks the payment rows.
+    ctx.update(_board_summary(
+        projects.prefetch_related("customer_payments", "payments", "change_orders")
+    ))
     ctx["conf"] = CabinetSettings.get()
 
     return render(request, "customlux/board.html", ctx)
@@ -267,7 +327,7 @@ def project_detail(request, pk):
         "estimates": project.estimates.select_related("uploaded_by"),
         "payment_form": CabinetPaymentForm(),
         "payments": project.payments.select_related("recorded_by"),
-        "customer_payment_form": CustomerPaymentForm(),
+        "customer_payment_form": CustomerPaymentForm(project=project),
         "customer_payments": project.customer_payments.select_related("recorded_by"),
         "change_order_form": ChangeOrderForm(),
         "change_orders": project.change_orders.select_related("created_by"),
@@ -346,7 +406,7 @@ def todo_delete(request, pk, todo_pk):
 @require_POST
 def customer_payment_add(request, pk):
     project = get_object_or_404(CabinetProject, pk=pk)
-    form = CustomerPaymentForm(request.POST)
+    form = CustomerPaymentForm(request.POST, project=project)
     if form.is_valid():
         pay = form.save(commit=False)
         pay.project = project
@@ -355,6 +415,7 @@ def customer_payment_add(request, pk):
         bits = [
             f"Customer paid ${pay.amount:,.2f}"
             + (" (deposit)" if pay.is_deposit else "")
+            + f" into {pay.depositor_label}"
         ]
         if pay.method:
             bits.append(pay.get_method_display().lower())
@@ -363,16 +424,16 @@ def customer_payment_add(request, pk):
         _log(project, request.user,
              " · ".join(bits) + f" on {pay.received_on:%b %-d, %Y}")
 
+        project.refresh_from_db()
         balance = project.customer_balance
         if balance is not None and balance <= 0:
             _log(project, request.user, "Customer paid in full.")
-            messages.success(request, "Recorded — the customer is paid in full.")
+            head = "Recorded — the customer is paid in full."
         elif balance is not None:
-            messages.success(
-                request, f"Recorded. ${balance:,.2f} still due from the customer."
-            )
+            head = f"Recorded. ${balance:,.2f} still due from the customer."
         else:
-            messages.success(request, "Recorded.")
+            head = "Recorded."
+        messages.success(request, f"{head} {_settlement_sentence(project)}".strip())
     else:
         for errs in form.errors.values():
             for e in errs:
@@ -452,8 +513,8 @@ def payment_add(request, pk):
         pay.project = project
         pay.recorded_by = request.user
         pay.save()
-        verb = ("Received ${:,.2f} from CustomLux" if pay.direction == CabinetPayment.DIR_IN
-                else "Sent ${:,.2f} to CustomLux").format(pay.amount)
+        verb = ("CustomLux sent ${:,.2f} to Garage Lions" if pay.direction == CabinetPayment.DIR_IN
+                else "Garage Lions sent ${:,.2f} to CustomLux").format(pay.amount)
         bits = [verb]
         if pay.method:
             bits.append(pay.get_method_display().lower())
@@ -462,15 +523,13 @@ def payment_add(request, pk):
         _log(project, request.user,
              " · ".join(bits) + f" on {pay.received_on:%b %-d, %Y}")
 
+        project.refresh_from_db()
         outstanding = project.settlement_outstanding
         if outstanding is not None and outstanding <= 0:
             _log(project, request.user, "Deal fully settled.")
             messages.success(request, "Recorded — this deal is fully settled.")
         elif outstanding is not None:
-            owed = "to collect" if not project.we_collect else "to pay out"
-            messages.success(
-                request, f"Recorded. ${outstanding:,.2f} still {owed}."
-            )
+            messages.success(request, f"Recorded. {_settlement_sentence(project)}")
         else:
             messages.success(request, "Payment recorded.")
     else:
