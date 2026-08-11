@@ -32,3 +32,8 @@ google-api-python-client==2.149.0
 
 # In-panel help renderer (docs/GUIDE.md → /panel/help/)
 markdown==3.7
+plaid-python==42.0.0
+# Verifies the ES256 signature on incoming Plaid webhooks (was only a
+# transitive dep before; panel/plaid_client.py imports it directly).
+PyJWT==2.12.1
+cryptography==47.0.0

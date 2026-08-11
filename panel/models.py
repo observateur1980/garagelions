@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 
 
@@ -586,12 +587,162 @@ class InvoiceItem(models.Model):
         return self.quantity * self.unit_price
 
 
-# ── Transaction ─────────────────────────────────────────────────────
+# ── Bank feed (QuickBooks-style Bank transactions) ──────────────────
+class PlaidItem(models.Model):
+    """A Plaid 'Item' = one bank login/connection returning one or more accounts."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="plaid_items",
+    )
+    item_id = models.CharField(max_length=100, unique=True)
+    access_token = models.CharField(max_length=200)
+    institution_id = models.CharField(max_length=100, blank=True)
+    institution_name = models.CharField(max_length=200, blank=True)
+    # Cursor for incremental /transactions/sync.
+    cursor = models.CharField(max_length=256, blank=True)
+    last_synced = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Set when the bank locks us out (ITEM_LOGIN_REQUIRED, e.g. after a password
+    # change or expired MFA). The UI then offers Link in update mode to re-auth.
+    needs_reauth = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.institution_name or self.item_id
+
+
+class BankAccount(models.Model):
+    """A bank/credit-card account whose transactions feed into the panel."""
+    name = models.CharField(max_length=120)
+    institution = models.CharField(max_length=120, blank=True)
+    mask = models.CharField(
+        max_length=8, blank=True, help_text="Last digits, e.g. 4021."
+    )
+    sales_point = models.ForeignKey(
+        "home.SalesPoint", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="bank_accounts",
+    )
+    color = models.CharField(max_length=9, default="#2563eb")
+    bank_balance = models.DecimalField(
+        max_digits=14, decimal_places=2, default=0,
+        help_text="Balance reported by the bank (the pencil-editable figure).",
+    )
+    opening_balance = models.DecimalField(
+        max_digits=14, decimal_places=2, default=0,
+        help_text="Ledger balance before any posted lines.",
+    )
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    last_synced = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Plaid link (null for manually-created accounts).
+    plaid_item = models.ForeignKey(
+        PlaidItem, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="accounts",
+    )
+    plaid_account_id = models.CharField(max_length=100, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_connected(self):
+        return bool(self.plaid_account_id)
+
+    @property
+    def posted_balance(self):
+        agg = self.lines.filter(status="posted").aggregate(s=Sum("amount"))
+        return self.opening_balance + (agg["s"] or Decimal("0"))
+
+    @property
+    def pending_count(self):
+        return self.lines.filter(status="pending").count()
+
+
+class BankTransaction(models.Model):
+    """One line from a bank feed: pending → posted (accepted) or excluded."""
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("posted", "Posted"),
+        ("excluded", "Excluded"),
+    ]
+
+    account = models.ForeignKey(
+        BankAccount, on_delete=models.CASCADE, related_name="lines"
+    )
+    date = models.DateField()
+    bank_description = models.CharField(max_length=255)
+    # Signed: positive = money received, negative = money spent.
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+
+    # From/To — who the money is with.
+    customer = models.ForeignKey(
+        Customer, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="bank_lines",
+    )
+    payee = models.CharField(max_length=200, blank=True)
+
+    # Match / Categorize.
+    category = models.CharField(max_length=120, blank=True)
+    project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="bank_lines",
+    )
+    matched_invoice = models.ForeignKey(
+        Invoice, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="bank_matches",
+    )
+
+    note = models.CharField(max_length=255, blank=True)
+    attachment_count = models.PositiveIntegerField(default=0)
+    posted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Plaid provenance (blank for manual/CSV lines).
+    plaid_txn_id = models.CharField(max_length=100, blank=True, db_index=True)
+    bank_pending = models.BooleanField(
+        default=False, help_text="True while the bank itself still marks it pending."
+    )
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(fields=["account", "status", "-date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.date} {self.bank_description} {self.amount}"
+
+    @property
+    def is_money_in(self):
+        return self.amount >= 0
+
+    @property
+    def abs_amount(self):
+        return abs(self.amount)
+
+    @property
+    def party(self):
+        return self.payee or (str(self.customer) if self.customer else "")
+
+
+# ── Transaction (legacy ledger; still powers Project profitability) ──
 class Transaction(models.Model):
     TYPE_CHOICES = [
         ("payment", "Payment"),
         ("refund", "Refund"),
         ("expense", "Expense"),
+    ]
+    METHOD_CHOICES = [
+        ("cash", "Cash"),
+        ("check", "Check"),
+        ("credit_card", "Credit Card"),
+        ("bank_transfer", "Bank Transfer"),
+        ("other", "Other"),
     ]
 
     invoice = models.ForeignKey(
@@ -601,17 +752,45 @@ class Transaction(models.Model):
     customer = models.ForeignKey(
         Customer, on_delete=models.SET_NULL, null=True, blank=True
     )
+    project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="transactions"
+    )
     transaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="payment")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=METHOD_CHOICES, blank=True)
+    category = models.CharField(
+        max_length=100, blank=True,
+        help_text="Expense/income category, e.g. Materials, Labor, Fuel.",
+    )
+    payee = models.CharField(
+        max_length=200, blank=True,
+        help_text="Vendor/payee name for expenses when no customer applies.",
+    )
     description = models.CharField(max_length=255, blank=True)
     date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-date"]
+        ordering = ["-date", "-created_at"]
 
     def __str__(self):
         return f"{self.get_transaction_type_display()} — ${self.amount}"
+
+    @property
+    def is_money_in(self):
+        """Payments are money in; refunds and expenses are money out."""
+        return self.transaction_type == "payment"
+
+    @property
+    def signed_amount(self):
+        """Positive for money in, negative for money out (refunds, expenses)."""
+        return self.amount if self.is_money_in else -self.amount
+
+    @property
+    def party(self):
+        """Display name of the other side of the transaction."""
+        return self.payee or (str(self.customer) if self.customer else "")
 
 
 # ── Task ────────────────────────────────────────────────────────────

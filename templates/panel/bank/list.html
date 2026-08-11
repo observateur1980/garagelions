@@ -1,0 +1,351 @@
+{% extends "panel/base.html" %}
+{% load humanize %}
+{% block title %}Bank transactions{% endblock %}
+
+{% block extra_css %}
+<style>
+  .bank-wrap { color: #1f2937; }
+  .bank-topbar { display: flex; align-items: center; gap: 12px; margin: 4px 0 20px; flex-wrap: wrap; }
+  .bank-acc-pick { display: flex; align-items: center; gap: 10px; }
+  .bank-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex: none; }
+  .bank-acc-pick select { border: none; background: none; font-size: 18px; font-weight: 700; color: #111827; cursor: pointer; padding: 4px; }
+  .bank-topbar .actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .g-btn { border: 1px solid #2ca01c; color: #2ca01c; background: #fff; border-radius: 4px; padding: 8px 16px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; }
+  .g-btn:hover { background: #f0fdf4; color: #2ca01c; }
+  .g-btn.solid { background: #2ca01c; color: #fff; }
+  .g-btn.solid:hover { background: #238017; color: #fff; }
+  .g-link { color: #2ca01c; font-weight: 600; text-decoration: none; font-size: 14px; }
+
+  .acct-cards { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 20px; }
+  .acct-card { flex: 0 0 250px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; background: #fff; text-decoration: none; color: inherit; position: relative; }
+  .acct-card.active { border: 2px solid #2ca01c; padding: 13px 15px; }
+  .acct-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .acct-card .aname { font-size: 14px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acct-card .count { background: #4b5563; color: #fff; border-radius: 5px; font-size: 12px; font-weight: 700; padding: 1px 7px; flex: none; }
+  .acct-card .bank { font-size: 22px; font-weight: 700; color: #111827; margin: 8px 0 2px; }
+  .acct-card .posted { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 8px; }
+  .acct-wrap { position: relative; flex: 0 0 250px; display: flex; }
+  .acct-wrap .acct-card { flex: 1 1 auto; }
+  .acct-wrap .pencil { position: absolute; right: 10px; bottom: 10px; color: #9ca3af; text-decoration: none; font-size: 14px; line-height: 1; padding: 4px; border-radius: 4px; }
+  .acct-wrap .pencil:hover { color: #2ca01c; background: #f3f4f6; }
+  .acct-card.add-card { display: flex; align-items: center; justify-content: center; color: #6b7280; border-style: dashed; font-size: 14px; }
+  .acct-card.add-card:hover { color: #2ca01c; border-color: #2ca01c; }
+  .acct-card .sync { color: #9ca3af; font-size: 12px; }
+
+  .bank-tabs { display: flex; gap: 2px; border-bottom: 1px solid #e5e7eb; margin-bottom: 16px; }
+  .bank-tabs a { padding: 9px 18px; font-size: 14px; font-weight: 600; color: #6b7280; text-decoration: none; border-radius: 6px 6px 0 0; }
+  .bank-tabs a.active { background: #4b5563; color: #fff; }
+  .bank-tabs .right { margin-left: auto; display: flex; gap: 18px; align-items: center; }
+
+  .bank-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .bank-toolbar input[type=search], .bank-toolbar input[type=date], .bank-toolbar select { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; background: #fff; }
+  .bank-toolbar .grow { min-width: 220px; }
+  .bank-toolbar .pageinfo { margin-left: auto; display: flex; gap: 14px; align-items: center; color: #6b7280; font-size: 13px; }
+  .bank-toolbar .pageinfo a { color: #6b7280; text-decoration: none; padding: 2px 6px; border: 1px solid #e5e7eb; border-radius: 5px; }
+  .bank-toolbar .pageinfo a.disabled { opacity: .4; pointer-events: none; }
+
+  .bulkbar { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .bulkbar button { border: 1px solid #2563eb; background: #fff; color: #2563eb; border-radius: 5px; padding: 5px 12px; font-weight: 600; cursor: pointer; }
+
+  table.bank-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.bank-table th { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-weight: 600; font-size: 12px; background: #f9fafb; white-space: nowrap; }
+  table.bank-table td { padding: 8px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; }
+  table.bank-table tr:hover td { background: #f9fafb; }
+  .col-amt { text-align: right; white-space: nowrap; }
+  .amt-in { color: #047857; font-weight: 600; }
+  .amt-out { color: #b91c1c; font-weight: 600; }
+  .icon-add { display: inline-flex; width: 22px; height: 22px; border: 1px solid #d1d5db; border-radius: 5px; align-items: center; justify-content: center; color: #6b7280; text-decoration: none; font-size: 14px; }
+  .cell-input, .cell-select { width: 100%; min-width: 130px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; background: #fff; }
+  .cell-input.placeholderish { color: #9ca3af; }
+  .pair-badge { display: inline-block; background: #ecfdf5; color: #047857; font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
+  .post-btn { color: #2563eb; background: none; border: none; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .post-btn:hover { text-decoration: underline; }
+  .rowmenu { position: relative; display: inline-block; }
+  .rowmenu > summary { list-style: none; cursor: pointer; color: #6b7280; font-weight: 700; padding: 0 6px; }
+  .rowmenu > summary::-webkit-details-marker { display: none; }
+  .rowmenu .menu { position: absolute; right: 0; z-index: 20; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.12); padding: 4px; min-width: 130px; }
+  .rowmenu .menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 7px 12px; font-size: 13px; cursor: pointer; border-radius: 5px; color: #374151; }
+  .rowmenu .menu button:hover { background: #f3f4f6; }
+  .empty-state { text-align: center; padding: 60px 20px; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bank-wrap">
+  <div class="page-header"><h2>Bank transactions</h2></div>
+
+  {% if request.GET.synced %}
+  <div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:9px 14px; border-radius:8px; margin-bottom:14px; font-size:14px">
+    &#8635; Updated from your bank — <strong>{{ request.GET.synced }}</strong> new transaction{{ request.GET.synced|pluralize }} imported.
+  </div>
+  {% endif %}
+  {% if request.GET.cleared %}
+  <div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:9px 14px; border-radius:8px; margin-bottom:14px; font-size:14px">
+    Cleared <strong>{{ request.GET.cleared }}</strong> transaction{{ request.GET.cleared|pluralize }} — the account is ready for a fresh import.
+  </div>
+  {% endif %}
+  {% if request.GET.not_linked %}
+  <div style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:9px 14px; border-radius:8px; margin-bottom:14px; font-size:14px">
+    This account isn't linked to a bank yet, so there's nothing to pull.
+    <a href="{% url 'panel:bank_link' %}" style="color:#92400e">Connect it &rsaquo;</a>
+  </div>
+  {% endif %}
+  {% if request.GET.plaid_error %}
+  <div style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:9px 14px; border-radius:8px; margin-bottom:14px; font-size:14px">
+    Couldn't reach your bank just now. Please try Update again in a moment.
+  </div>
+  {% endif %}
+  {% if account.plaid_item.needs_reauth %}
+  <div id="reauthBanner" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:11px 14px; border-radius:8px; margin-bottom:14px; font-size:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+    <span>
+      <strong>{{ account.institution|default:"Your bank" }} needs you to sign in again.</strong>
+      New transactions won't import until the connection is renewed.
+    </span>
+    <button type="button" id="reconnectBtn"
+            data-item="{{ account.plaid_item_id }}"
+            style="border:1px solid #92400e; background:#fff; color:#92400e; font-weight:700; border-radius:6px; padding:8px 16px; cursor:pointer">
+      Reconnect
+    </button>
+  </div>
+  {% endif %}
+
+  {% if not accounts %}
+    <div class="empty-state">
+      <p style="font-size:16px">No bank accounts yet.</p>
+      <a href="{% url 'panel:bank_link' %}" class="g-btn solid">Add account</a>
+    </div>
+  {% else %}
+
+  <!-- Account picker + top actions -->
+  <div class="bank-topbar">
+    <div class="bank-acc-pick">
+      <span class="bank-icon" style="background:{{ account.color }}">&#127974;</span>
+      <select onchange="location.href='?account='+this.value">
+        {% for a in accounts %}
+        <option value="{{ a.pk }}" {% if a.pk == account.pk %}selected{% endif %}>{{ a.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="actions">
+      <a href="{% url 'panel:plaid_sync' %}?account={{ account.pk }}" class="g-link">&#8635; Update</a>
+      <a href="{% url 'panel:bank_link' %}" class="g-btn solid">Link account</a>
+    </div>
+  </div>
+
+  <!-- Account cards -->
+  <div class="acct-cards">
+    {% for a in accounts %}
+    <div class="acct-wrap">
+      <a href="?account={{ a.pk }}" class="acct-card {% if a.pk == account.pk %}active{% endif %}">
+        <div class="top">
+          <div class="aname">{{ a.name }}</div>
+          <div class="count">{{ a.pending_count }}</div>
+        </div>
+        <div class="bank">${{ a.bank_balance|floatformat:2|intcomma }}</div>
+        <div class="posted">Posted: ${{ a.posted_balance|floatformat:2|intcomma }}
+          {% if a.last_synced %}<span class="sync">&#8635; {{ a.last_synced|timesince }} ago</span>{% endif %}
+        </div>
+      </a>
+      <a href="{% url 'panel:bank_account_edit' a.pk %}" class="pencil" title="Edit {{ a.name }}">&#9998;</a>
+    </div>
+    {% endfor %}
+    <a href="{% url 'panel:bank_link' %}" class="acct-card add-card" title="Add another account">
+      <span>+ Add account</span>
+    </a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="bank-tabs">
+    <a href="?account={{ account.pk }}&tab=pending" class="{% if tab == 'pending' %}active{% endif %}">Pending ({{ counts.pending|default:0 }})</a>
+    <a href="?account={{ account.pk }}&tab=posted" class="{% if tab == 'posted' %}active{% endif %}">Posted{% if counts.posted %} ({{ counts.posted }}){% endif %}</a>
+    <a href="?account={{ account.pk }}&tab=excluded" class="{% if tab == 'excluded' %}active{% endif %}">Excluded{% if counts.excluded %} ({{ counts.excluded }}){% endif %}</a>
+    <div class="right">
+      <a href="{% url 'panel:bank_account_edit' account.pk %}" class="g-link" style="color:#6b7280">Edit account</a>
+      <a href="{% url 'panel:bank_account_delete' account.pk %}" class="g-link" style="color:#b91c1c; margin-left:12px">Remove</a>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <form method="get" class="bank-toolbar">
+    <input type="hidden" name="account" value="{{ account.pk }}">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search" class="grow">
+    <input type="date" name="start" value="{{ start }}" title="From">
+    <input type="date" name="end" value="{{ end }}" title="To">
+    <select name="flow" onchange="this.form.submit()">
+      <option value="" {% if not flow %}selected{% endif %}>All transactions</option>
+      <option value="in" {% if flow == 'in' %}selected{% endif %}>Money in</option>
+      <option value="out" {% if flow == 'out' %}selected{% endif %}>Money out</option>
+    </select>
+    <button type="submit" class="g-btn">Filter</button>
+    <div class="pageinfo">
+      {% if page_obj %}
+        <span>{{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+        {% if page_obj.has_previous %}
+        <a href="?account={{ account.pk }}&tab={{ tab }}&page={{ page_obj.previous_page_number }}">&#8249;</a>
+        {% else %}<a class="disabled">&#8249;</a>{% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?account={{ account.pk }}&tab={{ tab }}&page={{ page_obj.next_page_number }}">&#8250;</a>
+        {% else %}<a class="disabled">&#8250;</a>{% endif %}
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Per-row categorize forms (HTML5 form= targets, kept out of the bulk form) -->
+  {% if tab == 'pending' %}
+    {% for line in page_obj %}
+    <form id="rf-{{ line.pk }}" method="post" action="{% url 'panel:bank_txn_update' line.pk %}" hidden>
+      {% csrf_token %}<input type="hidden" name="tab" value="{{ tab }}">
+    </form>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Bulk form wraps the table -->
+  <form method="post" action="{% url 'panel:bank_txn_action' %}" id="bulkform">
+    {% csrf_token %}
+    <input type="hidden" name="account" value="{{ account.pk }}">
+    <input type="hidden" name="tab" value="{{ tab }}">
+
+    <div class="bulkbar">
+      <label><input type="checkbox" onclick="document.querySelectorAll('.rowchk').forEach(c=>c.checked=this.checked)"> Select all</label>
+      <span style="color:#6b7280">With selected:</span>
+      {% if tab == 'pending' %}
+        <button name="action" value="post">Post</button>
+        <button name="action" value="exclude">Exclude</button>
+      {% elif tab == 'excluded' %}
+        <button name="action" value="undo">Undo (to Pending)</button>
+      {% else %}
+        <button name="action" value="undo">Undo (to Pending)</button>
+        <button name="action" value="exclude">Exclude</button>
+      {% endif %}
+    </div>
+
+    <div style="overflow-x:auto">
+    <table class="bank-table">
+      <thead>
+        <tr>
+          <th style="width:28px"></th>
+          <th>Date</th>
+          <th>Bank Description</th>
+          <th class="col-amt">Amount</th>
+          <th title="Attachments">&#128206;</th>
+          <th title="Notes">&#128172;</th>
+          <th>From/To</th>
+          <th>Match/Categorize</th>
+          <th style="text-align:right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in page_obj %}
+        <tr>
+          <td><input type="checkbox" class="rowchk" name="ids" value="{{ line.pk }}"></td>
+          <td style="white-space:nowrap">{{ line.date|date:"m/d/Y" }}</td>
+          <td>{{ line.bank_description }}</td>
+          <td class="col-amt {% if line.is_money_in %}amt-in{% else %}amt-out{% endif %}">{% if not line.is_money_in %}-{% endif %}${{ line.abs_amount|floatformat:2|intcomma }}</td>
+          <td><span class="icon-add">{% if line.attachment_count %}{{ line.attachment_count }}{% else %}+{% endif %}</span></td>
+          <td><span class="icon-add" title="{{ line.note }}">+</span></td>
+
+          {% if tab == 'pending' %}
+          <td>
+            <select name="customer" form="rf-{{ line.pk }}" class="cell-select">
+              <option value="">Select customer</option>
+              {% for c in customers %}
+              <option value="{{ c.pk }}" {% if line.customer_id == c.pk %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>
+            {% if line.suggested %}<span class="pair-badge">PAIR</span>{{ line.suggested|length }} suggested pair{{ line.suggested|length|pluralize }} found<br>{% endif %}
+            <input name="category" form="rf-{{ line.pk }}" class="cell-input" list="catlist" value="{{ line.category }}" placeholder="Select category">
+            <select name="project" form="rf-{{ line.pk }}" class="cell-select" style="margin-top:4px">
+              <option value="">No project</option>
+              {% for p in projects %}
+              <option value="{{ p.pk }}" {% if line.project_id == p.pk %}selected{% endif %}>{{ p.name }}</option>
+              {% endfor %}
+            </select>
+            {% if line.suggested %}
+            <select name="matched_invoice" form="rf-{{ line.pk }}" class="cell-select" style="margin-top:4px">
+              <option value="">Match to invoice…</option>
+              {% for inv in line.suggested %}
+              <option value="{{ inv.pk }}" {% if line.matched_invoice_id == inv.pk %}selected{% endif %}>{{ inv.invoice_number }} — {{ inv.customer }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+          <td style="text-align:right; white-space:nowrap">
+            <button class="post-btn" form="rf-{{ line.pk }}" name="action" value="post">Post</button>
+            <details class="rowmenu">
+              <summary>&#9662;</summary>
+              <div class="menu">
+                <button form="rf-{{ line.pk }}" name="action" value="save">Save changes</button>
+                <button form="rf-{{ line.pk }}" name="action" value="exclude">Exclude</button>
+              </div>
+            </details>
+          </td>
+          {% else %}
+          <td>{{ line.party|default:"—" }}</td>
+          <td>
+            {% if line.matched_invoice %}<span class="pair-badge">MATCHED</span> {{ line.matched_invoice.invoice_number }}<br>{% endif %}
+            {{ line.category|default:"—" }}{% if line.project %} · <span style="color:#6b7280">{{ line.project.name }}</span>{% endif %}
+          </td>
+          <td style="text-align:right; color:#6b7280">
+            {% if tab == 'posted' %}Posted {{ line.posted_at|date:"m/d/Y" }}{% else %}Excluded{% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="empty-state">No {{ tab }} transactions{% if q %} for “{{ q }}”{% endif %}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </form>
+
+  <datalist id="catlist">
+    <option value="Materials"><option value="Labor"><option value="Subcontractors">
+    <option value="Fuel"><option value="Equipment"><option value="Office Supplies">
+    <option value="Utilities"><option value="Insurance"><option value="Sales"><option value="For Deposit">
+  </datalist>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if account.plaid_item.needs_reauth %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+  // Re-auth uses Link in "update mode": same connection, fresh credentials.
+  (function () {
+    const btn = document.getElementById("reconnectBtn");
+    const CSRF = "{{ csrf_token }}";
+    btn.addEventListener("click", async function () {
+      btn.disabled = true; btn.textContent = "Opening…";
+      try {
+        const fd = new FormData(); fd.append("item", btn.dataset.item);
+        const r = await fetch("{% url 'panel:plaid_create_link_token' %}",
+          { method: "POST", headers: { "X-CSRFToken": CSRF }, body: fd });
+        const d = await r.json();
+        if (!r.ok || d.error) { alert(d.error || "Couldn't start the reconnect."); btn.disabled = false; btn.textContent = "Reconnect"; return; }
+        Plaid.create({
+          token: d.link_token,
+          onSuccess: async function () {
+            btn.textContent = "Updating…";
+            const f2 = new FormData(); f2.append("item", btn.dataset.item);
+            const r2 = await fetch("{% url 'panel:plaid_exchange' %}",
+              { method: "POST", headers: { "X-CSRFToken": CSRF }, body: f2 });
+            const d2 = await r2.json();
+            window.location = (r2.ok && d2.ok) ? d2.redirect : window.location.pathname;
+          },
+          onExit: function () { btn.disabled = false; btn.textContent = "Reconnect"; }
+        }).open();
+      } catch (e) {
+        alert("Network error starting the reconnect.");
+        btn.disabled = false; btn.textContent = "Reconnect";
+      }
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}

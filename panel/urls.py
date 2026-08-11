@@ -15,6 +15,7 @@ urlpatterns = [
     path("projects/new/", views.project_create, name="project_create"),
     path("projects/<int:pk>/", views.project_detail, name="project_detail"),
     path("projects/<int:pk>/edit/", views.project_edit, name="project_edit"),
+    path("projects/<int:pk>/status/", views.project_set_status, name="project_set_status"),
     path("projects/<int:pk>/delete/", views.project_delete, name="project_delete"),
 
     # Customers
@@ -53,9 +54,27 @@ urlpatterns = [
     path("invoices/new/", views.invoice_create, name="invoice_create"),
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
 
-    # Transactions
+    # Bank transactions (QuickBooks-style bank feed)
+    path("bank/", views.bank_transactions, name="bank_transactions"),
+    path("bank/link/", views.bank_link, name="bank_link"),
+    path("bank/plaid/link-token/", views.plaid_create_link_token, name="plaid_create_link_token"),
+    path("bank/plaid/exchange/", views.plaid_exchange, name="plaid_exchange"),
+    # Registered in the Plaid dashboard — keep this path stable, no query params.
+    path("bank/oauth/", views.plaid_oauth_return, name="plaid_oauth_return"),
+    path("bank/plaid/webhook/", views.plaid_webhook, name="plaid_webhook"),
+    path("bank/sync/", views.plaid_sync, name="plaid_sync"),
+    path("bank/accounts/new/", views.bank_account_create, name="bank_account_create"),
+    path("bank/accounts/<int:pk>/edit/", views.bank_account_edit, name="bank_account_edit"),
+    path("bank/accounts/<int:pk>/delete/", views.bank_account_delete, name="bank_account_delete"),
+    path("bank/add/", views.bank_txn_create, name="bank_txn_create"),
+    path("bank/line/<int:pk>/update/", views.bank_txn_update, name="bank_txn_update"),
+    path("bank/action/", views.bank_txn_action, name="bank_txn_action"),
+
+    # Transactions (legacy ledger — still powers Project profitability)
     path("transactions/", views.transaction_list, name="transaction_list"),
     path("transactions/new/", views.transaction_create, name="transaction_create"),
+    path("transactions/<int:pk>/edit/", views.transaction_edit, name="transaction_edit"),
+    path("transactions/<int:pk>/delete/", views.transaction_delete, name="transaction_delete"),
 
     # Parts
     path("parts/", views.part_list, name="part_list"),

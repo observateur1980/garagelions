@@ -294,7 +294,7 @@
       <a href="{% url 'panel:customer_list' %}" class="{% if 'customer' in request.resolver_match.url_name %}active{% endif %}">
         <span class="icon">&#128101;</span><span class="text">Customers</span>
       </a>
-      <a href="{% url 'panel:transaction_list' %}" class="{% if 'transaction' in request.resolver_match.url_name %}active{% endif %}">
+      <a href="{% url 'panel:bank_transactions' %}" class="{% if 'bank' in request.resolver_match.url_name or 'transaction' in request.resolver_match.url_name %}active{% endif %}">
         <span class="icon">&#128179;</span><span class="text">Transactions</span>
       </a>
       <a href="{% url 'panel:estimate_list' %}" class="{% if 'estimate' in request.resolver_match.url_name %}active{% endif %}">

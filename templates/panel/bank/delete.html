@@ -1,0 +1,49 @@
+{% extends "panel/base.html" %}
+{% load humanize %}
+{% block title %}Remove account{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>Remove &ldquo;{{ account.name }}&rdquo;</h2></div>
+
+<div class="card dashboard-card" style="max-width:560px">
+  <div class="card-body">
+    <p style="color:#6b7280; margin-bottom:18px">
+      {{ account.institution|default:"Bank account" }}{% if account.mask %} &middot;&middot;&middot;&middot;{{ account.mask }}{% endif %}
+      &mdash; {{ line_count|intcomma }} transaction{{ line_count|pluralize }} imported.
+    </p>
+
+    {% if line_count %}
+    <div style="border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px; margin-bottom:14px">
+      <strong style="display:block; margin-bottom:4px">Clear transactions only</strong>
+      <p style="color:#6b7280; font-size:14px; margin-bottom:12px">
+        Deletes all {{ line_count|intcomma }} lines but keeps the account, its name, and its balances.
+        Use this to redo a bad import.
+      </p>
+      <form method="post" onsubmit="return confirm('Delete all {{ line_count }} transactions on this account?')">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="lines">
+        <button type="submit" class="btn-panel-outline">Clear {{ line_count|intcomma }} transaction{{ line_count|pluralize }}</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div style="border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:14px 16px">
+      <strong style="display:block; margin-bottom:4px; color:#991b1b">Delete the whole account</strong>
+      <p style="color:#991b1b; font-size:14px; margin-bottom:12px">
+        Removes the account{% if line_count %} and all {{ line_count|intcomma }} of its transactions{% endif %}.
+        {% if account.is_connected %}The bank connection is removed too, so you'd have to link it again.{% endif %}
+        This cannot be undone.
+      </p>
+      <form method="post" onsubmit="return confirm('Permanently delete {{ account.name }}{% if line_count %} and its {{ line_count }} transactions{% endif %}?')">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="account">
+        <button type="submit" class="btn-danger">Delete account</button>
+      </form>
+    </div>
+
+    <div style="margin-top:16px">
+      <a href="{% url 'panel:bank_transactions' %}?account={{ account.pk }}" class="btn-panel-outline">Cancel</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

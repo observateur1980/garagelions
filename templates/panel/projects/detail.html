@@ -1,39 +1,202 @@
 {% extends "panel/base.html" %}
 {% block title %}{{ project.name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+  .proj-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .proj-head .title { flex: 1 1 auto; }
+  .proj-head h2 { margin: 0 0 6px; }
+  .proj-head .cust { color: #6b7280; }
+  .proj-head .cust a { color: #6b7280; }
+  .proj-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .status-form select {
+    padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: 13px; font-weight: 600; background: #fff;
+  }
+
+  .addto { position: relative; }
+  .addto > summary {
+    list-style: none; cursor: pointer; display: inline-block;
+    background: #111827; color: #fff; padding: 8px 16px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+  }
+  .addto > summary::-webkit-details-marker { display: none; }
+  .addto .menu {
+    position: absolute; right: 0; z-index: 20; margin-top: 6px; min-width: 190px;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 4px;
+  }
+  .addto .menu a {
+    display: block; padding: 8px 12px; font-size: 13px; color: #374151;
+    text-decoration: none; border-radius: 6px; font-weight: 500;
+  }
+  .addto .menu a:hover { background: #f3f4f6; }
+
+  .profit-bar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
+  .ptile {
+    flex: 1 1 180px; background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .ptile .label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 6px; }
+  .ptile .value { font-size: 26px; font-weight: 700; color: #111827; }
+  .ptile.income { border-top: 3px solid #059669; }
+  .ptile.costs  { border-top: 3px solid #dc2626; }
+  .ptile.profit { border-top: 3px solid #2563eb; }
+  .ptile.profit .value.pos { color: #1d4ed8; }
+  .ptile.profit .value.neg { color: #b91c1c; }
+  .ptile .sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+
+  .tab-bar { display: flex; gap: 4px; border-bottom: 1px solid #e5e7eb; margin: 24px 0 16px; }
+  .tab-bar button {
+    background: none; border: none; padding: 10px 16px; font-size: 14px; font-weight: 600;
+    color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-bar button.active { color: #111827; border-bottom-color: #111827; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .amount-in  { color: #047857; font-weight: 600; }
+  .amount-out { color: #b91c1c; font-weight: 600; }
+  .meta-grid { display: grid; grid-template-columns: 140px 1fr; row-gap: 10px; column-gap: 12px; }
+  .meta-grid .k { color: #6b7280; font-size: 13px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-  <h2>{{ project.name }}</h2>
-  <div>
+<div class="proj-head">
+  <div class="title">
+    <h2>{{ project.name }}</h2>
+    <div class="cust">for <a href="{% url 'panel:customer_detail' project.customer.pk %}">{{ project.customer }}</a></div>
+  </div>
+  <div class="proj-actions">
+    <form class="status-form" method="post" action="{% url 'panel:project_set_status' project.pk %}">
+      {% csrf_token %}
+      <select name="status" onchange="this.form.submit()">
+        {% for code, label in status_choices %}
+        <option value="{{ code }}" {% if project.status == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <details class="addto">
+      <summary>Add to project ▾</summary>
+      <div class="menu">
+        <a href="{% url 'panel:transaction_create' %}?project={{ project.pk }}">Payment / Expense</a>
+        <a href="{% url 'panel:estimate_create' %}">Estimate</a>
+        <a href="{% url 'panel:invoice_create' %}">Invoice</a>
+      </div>
+    </details>
     <a href="{% url 'panel:project_edit' project.pk %}" class="btn-panel-outline">Edit</a>
-    <a href="{% url 'panel:project_delete' project.pk %}" class="btn-panel-outline" style="color:#b91c1c; border-color:#b91c1c; margin-left:8px">Delete</a>
+    <a href="{% url 'panel:project_delete' project.pk %}" class="btn-panel-outline" style="color:#b91c1c; border-color:#b91c1c">Delete</a>
   </div>
 </div>
 
-<div class="row g-4">
-  <div class="col-md-6">
-    <div class="card dashboard-card">
-      <div class="card-body">
-        <h6>Customer</h6>
-        <p><a href="{% url 'panel:customer_detail' project.customer.pk %}" style="color:#111827">{{ project.customer }}</a></p>
-        <h6>Status</h6>
-        <p><span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span></p>
-        <h6>Created</h6>
-        <p>{{ project.created_at|date:"M d, Y" }}</p>
-      </div>
-    </div>
+<div class="profit-bar">
+  <div class="ptile income">
+    <div class="label">Income</div>
+    <div class="value">${{ income|floatformat:2 }}</div>
+    <div class="sub">Payments received{% if invoiced %} · ${{ invoiced|floatformat:2 }} invoiced{% endif %}</div>
   </div>
-  <div class="col-md-6">
-    <div class="card dashboard-card">
-      <div class="card-body">
-        <h6>Description</h6>
-        <p>{{ project.description|default:"—" }}</p>
-        <h6>Start Date</h6>
-        <p>{{ project.start_date|date:"M d, Y"|default:"—" }}</p>
-        <h6>Due Date</h6>
-        <p>{{ project.due_date|date:"M d, Y"|default:"—" }}</p>
+  <div class="ptile costs">
+    <div class="label">Costs</div>
+    <div class="value">${{ costs|floatformat:2 }}</div>
+    <div class="sub">Expenses booked to this project</div>
+  </div>
+  <div class="ptile profit">
+    <div class="label">Profit</div>
+    <div class="value {% if profit < 0 %}neg{% else %}pos{% endif %}">${{ profit|floatformat:2 }}</div>
+    <div class="sub">{{ margin|floatformat:0 }}% margin</div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="transactions">Transactions ({{ transactions|length }})</button>
+  <button data-tab="invoices">Invoices ({{ invoices|length }})</button>
+</div>
+
+<!-- Overview -->
+<div class="tab-panel active" id="tab-overview">
+  <div class="card dashboard-card" style="max-width:640px">
+    <div class="card-body">
+      <div class="meta-grid">
+        <div class="k">Status</div>
+        <div><span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span></div>
+        <div class="k">Customer</div>
+        <div><a href="{% url 'panel:customer_detail' project.customer.pk %}" style="color:#111827">{{ project.customer }}</a></div>
+        <div class="k">Start date</div>
+        <div>{{ project.start_date|date:"M d, Y"|default:"—" }}</div>
+        <div class="k">Due date</div>
+        <div>{{ project.due_date|date:"M d, Y"|default:"—" }}</div>
+        <div class="k">Invoiced</div>
+        <div>${{ invoiced|floatformat:2 }}</div>
+        <div class="k">Collected</div>
+        <div>${{ collected|floatformat:2 }}</div>
+        <div class="k">Open balance</div>
+        <div>${{ open_balance|floatformat:2 }}</div>
+        <div class="k">Description</div>
+        <div>{{ project.description|default:"—"|linebreaksbr }}</div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Transactions -->
+<div class="tab-panel" id="tab-transactions">
+  <div style="margin-bottom:12px">
+    <a href="{% url 'panel:transaction_create' %}?project={{ project.pk }}" class="btn-panel">+ Add Transaction</a>
+  </div>
+  <table class="panel-table">
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Payee / Customer</th><th>Category / Memo</th><th style="text-align:right">Amount</th></tr>
+    </thead>
+    <tbody>
+      {% for txn in transactions %}
+      <tr>
+        <td>{{ txn.date|date:"M d, Y" }}</td>
+        <td><span class="badge-status badge-{{ txn.transaction_type }}">{{ txn.get_transaction_type_display }}</span></td>
+        <td>{{ txn.party|default:"—" }}</td>
+        <td>{% if txn.category %}<strong style="font-weight:600">{{ txn.category }}</strong> {% endif %}{{ txn.description }}</td>
+        <td style="text-align:right" class="{% if txn.is_money_in %}amount-in{% else %}amount-out{% endif %}">{% if txn.is_money_in %}+{% else %}−{% endif %}${{ txn.amount|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="color:#6b7280; padding:24px; text-align:center">No transactions on this project yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Invoices -->
+<div class="tab-panel" id="tab-invoices">
+  <table class="panel-table">
+    <thead>
+      <tr><th>Invoice</th><th>Title</th><th>Status</th><th style="text-align:right">Total</th><th style="text-align:right">Balance</th></tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr>
+        <td><a href="{% url 'panel:invoice_detail' inv.pk %}">{{ inv.invoice_number }}</a></td>
+        <td>{{ inv.title }}</td>
+        <td><span class="badge-status badge-{{ inv.status }}">{{ inv.get_status_display }}</span></td>
+        <td style="text-align:right">${{ inv.total|floatformat:2 }}</td>
+        <td style="text-align:right">${{ inv.balance_due|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="color:#6b7280; padding:24px; text-align:center">No invoices on this project yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.tab-bar button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>
 {% endblock %}

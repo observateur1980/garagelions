@@ -1,19 +1,21 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from django.db.models import Sum, Q, Case, When, IntegerField, Value, Subquery, OuterRef, CharField
+from django.db.models import Sum, Q, Case, When, IntegerField, Value, Subquery, OuterRef, CharField, F
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation as DecimalInvalid
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 
 from django.core.paginator import Paginator
 from django.db.models import Count
 
 from account.models import ProjectManager
-from home.models import LeadModel, LeadActivity, LeadTodo, LeadFollowUp, SalesPoint, LeadStatus
+from home.models import LeadModel, LeadActivity, LeadTodo, LeadFollowUp, SalesPoint, LeadStatus, ZipCoverage
 from home.forms import LeadUpdateForm, ManualLeadForm
 from .models import (
     Customer, Project, Part, PartCategory, SalesPointPartCategory,
@@ -23,8 +25,16 @@ from .models import (
     EstimatePackage,
     Invoice, InvoiceItem,
     Transaction, TaskList, Task,
+    BankAccount, BankTransaction, PlaidItem,
     GoogleCalendarCredential,
 )
+from . import plaid_client
+import plaid as plaid_sdk
+import json
+import logging
+from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -152,19 +162,154 @@ def dashboard(request):
         .order_by("-sent_at")[:10]
     )
 
+    # Banking widget — accounts the user can see, newest balances first.
+    bank_accounts = list(_bank_accounts(request.user).order_by("order", "name"))
+    bank_total = sum((a.bank_balance for a in bank_accounts), Decimal("0"))
+    bank_pending_total = sum(a.pending_count for a in bank_accounts)
+
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+
+    # ── Money in / out this month (posted bank lines) ──
+    posted = BankTransaction.objects.filter(
+        account__in=bank_accounts, status="posted"
+    )
+    mtd = posted.filter(date__gte=month_start)
+    money_in = mtd.filter(amount__gt=0).aggregate(s=Sum("amount"))["s"] or Decimal("0")
+    money_out = -(mtd.filter(amount__lt=0).aggregate(s=Sum("amount"))["s"] or Decimal("0"))
+    net_profit = money_in - money_out
+
+    # Spending by category this month (donut) — biggest first.
+    spend_rows = (
+        mtd.filter(amount__lt=0)
+        .values("category")
+        .annotate(total=Sum("amount"))
+        .order_by("total")[:6]
+    )
+    palette = ["#2ca01c", "#0ea5e9", "#f59e0b", "#8b5cf6", "#ef4444", "#64748b"]
+    spend_by_category, offset = [], Decimal("0")
+    for i, row in enumerate(spend_rows):
+        amt = -row["total"]
+        pct = (amt / money_out * 100) if money_out else Decimal("0")
+        spend_by_category.append({
+            "label": row["category"] or "Uncategorized",
+            "amount": amt,
+            "pct": round(float(pct), 1),
+            "offset": round(float(offset), 1),
+            "color": palette[i % len(palette)],
+        })
+        offset += pct
+
+    # ── 12-month money in/out series (bar chart) ──
+    series, cursor = [], month_start
+    for _ in range(11):
+        cursor = (cursor - timedelta(days=1)).replace(day=1)
+    months = []
+    while cursor <= month_start:
+        nxt = (cursor + timedelta(days=32)).replace(day=1)
+        months.append((cursor, nxt))
+        cursor = nxt
+    for start, nxt in months:
+        window = posted.filter(date__gte=start, date__lt=nxt)
+        m_in = window.filter(amount__gt=0).aggregate(s=Sum("amount"))["s"] or Decimal("0")
+        m_out = -(window.filter(amount__lt=0).aggregate(s=Sum("amount"))["s"] or Decimal("0"))
+        series.append({"label": start.strftime("%b"), "in": m_in, "out": m_out})
+    peak = max([max(p["in"], p["out"]) for p in series] or [Decimal("0")]) or Decimal("1")
+    for p in series:
+        p["in_h"] = round(float(p["in"] / peak * 100), 1)
+        p["out_h"] = round(float(p["out"] / peak * 100), 1)
+
+    # ── Leads per month (sparkline) ──
+    lead_series = []
+    for start, nxt in months:
+        lead_series.append({
+            "label": start.strftime("%b"),
+            "n": leads.filter(created_at__date__gte=start, created_at__date__lt=nxt).count(),
+        })
+    lead_peak = max([p["n"] for p in lead_series] or [0]) or 1
+    for p in lead_series:
+        p["h"] = round(p["n"] / lead_peak * 100, 1)
+
+    # ── Invoices ──
+    unpaid_qs = invoices.filter(status__in=["sent", "partial", "overdue"])
+    unpaid_total = unpaid_qs.aggregate(s=Sum("total"))["s"] or Decimal("0")
+    overdue_total = invoices.filter(status="overdue").aggregate(s=Sum("total"))["s"] or Decimal("0")
+    paid_total = invoices.filter(status="paid").aggregate(s=Sum("total"))["s"] or Decimal("0")
+    not_due_total = unpaid_total - overdue_total
+    inv_bar_total = unpaid_total or Decimal("1")
+
+    # ── Estimates pipeline ──
+    est_open = estimates.filter(status__in=["draft", "sent"])
+    est_value = est_open.aggregate(s=Sum("total"))["s"] or Decimal("0")
+
+    # ── Needs attention ──
+    stale_cutoff = timezone.now() - timedelta(days=3)
+    attention = []
+    n_ack = needs_attention_followups.count() if hasattr(needs_attention_followups, "count") else 0
+    if n_ack:
+        attention.append({
+            "label": f"{n_ack} follow-up{'s' if n_ack != 1 else ''} awaiting acknowledgement",
+            "sub": "Reminders", "url": reverse("panel:lead_list"), "cta": "Review",
+        })
+    if bank_pending_total:
+        attention.append({
+            "label": f"{bank_pending_total} bank transaction{'s' if bank_pending_total != 1 else ''} to review",
+            "sub": "Banking", "url": reverse("panel:bank_transactions"), "cta": "Review",
+        })
+    n_overdue = invoices.filter(status="overdue").count()
+    if n_overdue:
+        attention.append({
+            "label": f"{n_overdue} overdue invoice{'s' if n_overdue != 1 else ''}",
+            "sub": "Invoices", "url": reverse("panel:invoice_list"), "cta": "Review",
+        })
+    n_draft = estimates.filter(status="draft").count()
+    if n_draft:
+        attention.append({
+            "label": f"{n_draft} estimate{'s' if n_draft != 1 else ''} still in draft",
+            "sub": "Estimates", "url": reverse("panel:estimate_list"), "cta": "Finish",
+        })
+    n_new_leads = leads.filter(status="new", created_at__lt=stale_cutoff).count()
+    if n_new_leads:
+        attention.append({
+            "label": f"{n_new_leads} new lead{'s' if n_new_leads != 1 else ''} not contacted in 3+ days",
+            "sub": "Leads", "url": f"{reverse('panel:lead_list')}?status=new", "cta": "Review",
+        })
+
+    hour = timezone.localtime().hour
+    greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 18 else "Good evening")
+
     context = {
+        "greeting": greeting,
         "total_projects": projects.count(),
+        "active_projects": projects.filter(status="in_progress").count(),
         "total_customers": customers.count(),
         "estimates_pending": estimates.filter(status="sent").count(),
-        "open_invoices": invoices.filter(
-            status__in=["sent", "partial", "overdue"]
-        ).aggregate(total=Sum("total"))["total"] or 0,
+        "est_open_count": est_open.count(),
+        "est_value": est_value,
+        "open_invoices": unpaid_total,
+        "unpaid_total": unpaid_total,
+        "overdue_total": overdue_total,
+        "not_due_total": not_due_total,
+        "paid_total": paid_total,
+        "overdue_pct": round(float(overdue_total / inv_bar_total * 100), 1),
+        "not_due_pct": round(float(not_due_total / inv_bar_total * 100), 1),
         "total_tasks": tasks.count(),
         "project_manager": pm,
         "lead_counts": lead_counts,
         "recent_leads": leads.exclude(status="closed_lost").order_by("-created_at")[:10],
         "upcoming_followups": upcoming_followups,
         "needs_attention_followups": needs_attention_followups,
+        "bank_accounts": bank_accounts,
+        "bank_total": bank_total,
+        "bank_pending_total": bank_pending_total,
+        "money_in": money_in,
+        "money_out": money_out,
+        "net_profit": net_profit,
+        "spend_by_category": spend_by_category,
+        "cash_series": series,
+        "lead_series": lead_series,
+        "attention": attention,
+        "month_label": today.strftime("%B"),
     }
     return render(request, "panel/dashboard.html", context)
 
@@ -175,12 +320,31 @@ def project_list(request):
     status = request.GET.get("status", "")
     projects = _filter_by_sp(
         Project.objects.select_related("customer", "sales_point"), request.user
-    )
+    ).annotate(
+        income=Coalesce(
+            Sum("transactions__amount",
+                filter=Q(transactions__transaction_type="payment")),
+            Value(Decimal("0")),
+        ),
+        costs=Coalesce(
+            Sum("transactions__amount",
+                filter=Q(transactions__transaction_type="expense")),
+            Value(Decimal("0")),
+        ),
+    ).annotate(profit=F("income") - F("costs"))
     if status:
         projects = projects.filter(status=status)
+
+    counts = {
+        row["status"]: row["n"]
+        for row in _filter_by_sp(Project.objects.all(), request.user)
+        .values("status").annotate(n=Count("id"))
+    }
     return render(request, "panel/projects/list.html", {
         "projects": projects,
         "current_status": status,
+        "counts": counts,
+        "total_count": sum(counts.values()),
     })
 
 
@@ -189,7 +353,41 @@ def project_detail(request, pk):
     project = get_object_or_404(
         _filter_by_sp(Project.objects.select_related("customer"), request.user), pk=pk
     )
-    return render(request, "panel/projects/detail.html", {"project": project})
+
+    transactions = list(
+        project.transactions.select_related("customer", "invoice").all()
+    )
+    invoices = list(
+        project.invoices.select_related("customer").order_by("-created_at")
+    )
+
+    # QBO-style profitability: income = payments received, costs = expenses,
+    # refunds reduce income. Profit = income − costs.
+    income = sum((t.amount for t in transactions if t.transaction_type == "payment"), Decimal("0"))
+    refunds = sum((t.amount for t in transactions if t.transaction_type == "refund"), Decimal("0"))
+    costs = sum((t.amount for t in transactions if t.transaction_type == "expense"), Decimal("0"))
+    income -= refunds
+    profit = income - costs
+    margin = (profit / income * 100) if income else Decimal("0")
+
+    # Invoicing context (money owed vs collected on this project).
+    invoiced = sum((i.total for i in invoices), Decimal("0"))
+    collected = sum((i.amount_paid for i in invoices), Decimal("0"))
+    open_balance = invoiced - collected
+
+    return render(request, "panel/projects/detail.html", {
+        "project": project,
+        "transactions": transactions,
+        "invoices": invoices,
+        "income": income,
+        "costs": costs,
+        "profit": profit,
+        "margin": margin,
+        "invoiced": invoiced,
+        "collected": collected,
+        "open_balance": open_balance,
+        "status_choices": Project.STATUS_CHOICES,
+    })
 
 
 @login_required
@@ -224,6 +422,19 @@ def project_edit(request, pk):
         "project": project,
         "customers": customers,
     })
+
+
+@login_required
+@require_POST
+def project_set_status(request, pk):
+    project = get_object_or_404(
+        _filter_by_sp(Project.objects.all(), request.user), pk=pk
+    )
+    new_status = request.POST.get("status")
+    if new_status in dict(Project.STATUS_CHOICES):
+        project.status = new_status
+        project.save(update_fields=["status", "updated_at"])
+    return redirect("panel:project_detail", pk=project.pk)
 
 
 @login_required
@@ -1145,32 +1356,637 @@ def invoice_create(request):
 # ── Transactions ────────────────────────────────────────────────────
 @login_required
 def transaction_list(request):
-    transactions = Transaction.objects.select_related("customer", "invoice")
+    txn_type = request.GET.get("type", "")
+    q = request.GET.get("q", "").strip()
+    start = request.GET.get("start", "")
+    end = request.GET.get("end", "")
+
+    transactions = Transaction.objects.select_related(
+        "customer", "invoice", "project"
+    )
+
+    if txn_type in ("payment", "refund", "expense"):
+        transactions = transactions.filter(transaction_type=txn_type)
+    if start:
+        transactions = transactions.filter(date__gte=start)
+    if end:
+        transactions = transactions.filter(date__lte=end)
+    if q:
+        transactions = transactions.filter(
+            Q(description__icontains=q)
+            | Q(payee__icontains=q)
+            | Q(category__icontains=q)
+            | Q(customer__name__icontains=q)
+            | Q(invoice__invoice_number__icontains=q)
+        )
+
+    # Money bar — totals over the current (filtered) result set.
+    agg = transactions.aggregate(
+        money_in=Sum("amount", filter=Q(transaction_type="payment")),
+        money_out=Sum("amount", filter=Q(transaction_type__in=["refund", "expense"])),
+    )
+    money_in = agg["money_in"] or Decimal("0")
+    money_out = agg["money_out"] or Decimal("0")
+
     return render(request, "panel/transactions/list.html", {
         "transactions": transactions,
+        "money_in": money_in,
+        "money_out": money_out,
+        "net": money_in - money_out,
+        "count": transactions.count(),
+        "current_type": txn_type,
+        "q": q,
+        "start": start,
+        "end": end,
     })
+
+
+def _transaction_form_context(request, transaction=None):
+    return {
+        "transaction": transaction,
+        "customers": _filter_by_sp(Customer.objects.all(), request.user),
+        "projects": _filter_by_sp(
+            Project.objects.select_related("customer").exclude(
+                status__in=["completed", "canceled"]
+            ),
+            request.user,
+        ) if transaction is None else _filter_by_sp(
+            Project.objects.select_related("customer"), request.user
+        ),
+        "invoices": _filter_by_sp(
+            Invoice.objects.filter(status__in=["sent", "partial", "overdue"]),
+            request.user,
+        ),
+        "method_choices": Transaction.METHOD_CHOICES,
+        "type_choices": Transaction.TYPE_CHOICES,
+        "preset_project": request.GET.get("project", ""),
+    }
+
+
+def _apply_transaction_post(transaction, post):
+    transaction.transaction_type = post["transaction_type"]
+    transaction.amount = post["amount"]
+    transaction.date = post["date"]
+    transaction.description = post.get("description", "")
+    transaction.payment_method = post.get("payment_method", "")
+    transaction.category = post.get("category", "")
+    transaction.payee = post.get("payee", "")
+    transaction.customer_id = post.get("customer") or None
+    transaction.project_id = post.get("project") or None
+    transaction.invoice_id = post.get("invoice") or None
 
 
 @login_required
 def transaction_create(request):
-    customers = _filter_by_sp(Customer.objects.all(), request.user)
-    invoices = _filter_by_sp(
-        Invoice.objects.filter(status__in=["sent", "partial", "overdue"]), request.user
-    )
     if request.method == "POST":
-        Transaction.objects.create(
-            transaction_type=request.POST["transaction_type"],
-            amount=request.POST["amount"],
-            description=request.POST.get("description", ""),
-            date=request.POST["date"],
-            customer_id=request.POST.get("customer") or None,
-            invoice_id=request.POST.get("invoice") or None,
-        )
+        txn = Transaction()
+        _apply_transaction_post(txn, request.POST)
+        txn.save()
+        if txn.project_id:
+            return redirect("panel:project_detail", pk=txn.project_id)
         return redirect("panel:transaction_list")
-    return render(request, "panel/transactions/form.html", {
-        "customers": customers,
-        "invoices": invoices,
+    return render(request, "panel/transactions/form.html",
+                  _transaction_form_context(request))
+
+
+@login_required
+def transaction_edit(request, pk):
+    txn = get_object_or_404(Transaction, pk=pk)
+    if request.method == "POST":
+        _apply_transaction_post(txn, request.POST)
+        txn.save()
+        return redirect("panel:transaction_list")
+    return render(request, "panel/transactions/form.html",
+                  _transaction_form_context(request, txn))
+
+
+@login_required
+def transaction_delete(request, pk):
+    txn = get_object_or_404(Transaction, pk=pk)
+    if request.method == "POST":
+        txn.delete()
+        return redirect("panel:transaction_list")
+    return render(request, "panel/transactions/delete.html", {"transaction": txn})
+
+
+# ── Bank transactions (QuickBooks-style bank feed) ──────────────────
+
+def _bank_accounts(user):
+    return _filter_by_sp(BankAccount.objects.filter(is_active=True), user)
+
+
+def _suggested_matches(line):
+    """Basic Match: open invoices whose balance equals this deposit's amount."""
+    if line.amount <= 0:
+        return Invoice.objects.none()
+    return Invoice.objects.filter(
+        status__in=["sent", "partial", "overdue"]
+    ).filter(total=line.amount).exclude(amount_paid=F("total"))[:5]
+
+
+@login_required
+def bank_transactions(request):
+    accounts = list(_bank_accounts(request.user).order_by("order", "name"))
+
+    # Pick the active account.
+    acc_id = request.GET.get("account")
+    account = None
+    if acc_id:
+        account = next((a for a in accounts if str(a.pk) == acc_id), None)
+    if account is None and accounts:
+        account = accounts[0]
+
+    tab = request.GET.get("tab", "pending")
+    if tab not in ("pending", "posted", "excluded"):
+        tab = "pending"
+    q = request.GET.get("q", "").strip()
+    flow = request.GET.get("flow", "")  # "", "in", "out"
+    start = request.GET.get("start", "")
+    end = request.GET.get("end", "")
+
+    lines = BankTransaction.objects.none()
+    page_obj = None
+    if account:
+        lines = account.lines.select_related(
+            "customer", "project", "matched_invoice"
+        ).filter(status=tab)
+        if q:
+            lines = lines.filter(
+                Q(bank_description__icontains=q)
+                | Q(payee__icontains=q)
+                | Q(category__icontains=q)
+                | Q(customer__name__icontains=q)
+            )
+        if flow == "in":
+            lines = lines.filter(amount__gte=0)
+        elif flow == "out":
+            lines = lines.filter(amount__lt=0)
+        if start:
+            lines = lines.filter(date__gte=start)
+        if end:
+            lines = lines.filter(date__lte=end)
+
+        paginator = Paginator(lines, 50)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        # Attach suggested-match counts for pending rows.
+        for ln in page_obj:
+            ln.suggested = _suggested_matches(ln) if tab == "pending" else []
+
+    counts = {}
+    if account:
+        for row in account.lines.values("status").annotate(n=Count("id")):
+            counts[row["status"]] = row["n"]
+
+    return render(request, "panel/bank/list.html", {
+        "accounts": accounts,
+        "account": account,
+        "tab": tab,
+        "q": q,
+        "flow": flow,
+        "start": start,
+        "end": end,
+        "page_obj": page_obj,
+        "counts": counts,
+        "customers": _filter_by_sp(Customer.objects.all(), request.user),
+        "projects": _filter_by_sp(
+            Project.objects.exclude(status__in=["completed", "canceled"]),
+            request.user,
+        ),
     })
+
+
+@login_required
+def bank_account_create(request):
+    if request.method == "POST":
+        BankAccount.objects.create(
+            name=request.POST["name"],
+            institution=request.POST.get("institution", ""),
+            mask=request.POST.get("mask", ""),
+            color=request.POST.get("color") or "#2563eb",
+            bank_balance=request.POST.get("bank_balance") or 0,
+            opening_balance=request.POST.get("opening_balance") or 0,
+            sales_point=_default_sp(request.user),
+        )
+        return redirect("panel:bank_transactions")
+    return render(request, "panel/bank/account_form.html", {})
+
+
+@login_required
+def bank_account_edit(request, pk):
+    account = get_object_or_404(_bank_accounts(request.user), pk=pk)
+    if request.method == "POST":
+        account.name = request.POST.get("name", account.name)
+        account.institution = request.POST.get("institution", account.institution)
+        account.mask = request.POST.get("mask", account.mask)
+        account.color = request.POST.get("color") or account.color
+        account.bank_balance = request.POST.get("bank_balance") or account.bank_balance
+        account.opening_balance = request.POST.get("opening_balance") or account.opening_balance
+        account.save()
+        return redirect(f"{reverse('panel:bank_transactions')}?account={account.pk}")
+    return render(request, "panel/bank/account_form.html", {"account": account})
+
+
+@login_required
+def bank_account_delete(request, pk):
+    """Remove an account, or just wipe its imported lines (e.g. a bad import)."""
+    account = get_object_or_404(_bank_accounts(request.user), pk=pk)
+    line_count = account.lines.count()
+    if request.method == "POST":
+        if request.POST.get("mode") == "lines":
+            account.lines.all().delete()
+            account.last_synced = None
+            account.save(update_fields=["last_synced"])
+            dest = reverse("panel:bank_transactions")
+            return redirect(f"{dest}?account={account.pk}&cleared={line_count}")
+        item = account.plaid_item
+        account.delete()
+        # Drop the bank connection once its last account is gone.
+        if item and not item.accounts.exists():
+            item.delete()
+        return redirect("panel:bank_transactions")
+    return render(request, "panel/bank/delete.html", {
+        "account": account,
+        "line_count": line_count,
+    })
+
+
+POPULAR_BANKS = [
+    {"name": "Chase", "color": "#117ACA"},
+    {"name": "Bank of America", "color": "#E31837"},
+    {"name": "Wells Fargo", "color": "#D71E28"},
+    {"name": "Capital One", "color": "#004977"},
+    {"name": "American Express", "color": "#2E77BC"},
+    {"name": "Citibank", "color": "#056DAE"},
+    {"name": "U.S. Bank", "color": "#0C2074"},
+    {"name": "PNC Bank", "color": "#F58025"},
+    {"name": "TD Bank", "color": "#54B848"},
+    {"name": "Truist", "color": "#52277F"},
+    {"name": "Robinhood", "color": "#00C805"},
+    {"name": "Ally Bank", "color": "#6C1D5F"},
+]
+
+
+@login_required
+def bank_link(request):
+    """QuickBooks-style 'Connect an account' flow (search + tiles → setup)."""
+    if request.method == "POST":
+        account = BankAccount.objects.create(
+            name=request.POST.get("name") or request.POST.get("bank") or "New account",
+            institution=request.POST.get("bank", ""),
+            mask=request.POST.get("mask", ""),
+            color=request.POST.get("color") or "#2563eb",
+            bank_balance=request.POST.get("bank_balance") or 0,
+            opening_balance=request.POST.get("opening_balance") or request.POST.get("bank_balance") or 0,
+            sales_point=_default_sp(request.user),
+        )
+        return redirect(f"{reverse('panel:bank_transactions')}?account={account.pk}")
+    return render(request, "panel/bank/link.html", {
+        "banks": POPULAR_BANKS,
+        "plaid_ready": plaid_client.is_configured(),
+    })
+
+
+# ── Plaid (real-time bank connection) ───────────────────────────────
+
+def _color_for(name):
+    for b in POPULAR_BANKS:
+        if name and b["name"].lower() in name.lower():
+            return b["color"]
+    return "#2563eb"
+
+
+def _sync_item(item):
+    """Pull new/changed transactions for a Plaid item into BankTransaction."""
+    added, modified, removed, cursor = plaid_client.sync_transactions(
+        item.access_token, item.cursor
+    )
+    acc_by_plaid = {a.plaid_account_id: a for a in item.accounts.all()}
+    created_n = 0
+    for t in added:
+        acc = acc_by_plaid.get(t["account_id"])
+        if not acc:
+            continue
+        _, created = BankTransaction.objects.get_or_create(
+            plaid_txn_id=t["plaid_txn_id"],
+            defaults=dict(
+                account=acc, date=t["date"], bank_description=t["name"],
+                amount=t["amount"], bank_pending=t["pending"], status="pending",
+            ),
+        )
+        if created:
+            created_n += 1
+    for t in modified:
+        BankTransaction.objects.filter(plaid_txn_id=t["plaid_txn_id"]).update(
+            date=t["date"], bank_description=t["name"],
+            amount=t["amount"], bank_pending=t["pending"],
+        )
+    if removed:
+        BankTransaction.objects.filter(plaid_txn_id__in=removed).delete()
+
+    item.cursor = cursor
+    item.last_synced = timezone.now()
+    item.needs_reauth = False  # a successful pull means the login is healthy
+    item.save(update_fields=["cursor", "last_synced", "needs_reauth"])
+
+    # Refresh live balances (best-effort).
+    try:
+        for a in plaid_client.get_accounts(item.access_token):
+            acc = acc_by_plaid.get(a["account_id"])
+            if acc:
+                acc.bank_balance = a["balance"]
+                acc.last_synced = timezone.now()
+                acc.save(update_fields=["bank_balance", "last_synced"])
+    except Exception:
+        logger.exception("Plaid balance refresh failed for item %s", item.item_id)
+    return created_n
+
+
+def _plaid_items(user):
+    """Plaid connections behind the bank accounts this user can see."""
+    return PlaidItem.objects.filter(accounts__in=_bank_accounts(user)).distinct()
+
+
+def _plaid_error_code(exc):
+    try:
+        return json.loads(exc.body).get("error_code", "")
+    except (ValueError, TypeError, AttributeError):
+        return ""
+
+
+def _friendly_plaid_error(exc):
+    """Plaid's raw JSON is useless in a UI banner — surface the human bits."""
+    try:
+        body = json.loads(exc.body)
+    except (ValueError, TypeError, AttributeError):
+        return "Couldn't reach Plaid. Please try again."
+    if body.get("error_code") == "INVALID_PRODUCT":
+        return ("This Plaid account isn't enabled for Transactions yet. "
+                "Request it at dashboard.plaid.com, then try again.")
+    return body.get("display_message") or body.get("error_message") \
+        or "Couldn't reach Plaid. Please try again."
+
+
+@login_required
+@require_POST
+def plaid_create_link_token(request):
+    if not plaid_client.is_configured():
+        return JsonResponse({"error": "Plaid is not configured."}, status=400)
+    # An `item` means update mode: re-authenticating an existing connection
+    # rather than adding a new bank.
+    access_token = None
+    item_pk = request.POST.get("item")
+    if item_pk:
+        item = get_object_or_404(_plaid_items(request.user), pk=item_pk)
+        access_token = item.access_token
+    try:
+        token = plaid_client.create_link_token(request.user.pk, access_token=access_token)
+    except plaid_sdk.ApiException as e:
+        logger.exception("Plaid link_token_create failed")
+        return JsonResponse({"error": _friendly_plaid_error(e)}, status=400)
+    # Stashed so the OAuth return page can resume the same Link session.
+    request.session["plaid_link_token"] = token
+    request.session["plaid_link_item"] = item_pk or ""
+    return JsonResponse({"link_token": token})
+
+
+@login_required
+def plaid_oauth_return(request):
+    """Where OAuth banks send the user back to. Link resumes from here.
+
+    The URI is registered in the Plaid dashboard and must stay free of query
+    parameters — the token comes from the session, not the URL.
+    """
+    return render(request, "panel/bank/oauth.html", {
+        "link_token": request.session.get("plaid_link_token", ""),
+        "item_pk": request.session.get("plaid_link_item", ""),
+    })
+
+
+@login_required
+@require_POST
+def plaid_exchange(request):
+    """Called by Plaid Link's onSuccess with a public_token → build accounts."""
+    if not plaid_client.is_configured():
+        return JsonResponse({"error": "Plaid is not configured."}, status=400)
+
+    # Update mode finished: the original access_token is still valid, so there
+    # is nothing to exchange — just clear the flag and pull what we missed.
+    item_pk = request.POST.get("item")
+    if item_pk:
+        item = get_object_or_404(_plaid_items(request.user), pk=item_pk)
+        dest = reverse("panel:bank_transactions")
+        try:
+            n = _sync_item(item)
+        except plaid_sdk.ApiException:
+            logger.exception("Plaid sync after re-auth failed for item %s", item.item_id)
+            return JsonResponse({"ok": True, "redirect": f"{dest}?plaid_error=1"})
+        first = item.accounts.first()
+        if first:
+            dest += f"?account={first.pk}&synced={n}"
+        return JsonResponse({"ok": True, "redirect": dest})
+
+    public_token = request.POST.get("public_token")
+    if not public_token:
+        return JsonResponse({"error": "Missing public_token."}, status=400)
+    try:
+        access_token, item_id = plaid_client.exchange_public_token(public_token)
+        inst_id, inst_name = plaid_client.get_institution(access_token)
+        item, _ = PlaidItem.objects.get_or_create(
+            item_id=item_id,
+            defaults={"access_token": access_token, "user": request.user},
+        )
+        item.access_token = access_token
+        item.institution_id = inst_id
+        item.institution_name = inst_name
+        item.save()
+
+        color = _color_for(inst_name)
+        for a in plaid_client.get_accounts(access_token):
+            ba, created = BankAccount.objects.get_or_create(
+                plaid_account_id=a["account_id"],
+                defaults=dict(
+                    name=a["name"], institution=inst_name, mask=a["mask"],
+                    bank_balance=a["balance"], opening_balance=0,
+                    plaid_item=item, color=color,
+                    sales_point=_default_sp(request.user),
+                ),
+            )
+            if not created:
+                ba.bank_balance = a["balance"]
+                ba.plaid_item = item
+                ba.save()
+
+        new_n = _sync_item(item)
+        first = item.accounts.first()
+        dest = reverse("panel:bank_transactions")
+        if first:
+            dest += f"?account={first.pk}&synced={new_n}"
+        return JsonResponse({"ok": True, "redirect": dest})
+    except plaid_sdk.ApiException as e:
+        logger.exception("Plaid exchange failed")
+        return JsonResponse({"error": _friendly_plaid_error(e)}, status=400)
+
+
+@login_required
+def plaid_sync(request):
+    """The 'Update' button — pull new transactions from the bank."""
+    acc_id = request.GET.get("account") or request.POST.get("account")
+    account = None
+    if acc_id:
+        account = get_object_or_404(_bank_accounts(request.user), pk=acc_id)
+
+    dest = reverse("panel:bank_transactions")
+    # Manual (non-Plaid) accounts have no bank to poll → nothing to update.
+    if account and not account.plaid_item_id:
+        return redirect(f"{dest}?account={account.pk}&not_linked=1")
+
+    if account and account.plaid_item_id:
+        try:
+            n = _sync_item(account.plaid_item)
+            return redirect(f"{dest}?account={account.pk}&synced={n}")
+        except plaid_sdk.ApiException as e:
+            logger.exception("Plaid sync failed")
+            # The bank wants the user to sign in again (password change, expired
+            # MFA). Flag it so the list page can offer Reconnect.
+            if _plaid_error_code(e) in ("ITEM_LOGIN_REQUIRED", "PENDING_EXPIRATION"):
+                item = account.plaid_item
+                item.needs_reauth = True
+                item.save(update_fields=["needs_reauth"])
+                return redirect(f"{dest}?account={account.pk}&reauth=1")
+            return redirect(f"{dest}?account={account.pk}&plaid_error=1")
+    return redirect(dest)
+
+
+@csrf_exempt
+@require_POST
+def plaid_webhook(request):
+    """Plaid pings here when transactions are ready or a connection breaks.
+
+    Unauthenticated by necessity — Plaid can't log in — so every request is
+    checked against Plaid's JWT signature before we act on it.
+    """
+    if not plaid_client.is_configured():
+        return HttpResponse(status=404)
+    if not plaid_client.verify_webhook(
+        request.body, request.headers.get("Plaid-Verification", "")
+    ):
+        logger.warning("Rejected unverified Plaid webhook from %s",
+                       request.META.get("REMOTE_ADDR"))
+        return HttpResponse(status=401)
+
+    try:
+        payload = json.loads(request.body or b"{}")
+    except ValueError:
+        return HttpResponse(status=400)
+
+    wtype = payload.get("webhook_type", "")
+    code = payload.get("webhook_code", "")
+    item = PlaidItem.objects.filter(item_id=payload.get("item_id", "")).first()
+    if not item:
+        return HttpResponse(status=200)  # not ours / already unlinked
+
+    if wtype == "TRANSACTIONS" and code in (
+        "SYNC_UPDATES_AVAILABLE", "INITIAL_UPDATE",
+        "HISTORICAL_UPDATE", "DEFAULT_UPDATE",
+    ):
+        try:
+            n = _sync_item(item)
+            logger.info("Plaid webhook %s: %s new lines for %s", code, n, item.item_id)
+        except plaid_sdk.ApiException:
+            logger.exception("Plaid webhook sync failed for %s", item.item_id)
+    elif wtype == "ITEM" and code in ("ERROR", "PENDING_EXPIRATION", "LOGIN_REPAIRED"):
+        repaired = code == "LOGIN_REPAIRED"
+        broken = code == "PENDING_EXPIRATION" or (
+            payload.get("error") or {}
+        ).get("error_code") == "ITEM_LOGIN_REQUIRED"
+        if repaired or broken:
+            item.needs_reauth = broken and not repaired
+            item.save(update_fields=["needs_reauth"])
+
+    # Always 200 once verified — a non-2xx makes Plaid retry the same event.
+    return HttpResponse(status=200)
+
+
+def _parse_amount(raw, flow=None):
+    """Return a signed Decimal. flow 'out' forces negative, 'in' forces positive."""
+    raw = (raw or "").replace(",", "").replace("$", "").strip()
+    if raw in ("", "-", "."):
+        return None
+    try:
+        val = Decimal(raw)
+    except DecimalInvalid:
+        return None
+    if flow == "out":
+        val = -abs(val)
+    elif flow == "in":
+        val = abs(val)
+    return val
+
+
+@login_required
+def bank_txn_create(request):
+    accounts = list(_bank_accounts(request.user))
+    if request.method == "POST":
+        account = get_object_or_404(_bank_accounts(request.user), pk=request.POST["account"])
+        amount = _parse_amount(request.POST.get("amount"), request.POST.get("flow"))
+        BankTransaction.objects.create(
+            account=account,
+            date=request.POST["date"],
+            bank_description=request.POST.get("bank_description", ""),
+            amount=amount or Decimal("0"),
+        )
+        return redirect(f"{reverse('panel:bank_transactions')}?account={account.pk}")
+    return render(request, "panel/bank/txn_form.html", {
+        "accounts": accounts,
+        "preset_account": request.GET.get("account", ""),
+    })
+
+
+@login_required
+@require_POST
+def bank_txn_update(request, pk):
+    line = get_object_or_404(
+        BankTransaction.objects.filter(account__in=_bank_accounts(request.user)), pk=pk
+    )
+    line.customer_id = request.POST.get("customer") or None
+    line.payee = request.POST.get("payee", line.payee)
+    line.category = request.POST.get("category", "")
+    line.project_id = request.POST.get("project") or None
+    line.matched_invoice_id = request.POST.get("matched_invoice") or None
+    line.save()
+
+    action = request.POST.get("action")
+    if action == "post":
+        line.status = "posted"
+        line.posted_at = timezone.now()
+        line.save(update_fields=["status", "posted_at"])
+    elif action == "exclude":
+        line.status = "excluded"
+        line.save(update_fields=["status"])
+
+    dest = f"{reverse('panel:bank_transactions')}?account={line.account_id}&tab={request.POST.get('tab', 'pending')}"
+    return redirect(dest)
+
+
+@login_required
+@require_POST
+def bank_txn_action(request):
+    """Bulk post / exclude / undo across selected line ids."""
+    action = request.POST.get("action")
+    ids = request.POST.getlist("ids")
+    lines = BankTransaction.objects.filter(
+        account__in=_bank_accounts(request.user), pk__in=ids
+    )
+    if action == "post":
+        lines.update(status="posted", posted_at=timezone.now())
+    elif action == "exclude":
+        lines.update(status="excluded")
+    elif action == "undo":
+        lines.update(status="pending", posted_at=None)
+
+    account_id = request.POST.get("account", "")
+    tab = request.POST.get("tab", "pending")
+    return redirect(f"{reverse('panel:bank_transactions')}?account={account_id}&tab={tab}")
 
 
 # ── Parts helpers ───────────────────────────────────────────────────

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "customlux",
 
     "django.contrib.sitemaps",
+    "django.contrib.humanize",
 ]
 
 MIDDLEWARE = [
@@ -122,6 +123,25 @@ GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
 GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
     "GOOGLE_OAUTH_REDIRECT_URI",
     "http://127.0.0.1:8000/panel/calendar/oauth/callback/",
+)
+
+# ── Plaid (real-time bank connection for /panel/bank/) ──────────────
+# Create a free account at dashboard.plaid.com to get these.
+# PLAID_ENV: "sandbox" (fake test banks), or "production" (real banks, paid).
+PLAID_CLIENT_ID = os.environ.get("PLAID_CLIENT_ID", "")
+PLAID_SECRET = os.environ.get("PLAID_SECRET", "")
+PLAID_ENV = os.environ.get("PLAID_ENV", "sandbox")
+# OAuth banks (Chase, Wells Fargo, BofA, Capital One, US Bank, PNC…) send the
+# user to their own site and back. This URI must be registered under
+# Team Settings → API → Allowed redirect URIs in the Plaid dashboard, must be
+# HTTPS, and must carry no query parameters. Blank = OAuth banks won't work.
+PLAID_REDIRECT_URI = os.environ.get(
+    "PLAID_REDIRECT_URI", "https://garagelions.com/panel/bank/oauth/"
+)
+# Plaid POSTs here when new transactions are ready or an item breaks. Blank
+# disables webhooks (the cron in `sync_bank_accounts` still keeps things fresh).
+PLAID_WEBHOOK_URL = os.environ.get(
+    "PLAID_WEBHOOK_URL", "https://garagelions.com/panel/bank/plaid/webhook/"
 )
 
 # ── CustomLux (cabinets-only board at /customlux/) ──────────────────

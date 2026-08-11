@@ -1,0 +1,79 @@
+{% extends "panel/base.html" %}
+{% block title %}Finishing bank connection{% endblock %}
+
+{% comment %}
+OAuth banks (Chase, Wells Fargo, BofA…) send the user to their own site and
+then back to this page. Link has to be re-created with the SAME link_token and
+`receivedRedirectUri` set to the full current URL, or the session is lost.
+{% endcomment %}
+
+{% block extra_css %}
+<style>
+  .oauth-shell { max-width: 520px; margin: 60px auto; text-align: center; }
+  .oauth-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.06); padding:36px 32px; }
+  .oauth-card h2 { margin:14px 0 6px; font-size:20px; color:#111827; }
+  .oauth-sub { color:#6b7280; font-size:14px; }
+  .spinner { width:34px; height:34px; border:3px solid #e5e7eb; border-top-color:#2ca01c; border-radius:50%; margin:0 auto; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #oauthErr { display:none; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:10px 12px; border-radius:8px; font-size:13px; margin-top:16px; text-align:left; }
+  .g-btn { border:1px solid #2ca01c; color:#2ca01c; background:#fff; border-radius:6px; padding:10px 20px; font-size:15px; font-weight:700; text-decoration:none; display:inline-block; margin-top:16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oauth-shell">
+  <div class="oauth-card">
+    <div class="spinner" id="spin"></div>
+    <h2 id="oauthTitle">Finishing up with your bank…</h2>
+    <div class="oauth-sub" id="oauthSub">Hang tight, this only takes a moment.</div>
+    <div id="oauthErr"></div>
+    <a href="{% url 'panel:bank_link' %}" class="g-btn" id="retryBtn" style="display:none">Start over</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+  const CSRF = "{{ csrf_token }}";
+  const LINK_TOKEN = "{{ link_token|escapejs }}";
+  const ITEM_PK = "{{ item_pk|escapejs }}";
+
+  function fail(msg) {
+    document.getElementById("spin").style.display = "none";
+    document.getElementById("oauthTitle").textContent = "We couldn't finish connecting";
+    document.getElementById("oauthSub").style.display = "none";
+    const box = document.getElementById("oauthErr");
+    box.style.display = "block";
+    box.textContent = msg;
+    document.getElementById("retryBtn").style.display = "inline-block";
+  }
+
+  if (!LINK_TOKEN) {
+    fail("This connection link expired. Please start again from Connect an account.");
+  } else {
+    const handler = Plaid.create({
+      token: LINK_TOKEN,
+      receivedRedirectUri: window.location.href,
+      onSuccess: async (public_token) => {
+        document.getElementById("oauthTitle").textContent = "Importing your transactions…";
+        const fd = new FormData();
+        if (ITEM_PK) { fd.append("item", ITEM_PK); }
+        else { fd.append("public_token", public_token); }
+        try {
+          const r = await fetch("{% url 'panel:plaid_exchange' %}",
+            { method: "POST", headers: { "X-CSRFToken": CSRF }, body: fd });
+          const d = await r.json();
+          if (r.ok && d.ok) { window.location = d.redirect; }
+          else { fail(d.error || "Couldn't finish connecting."); }
+        } catch (e) { fail("Network error while finishing the connection."); }
+      },
+      onExit: (err) => {
+        fail(err ? (err.display_message || "The connection was cancelled.")
+                 : "The connection was cancelled.");
+      }
+    });
+    handler.open();
+  }
+</script>
+{% endblock %}

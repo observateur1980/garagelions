@@ -1,0 +1,20 @@
+{% extends "panel/base.html" %}
+{% block title %}Delete Transaction{% endblock %}
+
+{% block content %}
+<div class="card dashboard-card" style="max-width:500px">
+  <div class="card-body">
+    <h5>Delete this {{ transaction.get_transaction_type_display|lower }}?</h5>
+    <p style="color:#6b7280">
+      {{ transaction.date|date:"M d, Y" }} — ${{ transaction.amount|floatformat:2 }}
+      {% if transaction.party %}· {{ transaction.party }}{% endif %}<br>
+      This action cannot be undone.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">Delete</button>
+      <a href="{% url 'panel:transaction_list' %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

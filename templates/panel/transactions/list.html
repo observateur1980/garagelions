@@ -1,10 +1,105 @@
 {% extends "panel/base.html" %}
 {% block title %}Transactions{% endblock %}
 
+{% block extra_css %}
+<style>
+  .money-bar {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;
+  }
+  .money-tile {
+    flex: 1 1 160px; background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .money-tile .label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+    color: #6b7280; margin-bottom: 6px;
+  }
+  .money-tile .value { font-size: 22px; font-weight: 700; color: #111827; }
+  .money-tile .sub { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+  .money-tile.in  { border-top: 3px solid #059669; }
+  .money-tile.out { border-top: 3px solid #dc2626; }
+  .money-tile.net { border-top: 3px solid #111827; }
+  .value.pos { color: #047857; }
+  .value.neg { color: #b91c1c; }
+
+  .txn-toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 14px;
+  }
+  .txn-tabs { display: flex; gap: 4px; }
+  .txn-tabs a {
+    padding: 6px 14px; border-radius: 999px; font-size: 13px;
+    color: #374151; text-decoration: none; border: 1px solid #e5e7eb; background: #fff;
+  }
+  .txn-tabs a.active { background: #111827; color: #fff; border-color: #111827; }
+  .txn-toolbar form { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+  .txn-toolbar input[type=date], .txn-toolbar input[type=search] {
+    padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;
+  }
+  .txn-toolbar input[type=search] { min-width: 200px; }
+
+  .amount-in  { color: #047857; font-weight: 600; }
+  .amount-out { color: #b91c1c; font-weight: 600; }
+
+  .row-actions { position: relative; text-align: right; }
+  .row-actions summary {
+    list-style: none; cursor: pointer; padding: 2px 8px; border-radius: 6px;
+    color: #6b7280; font-weight: 700;
+  }
+  .row-actions summary::-webkit-details-marker { display: none; }
+  .row-actions summary:hover { background: #f3f4f6; }
+  .row-actions .menu {
+    position: absolute; right: 0; z-index: 20; background: #fff; min-width: 130px;
+    border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.1);
+    padding: 4px; margin-top: 4px;
+  }
+  .row-actions .menu a {
+    display: block; padding: 7px 12px; font-size: 13px; color: #374151;
+    text-decoration: none; border-radius: 6px; font-weight: 500;
+  }
+  .row-actions .menu a:hover { background: #f3f4f6; }
+  .row-actions .menu a.danger { color: #b91c1c; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <h2>Transactions</h2>
   <a href="{% url 'panel:transaction_create' %}" class="btn-panel">+ New Transaction</a>
+</div>
+
+<div class="money-bar">
+  <div class="money-tile in">
+    <div class="label">Money In</div>
+    <div class="value pos">${{ money_in|floatformat:2 }}</div>
+    <div class="sub">Payments received</div>
+  </div>
+  <div class="money-tile out">
+    <div class="label">Money Out</div>
+    <div class="value neg">${{ money_out|floatformat:2 }}</div>
+    <div class="sub">Expenses &amp; refunds</div>
+  </div>
+  <div class="money-tile net">
+    <div class="label">Net</div>
+    <div class="value {% if net < 0 %}neg{% else %}pos{% endif %}">${{ net|floatformat:2 }}</div>
+    <div class="sub">{{ count }} transaction{{ count|pluralize }}</div>
+  </div>
+</div>
+
+<div class="txn-toolbar">
+  <div class="txn-tabs">
+    <a href="?{% if q %}q={{ q }}&{% endif %}" class="{% if not current_type %}active{% endif %}">All</a>
+    <a href="?type=payment{% if q %}&q={{ q }}{% endif %}" class="{% if current_type == 'payment' %}active{% endif %}">Payments</a>
+    <a href="?type=expense{% if q %}&q={{ q }}{% endif %}" class="{% if current_type == 'expense' %}active{% endif %}">Expenses</a>
+    <a href="?type=refund{% if q %}&q={{ q }}{% endif %}" class="{% if current_type == 'refund' %}active{% endif %}">Refunds</a>
+  </div>
+  <form method="get">
+    {% if current_type %}<input type="hidden" name="type" value="{{ current_type }}">{% endif %}
+    <input type="date" name="start" value="{{ start }}" title="From date">
+    <input type="date" name="end" value="{{ end }}" title="To date">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search payee, customer, memo…">
+    <button type="submit" class="btn-panel-outline">Filter</button>
+  </form>
 </div>
 
 <table class="panel-table">
@@ -12,10 +107,12 @@
     <tr>
       <th>Date</th>
       <th>Type</th>
-      <th>Customer</th>
-      <th>Invoice</th>
-      <th>Description</th>
-      <th>Amount</th>
+      <th>Payee / Customer</th>
+      <th>Project</th>
+      <th>Category / Memo</th>
+      <th>Method</th>
+      <th style="text-align:right">Amount</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -23,13 +120,33 @@
     <tr>
       <td>{{ txn.date|date:"M d, Y" }}</td>
       <td><span class="badge-status badge-{{ txn.transaction_type }}">{{ txn.get_transaction_type_display }}</span></td>
-      <td>{{ txn.customer|default:"—" }}</td>
-      <td>{% if txn.invoice %}<a href="{% url 'panel:invoice_detail' txn.invoice.pk %}">{{ txn.invoice.invoice_number }}</a>{% else %}—{% endif %}</td>
-      <td>{{ txn.description|default:"—" }}</td>
-      <td>${{ txn.amount|floatformat:2 }}</td>
+      <td>
+        {{ txn.party|default:"—" }}
+        {% if txn.invoice %}<br><a href="{% url 'panel:invoice_detail' txn.invoice.pk %}" style="font-size:12px;color:#6b7280">{{ txn.invoice.invoice_number }}</a>{% endif %}
+      </td>
+      <td>{% if txn.project %}<a href="{% url 'panel:project_detail' txn.project.pk %}">{{ txn.project.name }}</a>{% else %}—{% endif %}</td>
+      <td>
+        {% if txn.category %}<strong style="font-weight:600">{{ txn.category }}</strong>{% endif %}
+        {% if txn.category and txn.description %}<br>{% endif %}
+        {{ txn.description }}
+        {% if not txn.category and not txn.description %}—{% endif %}
+      </td>
+      <td>{{ txn.get_payment_method_display|default:"—" }}</td>
+      <td style="text-align:right" class="{% if txn.is_money_in %}amount-in{% else %}amount-out{% endif %}">
+        {% if txn.is_money_in %}+{% else %}−{% endif %}${{ txn.amount|floatformat:2 }}
+      </td>
+      <td class="row-actions">
+        <details>
+          <summary>⋯</summary>
+          <div class="menu">
+            <a href="{% url 'panel:transaction_edit' txn.pk %}">Edit</a>
+            <a href="{% url 'panel:transaction_delete' txn.pk %}" class="danger">Delete</a>
+          </div>
+        </details>
+      </td>
     </tr>
     {% empty %}
-    <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No transactions yet.</td></tr>
+    <tr><td colspan="8" style="color:#6b7280; padding:24px; text-align:center">No transactions found.</td></tr>
     {% endfor %}
   </tbody>
 </table>

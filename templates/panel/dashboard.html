@@ -1,214 +1,366 @@
 {% extends "panel/base.html" %}
+{% load humanize %}
 {% block title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+  .glance { --line: #e5e7eb; --muted: #6b7280; --green: #2ca01c; }
+  .glance-hello { text-align: center; margin: 4px 0 18px; }
+  .glance-hello h2 { font-size: 26px; font-weight: 600; margin: 0 0 14px; color: #111827; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line);
+    background: #fff; border-radius: 999px; padding: 6px 14px 6px 8px; font-size: 14px;
+    color: #374151; text-decoration: none; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--green); color: #111827; }
+  .chip .dot {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 12px; flex: none;
+  }
+
+  .glance-title { font-size: 15px; font-weight: 600; color: #374151; margin: 22px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+  .w { grid-column: span 4; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 14px; display: flex; flex-direction: column; }
+  .w.w6 { grid-column: span 6; }
+  .w.w8 { grid-column: span 8; }
+  .w.w12 { grid-column: span 12; }
+  @media (max-width: 1100px) { .w, .w.w6, .w.w8 { grid-column: span 6; } }
+  @media (max-width: 720px)  { .w, .w.w6, .w.w8, .w.w12 { grid-column: span 12; } }
+
+  .w-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .w-head h6 { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+  .w-head .meta { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+  .w-sub { font-size: 13px; color: var(--muted); margin: 0 0 2px; }
+  .w-big { font-size: 28px; font-weight: 600; color: #111827; margin: 0 0 2px; line-height: 1.2; }
+  .w-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid #f3f4f6; font-size: 13px; }
+  .w-foot a { color: #2563eb; text-decoration: none; }
+  .w-foot a:hover { text-decoration: underline; }
+  .w-empty { color: #9ca3af; font-size: 13px; padding: 14px 0; }
+
+  /* Needs attention */
+  .att-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+  .att-row:last-child { border-bottom: 0; }
+  .att-ico { width: 20px; height: 20px; border-radius: 50%; background: #eff6ff; color: #2563eb; font-size: 12px;
+             display: flex; align-items: center; justify-content: center; flex: none; margin-top: 1px; }
+  .att-txt { flex: 1; min-width: 0; }
+  .att-txt .l { font-size: 14px; color: #111827; }
+  .att-txt .s { font-size: 12px; color: #9ca3af; }
+  .att-row a.cta { font-size: 13px; color: #2563eb; text-decoration: none; white-space: nowrap; }
+
+  /* Funnel tiles */
+  .funnel { display: flex; gap: 12px; flex-wrap: wrap; }
+  .fn { flex: 1 1 130px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+        text-decoration: none; color: inherit; border-top: 3px solid var(--green); }
+  .fn:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .fn .k { font-size: 12px; color: var(--muted); }
+  .fn .v { font-size: 22px; font-weight: 600; color: #111827; margin-top: 2px; }
+
+  /* Bank rows */
+  .bk-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .bk-row:last-of-type { border-bottom: 0; }
+  .bk-chip { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+  .bk-name { flex: 1; min-width: 0; }
+  .bk-name .n { font-size: 14px; color: #111827; font-weight: 500; }
+  .bk-name .n a { color: inherit; text-decoration: none; }
+  .bk-name .n a:hover { text-decoration: underline; }
+  .bk-name .s { font-size: 12px; color: #9ca3af; }
+  .bk-amt { text-align: right; white-space: nowrap; }
+  .bk-amt .a { font-size: 14px; color: #111827; }
+  .bk-amt .r { font-size: 12px; }
+  .bk-amt .r a { color: #2563eb; text-decoration: none; }
+  .bk-act { font-size: 12px; white-space: nowrap; }
+  .bk-act a { color: #9ca3af; text-decoration: none; margin-left: 8px; }
+  .bk-act a:hover { color: #374151; }
+  .bk-act a.del:hover { color: #b91c1c; }
+
+  /* Bars & charts */
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bar-pair { display: flex; align-items: flex-end; gap: 2px; height: 100px; width: 100%; justify-content: center; }
+  .bar { width: 45%; max-width: 14px; border-radius: 2px 2px 0 0; min-height: 1px; }
+  .bar.in { background: #2ca01c; }
+  .bar.out { background: #d1d5db; }
+  .bar-col .lab { font-size: 10px; color: #9ca3af; }
+  .spark { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
+  .spark .s-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .spark .s-bar { width: 100%; background: #bfdbfe; border-radius: 2px 2px 0 0; min-height: 1px; }
+  .spark .s-col:last-child .s-bar { background: #2563eb; }
+  .spark .lab { font-size: 10px; color: #9ca3af; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+
+  .stack { height: 10px; border-radius: 5px; overflow: hidden; background: #f3f4f6; display: flex; margin: 10px 0 6px; }
+  .stack span { display: block; height: 100%; }
+  .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+  .kv .k { color: var(--muted); }
+  .kv .v { color: #111827; font-weight: 500; }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2 class="mb-4">Dashboard</h2>
+<div class="glance">
 
-<!-- KPI Cards row 1 -->
-<div class="row g-4">
-  <div class="col-md-4">
-    <a href="{% url 'panel:lead_list' %}" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>Total Leads</h6>
-          <h3>{{ lead_counts.total }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-4">
-    <a href="{% url 'panel:lead_list' %}?status=new" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>New Leads</h6>
-          <h3>{{ lead_counts.new_count }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-4">
-    <a href="{% url 'panel:estimate_list' %}" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>Estimates Pending</h6>
-          <h3>{{ estimates_pending }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-4">
-    <a href="{% url 'panel:invoice_list' %}" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>Open Invoices</h6>
-          <h3>${{ open_invoices|floatformat:0 }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-4">
-    <a href="{% url 'panel:project_list' %}" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>Total Projects</h6>
-          <h3>{{ total_projects }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-4">
-    <a href="{% url 'panel:customer_list' %}" class="text-decoration-none text-dark">
-      <div class="card dashboard-card h-100">
-        <div class="card-body">
-          <h6>Total Customers</h6>
-          <h3>{{ total_customers }}</h3>
-        </div>
-      </div>
-    </a>
-  </div>
-</div>
-
-<!-- Lead stats row -->
-<div class="row g-3" style="margin-top:8px">
-  <div class="col">
-    <a href="{% url 'panel:lead_list' %}?status=contacted" class="text-decoration-none text-dark">
-      <div class="card dashboard-card">
-        <div class="card-body" style="padding:12px 16px">
-          <h6 style="margin:0">Contacted</h6>
-          <h4 style="margin:4px 0 0">{{ lead_counts.contacted_count }}</h4>
-        </div>
-      </div>
-    </a>
-  </div>
-  <div class="col">
-    <a href="{% url 'panel:lead_list' %}?status=appointment_set" class="text-decoration-none text-dark">
-      <div class="card dashboard-card">
-        <div class="card-body" style="padding:12px 16px">
-          <h6 style="margin:0">Appointments</h6>
-          <h4 style="margin:4px 0 0">{{ lead_counts.appointment_count }}</h4>
-        </div>
-      </div>
-    </a>
-  </div>
-  <div class="col">
-    <a href="{% url 'panel:lead_list' %}?status=quoted" class="text-decoration-none text-dark">
-      <div class="card dashboard-card">
-        <div class="card-body" style="padding:12px 16px">
-          <h6 style="margin:0">Quoted</h6>
-          <h4 style="margin:4px 0 0">{{ lead_counts.quoted_count }}</h4>
-        </div>
-      </div>
-    </a>
-  </div>
-  <div class="col">
-    <a href="{% url 'panel:lead_list' %}?status=closed_won" class="text-decoration-none text-dark">
-      <div class="card dashboard-card">
-        <div class="card-body" style="padding:12px 16px">
-          <h6 style="margin:0">Won</h6>
-          <h4 style="margin:4px 0 0; color:#047857">{{ lead_counts.won_count }}</h4>
-        </div>
-      </div>
-    </a>
-  </div>
-  <div class="col">
-    <a href="{% url 'panel:lead_list' %}?status=closed_lost" class="text-decoration-none text-dark">
-      <div class="card dashboard-card">
-        <div class="card-body" style="padding:12px 16px">
-          <h6 style="margin:0">Lost</h6>
-          <h4 style="margin:4px 0 0; color:#b91c1c">{{ lead_counts.lost_count }}</h4>
-        </div>
-      </div>
-    </a>
-  </div>
-</div>
-
-<!-- Follow-up reminders widget -->
-{% if needs_attention_followups or upcoming_followups %}
-<h4 style="margin:28px 0 16px">Follow-Up Reminders</h4>
-<div class="row g-3">
-  {% if needs_attention_followups %}
-  <div class="col-md-6">
-    <div class="card dashboard-card h-100" style="border-left:4px solid #f59e0b">
-      <div class="card-body">
-        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#b45309; margin-bottom:12px">
-          Needs Attention <span style="background:#fffbeb; color:#b45309; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; margin-left:6px">{{ needs_attention_followups|length }}</span>
-        </h6>
-        <ul style="list-style:none; padding:0; margin:0">
-          {% for fu in needs_attention_followups %}
-          <li style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px">
-            <a href="{% url 'panel:lead_detail' fu.lead.pk %}" style="color:#111827; text-decoration:none; font-weight:500">{{ fu.lead.first_name }} {{ fu.lead.last_name }}</a>
-            <div style="color:#6b7280; font-size:12px; margin-top:2px">
-              Reminder fired {{ fu.sent_at|timesince }} ago{% if fu.note %} · {{ fu.note }}{% endif %}
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
+  <div class="glance-hello">
+    <h2>{{ greeting }}, {{ request.user.first_name|default:request.user.username }}!</h2>
+    <div class="chips">
+      <a href="{% url 'panel:lead_create' %}" class="chip"><span class="dot">+</span> New lead</a>
+      <a href="{% url 'panel:estimate_create' %}" class="chip"><span class="dot">+</span> New estimate</a>
+      <a href="{% url 'panel:invoice_create' %}" class="chip"><span class="dot">+</span> New invoice</a>
+      <a href="{% url 'panel:customer_create' %}" class="chip"><span class="dot">+</span> New customer</a>
+      <a href="{% url 'panel:bank_transactions' %}" class="chip"><span class="dot">&#8635;</span> Bank feed</a>
+      <a href="{% url 'panel:project_create' %}" class="chip"><span class="dot">+</span> New project</a>
     </div>
   </div>
-  {% endif %}
-  {% if upcoming_followups %}
-  <div class="col-md-6">
-    <div class="card dashboard-card h-100" style="border-left:4px solid #10b981">
-      <div class="card-body">
-        <h6 style="text-transform:uppercase; font-size:11px; letter-spacing:0.5px; color:#047857; margin-bottom:12px">
-          Upcoming <span style="background:#ecfdf5; color:#047857; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; margin-left:6px">{{ upcoming_followups|length }}</span>
-        </h6>
-        <ul style="list-style:none; padding:0; margin:0">
-          {% for fu in upcoming_followups %}
-          <li style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px">
-            <a href="{% url 'panel:lead_detail' fu.lead.pk %}" style="color:#111827; text-decoration:none; font-weight:500">{{ fu.lead.first_name }} {{ fu.lead.last_name }}</a>
-            <div style="color:#6b7280; font-size:12px; margin-top:2px">
-              {{ fu.remind_at|date:"M j, g:i A" }}{% if fu.note %} · {{ fu.note }}{% endif %}
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-</div>
-{% endif %}
 
-<!-- Recent leads -->
-<h4 style="margin:28px 0 16px">Recent Leads</h4>
-<div class="card dashboard-card">
-  <div class="card-body" style="padding:0; overflow-x:auto">
-    <table class="panel-table" style="margin:0">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Location</th>
-          <th>Status</th>
-          <th>Date</th>
-          <th>Assigned</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for lead in recent_leads %}
-        <tr>
-          <td><a href="{% url 'panel:lead_detail' lead.pk %}">{{ lead.first_name }} {{ lead.last_name }}</a></td>
-          <td style="font-size:13px">{{ lead.phone }}</td>
-          <td style="font-size:13px">{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}—{% endif %}</td>
-          <td><span class="badge-status" style="background:{{ lead.status_bg }}; color:{{ lead.status_fg }}">{{ lead.status_label }}</span></td>
-          <td style="font-size:13px">{{ lead.created_at|date:"m/d/y" }}</td>
-          <td style="font-size:13px">{% if lead.assigned_user %}{{ lead.assigned_user.get_full_name }}{% else %}—{% endif %}</td>
-        </tr>
+  <div class="glance-title">Business at a glance</div>
+
+  <div class="grid">
+
+    <!-- NEEDS ATTENTION -->
+    <div class="w">
+      <div class="w-head"><h6>Needs attention</h6><span class="meta">As of today</span></div>
+      {% for a in attention %}
+      <div class="att-row">
+        <span class="att-ico">!</span>
+        <div class="att-txt">
+          <div class="l">{{ a.label }}</div>
+          <div class="s">{{ a.sub }}</div>
+        </div>
+        <a href="{{ a.url }}" class="cta">{{ a.cta }}</a>
+      </div>
+      {% empty %}
+      <div class="w-empty">Nothing needs your attention right now.</div>
+      {% endfor %}
+      <div class="w-foot"><a href="{% url 'panel:lead_list' %}">View all leads</a></div>
+    </div>
+
+    <!-- LEAD FUNNEL -->
+    <div class="w w8">
+      <div class="w-head"><h6>Leads funnel</h6><span class="meta">{{ lead_counts.total }} total</span></div>
+      <div class="funnel">
+        <a href="{% url 'panel:lead_list' %}?status=new" class="fn" style="border-top-color:#3b82f6">
+          <div class="k">New</div><div class="v">{{ lead_counts.new_count }}</div></a>
+        <a href="{% url 'panel:lead_list' %}?status=contacted" class="fn" style="border-top-color:#6366f1">
+          <div class="k">Contacted</div><div class="v">{{ lead_counts.contacted_count }}</div></a>
+        <a href="{% url 'panel:lead_list' %}?status=appointment_set" class="fn" style="border-top-color:#8b5cf6">
+          <div class="k">Appointments</div><div class="v">{{ lead_counts.appointment_count }}</div></a>
+        <a href="{% url 'panel:lead_list' %}?status=quoted" class="fn" style="border-top-color:#f59e0b">
+          <div class="k">Quoted</div><div class="v">{{ lead_counts.quoted_count }}</div></a>
+        <a href="{% url 'panel:lead_list' %}?status=closed_won" class="fn" style="border-top-color:#2ca01c">
+          <div class="k">Won</div><div class="v" style="color:#047857">{{ lead_counts.won_count }}</div></a>
+        <a href="{% url 'panel:lead_list' %}?status=closed_lost" class="fn" style="border-top-color:#ef4444">
+          <div class="k">Lost</div><div class="v" style="color:#b91c1c">{{ lead_counts.lost_count }}</div></a>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:lead_list' %}">Manage leads</a></div>
+    </div>
+
+    <!-- BANK ACCOUNTS -->
+    <div class="w">
+      <div class="w-head"><h6>Bank accounts</h6><span class="meta">As of today</span></div>
+      <p class="w-sub">Total bank balance</p>
+      <p class="w-big">${{ bank_total|floatformat:2|intcomma }}</p>
+      <div style="margin-top:10px">
+        {% for a in bank_accounts %}
+        <div class="bk-row">
+          <span class="bk-chip" style="background:{{ a.color }}"></span>
+          <div class="bk-name">
+            <div class="n"><a href="{% url 'panel:bank_transactions' %}?account={{ a.pk }}">{{ a.name }}</a></div>
+            <div class="s">
+              {{ a.institution|default:"Manual" }}{% if a.mask %} &middot;&middot;&middot;&middot;{{ a.mask }}{% endif %}
+              {% if a.last_synced %} &middot; {{ a.last_synced|timesince }} ago{% endif %}
+            </div>
+          </div>
+          <div class="bk-amt">
+            <div class="a">${{ a.bank_balance|floatformat:2|intcomma }}</div>
+            <div class="r">
+              {% if a.pending_count %}
+                <a href="{% url 'panel:bank_transactions' %}?account={{ a.pk }}&tab=pending">{{ a.pending_count }} to review</a>
+              {% else %}<span style="color:#9ca3af">Nothing to review</span>{% endif %}
+            </div>
+          </div>
+          <div class="bk-act">
+            <a href="{% url 'panel:bank_account_edit' a.pk %}" title="Edit">&#9998;</a>
+            <a href="{% url 'panel:bank_account_delete' a.pk %}" class="del" title="Remove">&#10005;</a>
+          </div>
+        </div>
         {% empty %}
-        <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No leads yet.</td></tr>
+        <div class="w-empty">No accounts connected yet.</div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      <div class="w-foot">
+        <a href="{% url 'panel:bank_link' %}">+ Add account</a>
+        {% if bank_accounts %}<a href="{% url 'panel:bank_transactions' %}" style="margin-left:14px">Go to bank feed</a>{% endif %}
+      </div>
+    </div>
+
+    <!-- PROFIT & LOSS -->
+    <div class="w">
+      <div class="w-head"><h6>Profit &amp; loss</h6><span class="meta">{{ month_label }}</span></div>
+      <p class="w-sub">Net profit for {{ month_label }}</p>
+      <p class="w-big" {% if net_profit < 0 %}style="color:#b91c1c"{% endif %}>${{ net_profit|floatformat:2|intcomma }}</p>
+      <div style="margin-top:14px">
+        <div class="kv"><span class="k">Money in</span><span class="v" style="color:#047857">${{ money_in|floatformat:2|intcomma }}</span></div>
+        <div class="stack"><span style="background:#2ca01c; width:100%"></span></div>
+        <div class="kv"><span class="k">Money out</span><span class="v">${{ money_out|floatformat:2|intcomma }}</span></div>
+        <div class="stack"><span style="background:#9ca3af; width:{% if money_in %}{% widthratio money_out money_in 100 %}{% else %}100{% endif %}%"></span></div>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:bank_transactions' %}?tab=posted">See posted transactions</a></div>
+    </div>
+
+    <!-- SPENDING -->
+    <div class="w">
+      <div class="w-head"><h6>Expenses</h6><span class="meta">{{ month_label }}</span></div>
+      <p class="w-sub">Spending for {{ month_label }}</p>
+      <p class="w-big">${{ money_out|floatformat:2|intcomma }}</p>
+      {% if spend_by_category %}
+      <div style="display:flex; align-items:center; gap:16px; margin-top:10px; flex-wrap:wrap">
+        <svg viewBox="0 0 42 42" width="110" height="110" style="flex:none">
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f3f4f6" stroke-width="6"></circle>
+          {% for s in spend_by_category %}
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="{{ s.color }}" stroke-width="6"
+                  stroke-dasharray="{{ s.pct }} {{ 100|add:0 }}" stroke-dashoffset="-{{ s.offset }}"
+                  transform="rotate(-90 21 21)" pathLength="100"></circle>
+          {% endfor %}
+        </svg>
+        <div style="flex:1; min-width:150px">
+          {% for s in spend_by_category %}
+          <div class="kv">
+            <span class="k"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:{{ s.color }};margin-right:6px"></i>{{ s.label }}</span>
+            <span class="v">${{ s.amount|floatformat:2|intcomma }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="w-empty">No categorized spending this month. Categorize bank transactions to see the breakdown.</div>
+      {% endif %}
+      <div class="w-foot"><a href="{% url 'panel:bank_transactions' %}">Categorize transactions</a></div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="w w6">
+      <div class="w-head"><h6>Money in / out</h6><span class="meta">Last 12 months</span></div>
+      <div class="bars">
+        {% for p in cash_series %}
+        <div class="bar-col">
+          <div class="bar-pair">
+            <span class="bar in" style="height:{{ p.in_h }}%" title="In {{ p.label }}: ${{ p.in|floatformat:2 }}"></span>
+            <span class="bar out" style="height:{{ p.out_h }}%" title="Out {{ p.label }}: ${{ p.out|floatformat:2 }}"></span>
+          </div>
+          <span class="lab">{{ p.label }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="legend">
+        <span><i style="background:#2ca01c"></i>Money in</span>
+        <span><i style="background:#d1d5db"></i>Money out</span>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:bank_transactions' %}?tab=posted">View bank feed</a></div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="w">
+      <div class="w-head"><h6>Invoices</h6><span class="meta">As of today</span></div>
+      <p class="w-sub">${{ unpaid_total|floatformat:2|intcomma }} unpaid</p>
+      {% if unpaid_total %}
+      <div class="stack">
+        <span style="background:#ea580c; width:{{ overdue_pct }}%"></span>
+        <span style="background:#d1d5db; width:{{ not_due_pct }}%"></span>
+      </div>
+      <div class="kv"><span class="k">Overdue</span><span class="v">${{ overdue_total|floatformat:2|intcomma }}</span></div>
+      <div class="kv"><span class="k">Not due yet</span><span class="v">${{ not_due_total|floatformat:2|intcomma }}</span></div>
+      {% else %}
+      <div class="w-empty">No unpaid invoices.</div>
+      {% endif %}
+      <div class="kv" style="border-top:1px solid #f3f4f6; margin-top:6px">
+        <span class="k">Paid</span><span class="v" style="color:#047857">${{ paid_total|floatformat:2|intcomma }}</span>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:invoice_list' %}">Manage invoices</a></div>
+    </div>
+
+    <!-- ESTIMATES -->
+    <div class="w">
+      <div class="w-head"><h6>Estimates</h6><span class="meta">Open pipeline</span></div>
+      <p class="w-sub">{{ est_open_count }} open estimate{{ est_open_count|pluralize }}</p>
+      <p class="w-big">${{ est_value|floatformat:2|intcomma }}</p>
+      <div style="margin-top:10px">
+        <div class="kv"><span class="k">Awaiting customer</span><span class="v">{{ estimates_pending }}</span></div>
+        <div class="kv"><span class="k">Active projects</span><span class="v">{{ active_projects }}</span></div>
+        <div class="kv"><span class="k">Customers</span><span class="v">{{ total_customers }}</span></div>
+        <div class="kv"><span class="k">Open tasks</span><span class="v">{{ total_tasks }}</span></div>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:estimate_list' %}">Manage estimates</a></div>
+    </div>
+
+    <!-- NEW LEADS TREND -->
+    <div class="w">
+      <div class="w-head"><h6>New leads</h6><span class="meta">Last 12 months</span></div>
+      <div class="spark">
+        {% for p in lead_series %}
+        <div class="s-col">
+          <span class="s-bar" style="height:{{ p.h }}%" title="{{ p.label }}: {{ p.n }} leads"></span>
+          <span class="lab">{{ p.label }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:lead_list' %}">View all leads</a></div>
+    </div>
+
+    <!-- FOLLOW-UPS -->
+    {% if needs_attention_followups or upcoming_followups %}
+    <div class="w w6">
+      <div class="w-head"><h6>Follow-up reminders</h6><span class="meta">Next 10</span></div>
+      {% for f in needs_attention_followups %}
+      <div class="att-row">
+        <span class="att-ico" style="background:#fef3c7; color:#b45309">&#9200;</span>
+        <div class="att-txt">
+          <div class="l">{{ f.lead.first_name }} {{ f.lead.last_name }}</div>
+          <div class="s">Sent {{ f.sent_at|timesince }} ago — not acknowledged</div>
+        </div>
+        <a href="{% url 'panel:lead_detail' f.lead.pk %}" class="cta">Open</a>
+      </div>
+      {% endfor %}
+      {% for f in upcoming_followups %}
+      <div class="att-row">
+        <span class="att-ico" style="background:#ecfdf5; color:#047857">&#128197;</span>
+        <div class="att-txt">
+          <div class="l">{{ f.lead.first_name }} {{ f.lead.last_name }}</div>
+          <div class="s">Due {{ f.remind_at|date:"M d, g:i A" }}</div>
+        </div>
+        <a href="{% url 'panel:lead_detail' f.lead.pk %}" class="cta">Open</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- RECENT LEADS -->
+    <div class="w w12">
+      <div class="w-head"><h6>Recent leads</h6><span class="meta">Latest 10</span></div>
+      <div style="overflow-x:auto">
+        <table class="panel-table" style="margin:0">
+          <thead>
+            <tr><th>Name</th><th>Phone</th><th>Location</th><th>Status</th><th>Date</th><th>Assigned</th></tr>
+          </thead>
+          <tbody>
+            {% for lead in recent_leads %}
+            <tr>
+              <td><a href="{% url 'panel:lead_detail' lead.pk %}">{{ lead.first_name }} {{ lead.last_name }}</a></td>
+              <td style="font-size:13px">{{ lead.phone }}</td>
+              <td style="font-size:13px">{% if lead.sales_point %}{{ lead.sales_point.name }}{% else %}—{% endif %}</td>
+              <td><span class="badge-status" style="background:{{ lead.status_bg }}; color:{{ lead.status_fg }}">{{ lead.status_label }}</span></td>
+              <td style="font-size:13px">{{ lead.created_at|date:"m/d/y" }}</td>
+              <td style="font-size:13px">{% if lead.assigned_user %}{{ lead.assigned_user.get_full_name }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="color:#6b7280; padding:24px; text-align:center">No leads yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="w-foot"><a href="{% url 'panel:lead_list' %}">View all leads</a></div>
+    </div>
+
   </div>
-</div>
-<div style="margin-top:12px">
-  <a href="{% url 'panel:lead_list' %}" class="btn-panel-outline">View all leads</a>
 </div>
 {% endblock %}

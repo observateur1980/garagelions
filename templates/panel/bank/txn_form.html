@@ -1,0 +1,45 @@
+{% extends "panel/base.html" %}
+{% block title %}Add bank transaction{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>Add bank transaction</h2></div>
+
+<div class="card dashboard-card" style="max-width:560px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>Account</label>
+      <select name="account" required>
+        {% for a in accounts %}
+        <option value="{{ a.pk }}" {% if preset_account == a.pk|stringformat:'s' %}selected{% endif %}>{{ a.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Date</label>
+      <input type="date" name="date" required>
+
+      <label>Bank description</label>
+      <input type="text" name="bank_description" placeholder="e.g. Wt Amit Kumar" required>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap">
+        <div style="flex:1 1 160px">
+          <label>Direction</label>
+          <select name="flow">
+            <option value="in">Money in (deposit)</option>
+            <option value="out">Money out (withdrawal)</option>
+          </select>
+        </div>
+        <div style="flex:1 1 160px">
+          <label>Amount ($)</label>
+          <input type="number" step="0.01" name="amount" required>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn-panel">Add to Pending</button>
+        <a href="{% url 'panel:bank_transactions' %}{% if preset_account %}?account={{ preset_account }}{% endif %}" class="btn-panel-outline" style="margin-left:8px">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

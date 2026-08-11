@@ -1,0 +1,50 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if account %}Edit account{% else %}Add bank account{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>{% if account %}Edit account{% else %}Add bank account{% endif %}</h2></div>
+
+<div class="card dashboard-card" style="max-width:520px">
+  <div class="card-body panel-form">
+    <form method="post">
+      {% csrf_token %}
+      <label>Account name</label>
+      <input type="text" name="name" value="{{ account.name|default:'' }}" placeholder="e.g. Parviz Wells Fargo" required>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap">
+        <div style="flex:1 1 200px">
+          <label>Institution</label>
+          <input type="text" name="institution" value="{{ account.institution|default:'' }}" placeholder="Wells Fargo">
+        </div>
+        <div style="flex:1 1 120px">
+          <label>Last 4 digits</label>
+          <input type="text" name="mask" value="{{ account.mask|default:'' }}" placeholder="4021">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap">
+        <div style="flex:1 1 200px">
+          <label>Bank balance ($)</label>
+          <input type="number" step="0.01" name="bank_balance" value="{{ account.bank_balance|default:'0' }}">
+        </div>
+        <div style="flex:1 1 200px">
+          <label>Opening ledger balance ($)</label>
+          <input type="number" step="0.01" name="opening_balance" value="{{ account.opening_balance|default:'0' }}">
+        </div>
+      </div>
+
+      <label>Card color</label>
+      <input type="color" name="color" value="{{ account.color|default:'#2563eb' }}" style="width:60px; height:38px; padding:2px">
+
+      <div style="margin-top:16px; display:flex; align-items:center; gap:8px">
+        <button type="submit" class="btn-panel">{% if account %}Save{% else %}Add account{% endif %}</button>
+        <a href="{% url 'panel:bank_transactions' %}" class="btn-panel-outline">Cancel</a>
+        {% if account %}
+        <a href="{% url 'panel:bank_account_delete' account.pk %}"
+           style="margin-left:auto; color:#b91c1c; font-size:14px; text-decoration:none">Remove account</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
