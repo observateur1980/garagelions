@@ -65,7 +65,7 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = MyUser
-        fields = ('username', 'email')
+        fields = ('email',)          # username is derived from email
 
     def clean_password2(self):
         p1, p2 = self.cleaned_data.get('password1'), self.cleaned_data.get('password2')
@@ -88,7 +88,7 @@ class UserChangeForm(forms.ModelForm):
 
     class Meta:
         model = MyUser
-        fields = ('username', 'email', 'password', 'is_active', 'is_staff', 'is_superuser')
+        fields = ('email', 'password', 'is_active', 'is_staff', 'is_superuser')
 
     def clean_password(self):
         return self.initial.get('password')
@@ -188,14 +188,17 @@ class MyUserAdmin(BaseUserAdmin):
     ordering = ('username',)
     filter_horizontal = ('groups', 'user_permissions')
 
+    readonly_fields = ('username',)
+
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password')}),
+        # username is shown read-only: it is derived from email, not typed.
+        (None, {'fields': ('email', 'username', 'password')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'password1', 'password2', 'is_staff', 'is_active'),
+            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_active'),
         }),
     )
 

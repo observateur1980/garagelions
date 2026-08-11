@@ -11,6 +11,8 @@
 #   A user can have a Profile without being a ProjectManager (e.g. a customer-facing
 #   staff account). A ProjectManager always has both a MyUser and a Profile.
 
+import re
+
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
@@ -19,10 +21,41 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from PIL import Image
 
-# '@' and '_' are allowed because CustomLux invites use the email address
-# itself as the username. Widening only — every username that was valid
-# before still is.
+# '@' and '_' are allowed because the email address *is* the username.
+# Widening only — every username that was valid before still is.
 USERNAME_REGEX = r'^[a-zA-Z0-9.+@_-]*$'
+
+# Characters the column accepts, as a stripping pattern for the rule below.
+_USERNAME_STRIP = re.compile(r'[^a-zA-Z0-9.+@_-]')
+
+
+def username_for_email(email, exclude_pk=None):
+    """The username for an address. **The email address is the username.**
+
+    One rule, one place — `MyUser.save()`, the manager and the CustomLux
+    invite flow all call this, so the two columns cannot drift apart.
+
+    Two edge cases keep it from ever raising on save. Addresses may legally
+    hold characters the username column rejects (`o'brien@x.com`), so anything
+    outside USERNAME_REGEX is stripped; and because stripping can map two
+    different addresses onto one username, a numeric suffix breaks the tie
+    against the unique constraint. Ordinary addresses come back untouched.
+    """
+    base = _USERNAME_STRIP.sub('', (email or '').strip())[:110] or 'user'
+    qs = MyUser.objects.filter(username=base)
+    if exclude_pk is not None:
+        qs = qs.exclude(pk=exclude_pk)
+    if not qs.exists():
+        return base
+    n = 1
+    while True:
+        n += 1
+        candidate = f'{base}{n}'[:120]
+        qs = MyUser.objects.filter(username=candidate)
+        if exclude_pk is not None:
+            qs = qs.exclude(pk=exclude_pk)
+        if not qs.exists():
+            return candidate
 
 
 # ---------------------------------------------------------------------------
@@ -30,19 +63,20 @@ USERNAME_REGEX = r'^[a-zA-Z0-9.+@_-]*$'
 # ---------------------------------------------------------------------------
 
 class MyUserManager(BaseUserManager):
-    def create_user(self, username, email, password=None):
+    def create_user(self, username=None, email=None, password=None):
+        """`username` is accepted and ignored — save() derives it from the
+        email. The parameter stays so `createsuperuser`, which passes the
+        USERNAME_FIELD positionally, keeps working.
+        """
         if not email:
             raise ValueError('Users must have an email address')
-        user = self.model(
-            username=username,
-            email=self.normalize_email(email),
-        )
+        user = self.model(email=self.normalize_email(email))
         user.is_active = True
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email, password):
+    def create_superuser(self, username=None, email=None, password=None):
         user = self.create_user(username, email, password=password)
         user.is_staff = True
         user.is_superuser = True
@@ -52,9 +86,13 @@ class MyUserManager(BaseUserManager):
 
 
 class MyUser(AbstractBaseUser, PermissionsMixin):
+    # Derived, never typed: save() sets this from `email` on every write.
+    # It stays a real column because it is USERNAME_FIELD — what login,
+    # sessions and `createsuperuser` authenticate against.
     username = models.CharField(
         max_length=120,
         unique=True,
+        editable=False,
         validators=[RegexValidator(
             regex=USERNAME_REGEX,
             message='Username must be alphanumeric',
@@ -77,6 +115,23 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+
+    def save(self, *args, **kwargs):
+        """Keep username == email. Changing someone's address renames them.
+
+        Sessions survive it: Django's session auth hash is derived from the
+        password, not the username, so a rename does not sign anyone out.
+        """
+        self.email = (self.email or '').strip()
+        derived = username_for_email(self.email, exclude_pk=self.pk)
+        if self.username != derived:
+            self.username = derived
+            # A caller doing save(update_fields=['email']) would otherwise
+            # write the new address and silently leave the old username.
+            uf = kwargs.get('update_fields')
+            if uf is not None:
+                kwargs['update_fields'] = set(uf) | {'username'}
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email

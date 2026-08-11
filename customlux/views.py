@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from account.models import ProjectManager
+from account.models import ProjectManager, username_for_email
 
 from .access import OWNER, access_level, customlux_access, customlux_edit, customlux_owner
 from .forms import (
@@ -700,19 +700,13 @@ def send_lead(request, pk):
 
 # ── Members (owner only) ────────────────────────────────────────────
 def _username_for(email):
-    """The email address *is* the username — one thing for the member to
-    remember, and it is what the owner already typed.
+    """The email address *is* the username.
 
-    Stripped of anything USERNAME_REGEX rejects, and suffixed on the rare
-    collision, because the column is unique and a clash would 500 the invite.
+    This rule is now system-wide and enforced in `MyUser.save()`; the helper
+    stays only so the invite mail can quote the username before the row is
+    written. See `account.models.username_for_email`.
     """
-    base = re.sub(r"[^a-zA-Z0-9.+@_-]", "", email)[:110] or "member"
-    candidate = base
-    n = 1
-    while User.objects.filter(username=candidate).exists():
-        n += 1
-        candidate = f"{base}{n}"[:120]
-    return candidate
+    return username_for_email(email)
 
 
 # Unambiguous alphabet — no O/0 or l/1/I to misread over the phone.
