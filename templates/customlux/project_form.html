@@ -42,12 +42,13 @@
         {{ form.zip_code }}
       </div>
       <div class="col-md-4">
-        <label class="form-label small fw-semibold">Deal total (incl. tax)</label>
+        <label class="form-label small fw-semibold">Deal price (before tax)</label>
         {{ form.quoted_amount }}
       </div>
       <div class="col-md-4">
-        <label class="form-label small fw-semibold">Sales tax in that total</label>
-        {{ form.tax_amount }}
+        <label class="form-label small fw-semibold">Sales tax %</label>
+        {{ form.tax_percent }}
+        <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|floatformat:"-2" }}%)</div>
       </div>
       <div class="col-md-4">
         <label class="form-label small fw-semibold">Commission rate %</label>
@@ -70,6 +71,7 @@
             {{ form.install_date }}
           </div>
         </div>
+        {% include "customlux/_pays.html" %}
       </div>
       <div class="col-md-5">
         {% include "customlux/_commission.html" %}

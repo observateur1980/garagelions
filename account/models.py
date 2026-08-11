@@ -19,7 +19,10 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from PIL import Image
 
-USERNAME_REGEX = r'^[a-zA-Z0-9.+-]*$'
+# '@' and '_' are allowed because CustomLux invites use the email address
+# itself as the username. Widening only — every username that was valid
+# before still is.
+USERNAME_REGEX = r'^[a-zA-Z0-9.+@_-]*$'
 
 
 # ---------------------------------------------------------------------------

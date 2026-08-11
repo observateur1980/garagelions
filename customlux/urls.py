@@ -36,5 +36,7 @@ urlpatterns = [
 
     path("members/", views.members, name="members"),
     path("members/<int:pk>/toggle/", views.member_toggle, name="member_toggle"),
+    path("members/<int:pk>/reset/", views.member_reset_password,
+         name="member_reset_password"),
     path("members/<int:pk>/remove/", views.member_remove, name="member_remove"),
 ]

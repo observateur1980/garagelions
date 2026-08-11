@@ -10,22 +10,26 @@
   </div>
 
   <div class="cl-comm-row">
-    <span>Deal total</span>
-    <span id="cl-out-total">—</span>
+    <span>Deal price</span>
+    <span id="cl-out-price">—</span>
   </div>
   <div class="cl-comm-row" id="cl-row-chg" style="display:none">
     <span>Change orders</span>
     <span id="cl-out-chg">—</span>
   </div>
-  <div class="cl-comm-row">
-    <span>Less sales tax</span>
+  <div class="cl-comm-row cl-comm-base">
+    <span id="cl-lbl-tax">Plus sales tax</span>
     <span id="cl-out-tax">—</span>
   </div>
   <div class="cl-comm-row" id="cl-row-fee" style="display:none">
-    <span>Less online transaction fee</span>
+    <span>Plus online transaction fee</span>
     <span id="cl-out-fee">—</span>
   </div>
   <div class="cl-comm-row cl-comm-base">
+    <span>Customer pays</span>
+    <span id="cl-out-total">—</span>
+  </div>
+  <div class="cl-comm-row">
     <span>Commission base</span>
     <span id="cl-out-net">—</span>
   </div>
@@ -47,8 +51,9 @@
   </div>
 
   <div class="cl-comm-note" id="cl-comm-note">
-    Tax and any online transaction fee are excluded from the base — the
-    split is on what is left.
+    Sales tax and any online transaction fee are added to what the customer
+    pays. Neither touches the commission base — the split is on the priced
+    work alone.
   </div>
 </div>
 
@@ -72,6 +77,21 @@
   .cl-comm-total span:last-child { color:#065f46; }
   .cl-comm-note { font-size:11px; color:#9ca3af; margin-top:10px; line-height:1.45; }
   .cl-comm-warn { color:#b45309; }
+
+  /* The bill as the customer sees it. Lives here rather than on either page
+     because both the new-project form and the project page render it, and the
+     script below is what fills it in. */
+  .cl-pays { margin-top:18px; padding:12px 14px; border:1px solid #e5e7eb;
+             border-radius:10px; background:#fafafa; }
+  .cl-pays-head { font-size:12px; text-transform:uppercase; letter-spacing:.5px;
+                  font-weight:700; color:#6b7280; margin-bottom:8px; }
+  .cl-pays-row { display:flex; justify-content:space-between; align-items:center;
+                 font-size:13px; color:#4b5563; padding:4px 0; }
+  .cl-pays-row span:last-child { font-variant-numeric:tabular-nums; color:#111827; }
+  .cl-pays-total { border-top:1px solid #e5e7eb; margin-top:4px; padding-top:8px; }
+  .cl-pays-total span { font-weight:700; font-size:15px; color:#111827; }
+  .cl-pays-bal { border-top:1px solid #f0f1f3; margin-top:2px; padding-top:7px; }
+  .cl-pays-bal span:last-child { font-weight:600; }
   .cl-tax-auto { font-size:11px; color:#2563eb; cursor:pointer; text-decoration:underline;
                  background:none; border:0; padding:0; margin-top:4px; }
 </style>
@@ -92,31 +112,47 @@
   const defDep  = parseFloat(box.dataset.defaultDeposit) || 0;
   const depEl   = document.getElementById('cl-deposit');
 
+  const pays  = document.getElementById('cl-pays');
+  const paid  = pays ? (parseFloat(pays.dataset.paid) || 0) : 0;
+
   const money = n => '$' + n.toLocaleString('en-US',
     { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const num = el => {
     const v = parseFloat((el && el.value) || '');
     return isNaN(v) ? 0 : v;
   };
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
 
-  // Names only the deductions actually in play, so the note never mentions
+  // Names only the additions actually in play, so the note never mentions
   // an online fee on a deal that has none.
-  function excluded() {
+  function added() {
     const parts = [];
-    if (num(tax)) parts.push('Tax');
+    if (taxPct()) parts.push('Tax');
     if (num(fee)) parts.push('the online fee');
-    if (!parts.length) return 'Tax and fees are';
-    return parts.join(' and ') + (parts.length > 1 ? ' are' : ' is');
+    if (!parts.length) return 'Tax and fees sit';
+    return parts.join(' and ') + (parts.length > 1 ? ' sit' : ' sits');
+  }
+
+  // Blank means "use the board rate", exactly like the commission field.
+  function taxPct() {
+    return (tax && tax.value.trim() !== '') ? num(tax) : defTax;
   }
 
   function render() {
-    // Change orders are part of the live figure — they re-price the job.
-    const t = num(total) + changes;
-    const x = num(tax);
+    // Change orders re-price the job, so they are part of the taxed base.
+    const base = num(total) + changes;
+    const p = taxPct();
+    const x = base * p / 100;
     const f = num(fee);
     const r = (rate && rate.value.trim() !== '') ? num(rate) : defRate;
 
-    const net = t - x - f;
+    // Tax and the fee are added to what the customer pays and never enter
+    // the base — the split is on the priced work alone.
+    const t = base + x + f;
+    const net = base;
     // markup: their price + r% of it = net, so the cut is r/(100+r) of net.
     // share : the cut is r/100 of net.
     const comm  = (basis === 'markup') ? net * r / (100 + r) : net * r / 100;
@@ -127,6 +163,7 @@
       (Math.round(r * 100) / 100) + '%' +
       ((rate && rate.value.trim() !== '') ? ' (this deal)' : '');
 
+    document.getElementById('cl-out-price').textContent = base ? money(num(total)) : '—';
     document.getElementById('cl-out-total').textContent = t ? money(t) : '—';
     if (changes) {
       document.getElementById('cl-row-chg').style.display = '';
@@ -136,29 +173,46 @@
     const dp = (depEl && depEl.value.trim() !== '') ? num(depEl) : defDep;
     document.getElementById('cl-out-dep').textContent =
       t ? money(t * dp / 100) + '  (' + (Math.round(dp*100)/100) + '%)' : '—';
-    document.getElementById('cl-out-tax').textContent   = x ? '− ' + money(x) : '—';
+    document.getElementById('cl-lbl-tax').textContent =
+      'Plus sales tax (' + (Math.round(p * 100) / 100) + '%)' +
+      ((tax && tax.value.trim() !== '') ? '' : ' — board rate');
+    document.getElementById('cl-out-tax').textContent   = x ? '+ ' + money(x) : '—';
     document.getElementById('cl-row-fee').style.display = f ? '' : 'none';
-    document.getElementById('cl-out-fee').textContent   = f ? '− ' + money(f) : '—';
-    document.getElementById('cl-out-net').textContent   = t ? money(net) : '—';
-    document.getElementById('cl-out-comm').textContent  = t ? money(comm) : '—';
-    document.getElementById('cl-out-sub').textContent   = t ? money(sub) : '—';
-    document.getElementById('cl-out-their').textContent  = t ? money(their) : '—';
+    document.getElementById('cl-out-fee').textContent   = f ? '+ ' + money(f) : '—';
+    document.getElementById('cl-out-net').textContent   = base ? money(net) : '—';
+    document.getElementById('cl-out-comm').textContent  = base ? money(comm) : '—';
+    document.getElementById('cl-out-sub').textContent   = base ? money(sub) : '—';
+    document.getElementById('cl-out-their').textContent  = base ? money(their) : '—';
     document.getElementById('cl-row-their').style.display =
       (basis === 'markup') ? '' : 'none';
 
-    const note = document.getElementById('cl-comm-note');
-    if (x + f > t && t) {
-      note.textContent = 'Tax and fees are larger than the deal total — check those figures.';
-      note.classList.add('cl-comm-warn');
-    } else {
-      note.textContent = (basis === 'markup')
-        ? 'CustomLux quotes their price and adds ' + (Math.round(r*100)/100) +
-          '% on top. The Garage Lions cut is ' + (Math.round(r/(100+r)*10000)/100) +
-          '% of the base. ' + excluded() + ' excluded from the base.'
-        : 'The Garage Lions cut is ' + (Math.round(r*100)/100) +
-          '% of the base. ' + excluded() + ' excluded from the base.';
-      note.classList.remove('cl-comm-warn');
+    // "Customer pays total" on the pricing card, when that card is on the
+    // page. Same figures, restated as the bill rather than as the split.
+    if (pays) {
+      const dep = t * dp / 100;
+      set('cl-pay-price', base ? money(num(total)) : '—');
+      if (changes) {
+        document.getElementById('cl-pay-row-chg').style.display = '';
+        set('cl-pay-chg', (changes > 0 ? '+ ' : '− ') + money(Math.abs(changes)));
+      }
+      set('cl-pay-lbl-tax', 'Sales tax (' + (Math.round(p * 100) / 100) + '%)');
+      set('cl-pay-tax', x ? '+ ' + money(x) : '—');
+      document.getElementById('cl-pay-row-fee').style.display = f ? '' : 'none';
+      set('cl-pay-fee', f ? '+ ' + money(f) : '—');
+      set('cl-pay-total', t ? money(t) : '—');
+      set('cl-pay-lbl-dep', 'Deposit due (' + (Math.round(dp * 100) / 100) + '%)');
+      set('cl-pay-dep', t ? money(dep) : '—');
+      set('cl-pay-bal', t ? money(t - paid) : '—');
     }
+
+    const note = document.getElementById('cl-comm-note');
+    note.textContent = (basis === 'markup')
+      ? 'CustomLux quotes their price and adds ' + (Math.round(r*100)/100) +
+        '% on top. The Garage Lions cut is ' + (Math.round(r/(100+r)*10000)/100) +
+        '% of the base. ' + added() + ' outside the base.'
+      : 'The Garage Lions cut is ' + (Math.round(r*100)/100) +
+        '% of the base. ' + added() + ' outside the base.';
+    note.classList.remove('cl-comm-warn');
   }
 
   [total, tax, fee, rate, depEl].forEach(el => {
@@ -167,20 +221,8 @@
     el.addEventListener('change', render);
   });
 
-  // Back the tax out of a tax-inclusive total, using the board's default rate.
-  if (tax && defTax > 0) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'cl-tax-auto';
-    btn.textContent = 'calculate tax at ' + defTax + '%';
-    btn.addEventListener('click', () => {
-      const t = num(total);
-      if (!t) return;
-      tax.value = (t * defTax / (100 + defTax)).toFixed(2);
-      render();
-    });
-    tax.parentNode.appendChild(btn);
-  }
+  // No "work the tax out for me" button any more: the field is the rate
+  // itself, and leaving it empty already means the board's rate.
 
   render();
 })();

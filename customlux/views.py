@@ -4,12 +4,15 @@ Access is enforced by the decorators in customlux.access, NOT by panel's
 territory scoping. The one exception is `send_lead`, which is reached from
 /panel/ and therefore guards on the *panel* user's lead visibility instead.
 """
+import logging
 import re
 import secrets
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Q
 from django.http import JsonResponse
@@ -32,9 +35,7 @@ from .models import (
 )
 
 User = get_user_model()
-
-# Unambiguous alphabet — no O/0 or l/1/I to misread over the phone.
-_PW_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+logger = logging.getLogger(__name__)
 
 
 def _log(project, user, detail):
@@ -44,8 +45,8 @@ def _log(project, user, detail):
 # Fields worth naming in the history, and how to render them.
 _TRACKED = [
     ("stage", "Stage", "stage"),
-    ("quoted_amount", "Deal total", "money"),
-    ("tax_amount", "Sales tax", "money"),
+    ("quoted_amount", "Deal price", "money"),
+    ("tax_percent", "Sales tax", "pct"),
     ("online_fee", "Online transaction fee", "money"),
     ("commission_rate", "Commission rate", "pct"),
     ("deposit_percent", "Deposit", "pct"),
@@ -690,15 +691,81 @@ def send_lead(request, pk):
 
 # ── Members (owner only) ────────────────────────────────────────────
 def _username_for(email):
-    """Derive a valid, unique username. Validator allows [a-zA-Z0-9.+-] only."""
-    base = re.sub(r"[^a-zA-Z0-9.+-]", "", email.split("@")[0]) or "member"
-    base = base[:100]
+    """The email address *is* the username — one thing for the member to
+    remember, and it is what the owner already typed.
+
+    Stripped of anything USERNAME_REGEX rejects, and suffixed on the rare
+    collision, because the column is unique and a clash would 500 the invite.
+    """
+    base = re.sub(r"[^a-zA-Z0-9.+@_-]", "", email)[:110] or "member"
     candidate = base
     n = 1
     while User.objects.filter(username=candidate).exists():
         n += 1
         candidate = f"{base}{n}"[:120]
     return candidate
+
+
+# Unambiguous alphabet — no O/0 or l/1/I to misread over the phone.
+_PW_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+
+
+def _temp_password():
+    """A fresh password per invite, so no two members share one and none of
+    them can be guessed from another."""
+    return "-".join(
+        "".join(secrets.choice(_PW_ALPHABET) for _ in range(5)) for _ in range(4)
+    )
+
+
+def _board_url():
+    return f"{getattr(settings, 'SITE_URL', 'https://garagelions.com')}/customlux/"
+
+
+def _send_invite_email(member, temp_password):
+    """Mail the member their way in. Returns True if SendGrid took it.
+
+    Never raises: a mail outage must not lose the invite, because the flash
+    message still carries the password when this comes back False.
+    """
+    login_url = f"{getattr(settings, 'SITE_URL', 'https://garagelions.com')}/account/login/"
+    if temp_password:
+        credentials = (
+            f"Username: {member.user.username}  (your email address)\n"
+            f"Temporary password: {temp_password}\n\n"
+            f"Please change it as soon as you sign in, from the “Password” "
+            f"link in the board's top bar."
+        )
+    else:
+        credentials = (
+            f"You already have a Garage Lions login ({member.user.username}) — "
+            f"sign in with your existing password."
+        )
+    body = (
+        f"Hi,\n\n"
+        f"You've been given access to the CustomLux cabinets board.\n\n"
+        f"Board: {_board_url()}\n"
+        f"Sign in: {login_url}\n\n"
+        f"{credentials}\n\n"
+        f"Your access is "
+        f"{'read and write' if member.can_edit else 'read-only'}. "
+        f"The board is the only part of the site this login opens.\n\n"
+        f"— Garage Lions\n"
+    )
+    try:
+        send_mail(
+            subject="Your CustomLux board access",
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[member.email],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        logger.error("CustomLux invite email to %s failed: %s", member.email, exc)
+        return False
+    member.invite_sent_at = timezone.now()
+    member.save(update_fields=["invite_sent_at"])
+    return True
 
 
 @customlux_owner
@@ -713,33 +780,67 @@ def members(request):
 
             user = User.objects.filter(email__iexact=email).first()
             temp_password = None
+            ours = False
             if user is None:
-                temp_password = "-".join(
-                    "".join(secrets.choice(_PW_ALPHABET) for _ in range(5))
-                    for _ in range(4)
-                )
+                temp_password = _temp_password()
+                ours = True
                 user = User.objects.create_user(
                     username=_username_for(email),
                     email=email,
                     password=temp_password,
                 )
-            CabinetMember.objects.create(
+            elif not user.is_active:
+                # Almost always a member we removed earlier — re-inviting has
+                # to switch the login back on, and the old password is gone.
+                # Never silently revive a CRM account someone disabled on
+                # purpose, though: that decision wasn't made on this board.
+                if user.is_staff or user.is_superuser or \
+                        ProjectManager.objects.filter(user=user).exists():
+                    messages.error(
+                        request,
+                        f"{email} has a disabled Garage Lions staff login. "
+                        f"Re-enable it in the admin first, then invite them.",
+                    )
+                    return redirect("customlux:members")
+                temp_password = _temp_password()
+                ours = True
+                user.is_active = True
+                user.set_password(temp_password)
+                user.save(update_fields=["is_active", "password"])
+            member = CabinetMember.objects.create(
                 email=email, user=user,
                 can_edit=form.cleaned_data["can_edit"],
+                login_created=ours,
                 invited_by=request.user,
             )
-            if temp_password:
+            emailed = _send_invite_email(member, temp_password)
+            if temp_password and emailed:
                 messages.success(
                     request,
-                    f"Invited {email}. New login created — username "
-                    f"“{user.username}”, temporary password “{temp_password}”. "
-                    f"This is shown once; pass it along and have them change it.",
+                    f"Invited {email} — sign-in details emailed to them. "
+                    f"In case you need it: username “{user.username}”, "
+                    f"temporary password “{temp_password}”.",
+                )
+            elif temp_password:
+                messages.warning(
+                    request,
+                    f"Invited {email}, but the email could not be sent. Pass "
+                    f"these on yourself — username “{user.username}”, "
+                    f"temporary password “{temp_password}” — and ask them to "
+                    f"change it once they are in. Shown once.",
+                )
+            elif emailed:
+                messages.success(
+                    request,
+                    f"Invited {email} — emailed them the link. They already had "
+                    f"a Garage Lions login and use their existing password.",
                 )
             else:
-                messages.success(
+                messages.warning(
                     request,
-                    f"Invited {email}. They already had a Garage Lions login "
-                    f"— they use their existing password.",
+                    f"Invited {email}, but the email could not be sent. They "
+                    f"already had a Garage Lions login — tell them to sign in "
+                    f"and open {_board_url()}",
                 )
             return redirect("customlux:members")
     else:
@@ -752,7 +853,7 @@ def members(request):
         "members": CabinetMember.objects.select_related("user"),
         "is_owner": True,
         "can_edit": True,
-        "owner_email": (getattr(request.user, "email", "") or ""),
+        "owner_email": (getattr(settings, "CUSTOMLUX_OWNER_EMAIL", "") or ""),
     })
 
 
@@ -822,7 +923,7 @@ def board_settings(request):
     # never drift from the maths the board actually uses.
     sample = CabinetProject(
         stage_id=CabinetStage.objects.values_list("pk", flat=True).first(),
-        quoted_amount=Decimal("5200"), tax_amount=Decimal("0"),
+        quoted_amount=Decimal("5200"), tax_percent=Decimal("0"),
     )
 
     return render(request, "customlux/settings.html", {
@@ -861,22 +962,82 @@ def member_toggle(request, pk):
     member.save(update_fields=["is_active"])
     messages.success(
         request,
-        f"{member.email} {'re-enabled' if member.is_active else 'suspended'}.",
+        f"{member.email} {'re-enabled' if member.is_active else 'suspended'}. "
+        f"{'They can open the board again.' if member.is_active else 'The board is closed to them; their login still exists.'}",
     )
     return redirect("customlux:members")
 
 
 @customlux_owner
 @require_POST
+def member_reset_password(request, pk):
+    """Issue a fresh temporary password.
+
+    The site has no self-serve password reset, so without this a member who
+    loses their password is stuck until someone edits them in Django admin —
+    which is exactly the place this board exists to avoid.
+    """
+    member = get_object_or_404(CabinetMember.objects.select_related("user"), pk=pk)
+    if member.user is None:
+        messages.error(
+            request,
+            f"{member.email} has no login yet — remove and re-invite them.",
+        )
+        return redirect("customlux:members")
+
+    temp_password = _temp_password()
+    member.user.set_password(temp_password)
+    member.user.save(update_fields=["password"])
+    if _send_invite_email(member, temp_password):
+        messages.success(
+            request,
+            f"New password emailed to {member.email}, with a reminder to "
+            f"change it. In case you need it: “{temp_password}”.",
+        )
+    else:
+        messages.warning(
+            request,
+            f"Password reset for {member.email}, but the email could not be "
+            f"sent. Pass it on yourself — username “{member.user.username}”, "
+            f"password “{temp_password}” — and ask them to change it. "
+            f"Shown once.",
+        )
+    return redirect("customlux:members")
+
+
+@customlux_owner
+@require_POST
 def member_remove(request, pk):
-    """Revoke board access. Leaves the login account intact on purpose —
-    deleting a MyUser would cascade into anything else they touched."""
-    member = get_object_or_404(CabinetMember, pk=pk)
-    email = member.email
+    """Revoke board access for good.
+
+    The MyUser row is never deleted — that would cascade into anything else
+    they touched. But a login this board created has no other purpose, so it
+    is switched off; otherwise the account survives with no CabinetMember row
+    to confine it, and /panel/ is only `@login_required`. A login that existed
+    before the invite is left alone: it was never ours to disable.
+    """
+    member = get_object_or_404(CabinetMember.objects.select_related("user"), pk=pk)
+    email, user, ours = member.email, member.user, member.login_created
     member.delete()
-    messages.success(
-        request,
-        f"Removed {email} from CustomLux. Their login still exists but can no "
-        f"longer open the board.",
-    )
+
+    closed = False
+    if user is not None and ours and not (user.is_staff or user.is_superuser):
+        if not ProjectManager.objects.filter(user=user).exists():
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+            closed = True
+
+    if closed:
+        messages.success(
+            request,
+            f"Removed {email} from CustomLux. The login created for them has "
+            f"been switched off — re-invite to give it back.",
+        )
+    else:
+        messages.success(
+            request,
+            f"Removed {email} from CustomLux — the board is closed to them. "
+            f"Their Garage Lions login pre-dates the invite, so it stays as it "
+            f"was.",
+        )
     return redirect("customlux:members")

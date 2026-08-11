@@ -286,17 +286,19 @@
         <div class="cl-sec">Pricing</div>
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Deal total (incl. tax)</label>
+            <label class="form-label small fw-semibold">Deal price (before tax)</label>
             {{ form.quoted_amount }}
+            <div class="form-text" style="font-size:11px">This is the commission base.</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Sales tax in that total</label>
-            {{ form.tax_amount }}
+            <label class="form-label small fw-semibold">Sales tax %</label>
+            {{ form.tax_percent }}
+            <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|floatformat:"-2" }}%)</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Online transaction fee in that total</label>
+            <label class="form-label small fw-semibold">Online transaction fee</label>
             {{ form.online_fee }}
-            <div class="form-text" style="font-size:11px">Excluded from the commission base, like tax.</div>
+            <div class="form-text" style="font-size:11px">Added to the total. Outside the commission base, like tax.</div>
           </div>
           <div class="col-md-6">
             <label class="form-label small fw-semibold">Commission rate %</label>
@@ -308,6 +310,15 @@
             {{ form.deposit_percent }}
           </div>
         </div>
+
+        {% comment %}
+          Adds up while you type — the same figures the commission card and the
+          saved record use, so the number you sign off on is the number the
+          customer is billed. ({# #} comments only one line; a multi-line one
+          renders straight onto the page.)
+        {% endcomment %}
+        {% include "customlux/_pays.html" with paid=project.customer_paid show_paid=True %}
+
         {% if can_edit %}<button class="btn-panel" style="margin-top:18px">Save</button>{% endif %}
       </div>
 
@@ -335,7 +346,7 @@
           {% if project.pass_through %}
             <div><span>Price before {{ project.pass_through_label }}</span><span>${{ project.net_amount|money }}</span></div>
             {% if project.tax_amount %}
-              <div><span>Sales tax</span><span>${{ project.tax_amount|money }}</span></div>
+              <div><span>Sales tax ({{ project.effective_tax_percent|floatformat:"-2" }}%)</span><span>${{ project.tax_amount|money }}</span></div>
             {% endif %}
             {% if project.online_fee %}
               <div><span>Online transaction fee</span><span>${{ project.online_fee|money }}</span></div>

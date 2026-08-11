@@ -66,8 +66,9 @@ class CabinetSettings(models.Model):
     default_tax_rate = models.DecimalField(
         max_digits=5, decimal_places=2, default=Decimal("0.00"),
         help_text=(
-            "Sales-tax percent used to pre-fill the tax field on a new deal. "
-            "Tax is always excluded from the commission base."
+            "Sales-tax percent applied to any deal that doesn't set its own. "
+            "The tax is added to the deal price; it never enters the "
+            "commission base."
         ),
     )
     updated_at = models.DateTimeField(auto_now=True)
@@ -148,17 +149,24 @@ class CabinetProject(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Deal total (incl. tax)",
     )
-    # Excluded from the commission base — the split is on the pre-tax amount.
-    tax_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        verbose_name="Sales tax included in the total",
+    # A rate, not an amount: the tax is worked out from the deal price and
+    # added on top of it. Blank = the board's default rate.
+    tax_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name="Sales tax %",
     )
-    # Card/online processing charge sitting inside the total. Treated exactly
-    # like tax: the customer pays it, but it is somebody else's money, so it
+    # What the old tax-inclusive scheme stored. Never read by the maths any
+    # more — kept so the figures typed before tax became a percentage can
+    # still be checked against. Safe to drop.
+    legacy_tax_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+    )
+    # Card/online processing charge added to what the customer pays. Treated
+    # exactly like tax: they pay it, but it is somebody else's money, so it
     # never forms part of the amount the commission is split from.
     online_fee = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
-        verbose_name="Online transaction fee included in the total",
+        verbose_name="Online transaction fee added to the total",
     )
     # Blank = use the board-wide rate from CabinetSettings. Set only when a
     # particular deal was agreed at a different split.
@@ -207,8 +215,10 @@ class CabinetProject(models.Model):
         return self.customer_name or self.title
 
     # ── Commission maths ────────────────────────────────────────────
-    # Sales tax is always taken out first; the split is on the pre-tax amount.
-    # How the percentage is then applied depends on CabinetSettings.basis:
+    # The split is on the priced work — tax sits on top of it and never enters
+    # the base, so changing the tax rate moves what the customer pays and
+    # nothing else. How the percentage is applied depends on
+    # CabinetSettings.basis:
     #
     #   markup (default, matches CustomLux's invoices)
     #       their price + rate% of their price = net
@@ -230,11 +240,15 @@ class CabinetProject(models.Model):
         return CabinetSettings.get().commission_basis
 
     # ── Contract value, including any changes agreed mid-job ────────
-    # `quoted_amount` is the ORIGINAL contract. Change orders sit on top as
-    # signed rows, so `current_total` is what everything downstream — tax base,
-    # commission, deposit, customer balance — is calculated from. Editing the
-    # original amount and adding a change order both work; the difference is
-    # that a change order keeps the history of what was agreed and when.
+    # `quoted_amount` is the ORIGINAL contract, before tax. Change orders sit
+    # on top as signed rows, so `pre_tax_total` is the priced work — the figure
+    # the commission is split from and the figure the tax percentage is applied
+    # to. `current_total` is that plus tax and any fee: what the customer pays,
+    # and what the deposit and their balance are measured against.
+    #
+    # Editing the original amount and adding a change order both work; the
+    # difference is that a change order keeps the history of what was agreed
+    # and when.
 
     @property
     def change_total(self):
@@ -245,11 +259,38 @@ class CabinetProject(models.Model):
         return _money(sum(c.amount for c in self.change_orders.all()))
 
     @property
-    def current_total(self):
-        """Deal total after change orders. None until an amount is entered."""
+    def pre_tax_total(self):
+        """The priced work after change orders, before tax and fees."""
         if self.quoted_amount is None:
             return None
         return _money(self.quoted_amount + self.change_total)
+
+    @property
+    def effective_tax_percent(self):
+        if self.tax_percent is not None:
+            return self.tax_percent
+        return CabinetSettings.get().default_tax_rate
+
+    @property
+    def tax_amount(self):
+        """Sales tax in dollars — the rate applied to the priced work.
+
+        A property, not a column: the rate is what anyone types, and a stored
+        amount would quietly go stale the moment a change order re-priced the
+        job.
+        """
+        base = self.pre_tax_total
+        if base is None:
+            return None
+        return _money(base * self.effective_tax_percent / Decimal(100))
+
+    @property
+    def current_total(self):
+        """What the customer pays, tax and fee included. None until priced."""
+        base = self.pre_tax_total
+        if base is None:
+            return None
+        return _money(base + (self.tax_amount or 0) + (self.online_fee or 0))
 
     @property
     def has_changes(self):
@@ -257,7 +298,7 @@ class CabinetProject(models.Model):
 
     @property
     def pass_through(self):
-        """Money inside the total that belongs to neither side.
+        """Money in the total that belongs to neither side.
 
         Sales tax goes to the state; the online fee goes to the processor. Both
         are collected from the customer and neither is ours to split.
@@ -266,7 +307,13 @@ class CabinetProject(models.Model):
 
     @property
     def net_amount(self):
-        """The amount the commission is calculated on, pass-throughs removed."""
+        """The amount the commission is calculated on — the priced work.
+
+        Identical to `pre_tax_total` by construction: the total is the priced
+        work plus the pass-throughs, so removing them leaves the work. Kept as
+        its own name because this is the *commission base*, and the two would
+        part company if a deduction ever appeared that wasn't a pass-through.
+        """
         total = self.current_total
         if total is None:
             return None
@@ -559,10 +606,15 @@ class CabinetMember(models.Model):
         default=True, help_text="Off = read-only access to the board.",
     )
     is_active = models.BooleanField(default=True)
+    # True when the invite itself created the login. Removal may then close
+    # that account outright; a login that existed beforehand is left alone,
+    # because it was never ours to disable.
+    login_created = models.BooleanField(default=False)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name="cabinet_invites_sent",
     )
+    invite_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

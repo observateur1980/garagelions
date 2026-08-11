@@ -16,7 +16,7 @@ class CabinetProjectForm(forms.ModelForm):
         model = CabinetProject
         fields = [
             "title", "customer_name", "email", "phone", "address", "zip_code",
-            "stage", "quoted_amount", "tax_amount", "online_fee",
+            "stage", "quoted_amount", "tax_percent", "online_fee",
             "commission_rate", "deposit_percent",
             "measure_date", "install_date", "notes",
         ]
@@ -32,9 +32,9 @@ class CabinetProjectForm(forms.ModelForm):
                 "class": _FC, "step": "0.01", "min": "0", "id": "cl-total",
                 "placeholder": "0.00",
             }),
-            "tax_amount": forms.NumberInput(attrs={
-                "class": _FC, "step": "0.01", "min": "0", "id": "cl-tax",
-                "placeholder": "0.00",
+            "tax_percent": forms.NumberInput(attrs={
+                "class": _FC, "step": "0.01", "min": "0", "max": "100",
+                "id": "cl-tax",
             }),
             "online_fee": forms.NumberInput(attrs={
                 "class": _FC, "step": "0.01", "min": "0", "id": "cl-fee",
@@ -66,35 +66,27 @@ class CabinetProjectForm(forms.ModelForm):
             "Leave blank to use the board rate. Set only if this one deal "
             "was agreed at a different split."
         )
-        self.fields["tax_amount"].help_text = (
-            "Excluded from the commission base."
+        self.fields["tax_percent"].widget.attrs["placeholder"] = (
+            f"{conf.default_tax_rate:g} (board default)"
+        )
+        self.fields["tax_percent"].help_text = (
+            "Added to the deal price. Never part of the commission base."
         )
         self.fields["online_fee"].help_text = (
-            "Card/processing charge inside the total. Also excluded from "
-            "the commission base."
+            "Card/processing charge added to the total. Also outside the "
+            "commission base."
         )
         self.fields["deposit_percent"].widget.attrs["placeholder"] = (
             f"{conf.default_deposit_percent:g} (board default)"
         )
 
-    def clean(self):
-        cleaned = super().clean()
-        total = cleaned.get("quoted_amount")
-        tax = cleaned.get("tax_amount")
-        fee = cleaned.get("online_fee")
-        if total is not None and tax is not None and tax > total:
-            self.add_error(
-                "tax_amount", "Tax can't be more than the deal total."
-            )
-        # Together they can swallow the total even when neither does alone,
-        # which would leave nothing for either side to split.
-        if total is not None and (tax or 0) + (fee or 0) > total:
-            self.add_error(
-                "online_fee",
-                "Tax and the online fee together can't be more than the "
-                "deal total.",
-            )
-        return cleaned
+    def clean_tax_percent(self):
+        # The old tax-as-an-amount field needed guarding against swallowing the
+        # deal; a rate only has to be a rate.
+        pct = self.cleaned_data.get("tax_percent")
+        if pct is not None and (pct < 0 or pct > 100):
+            raise forms.ValidationError("Enter a tax rate between 0 and 100%.")
+        return pct
 
 
 class MemberInviteForm(forms.Form):
@@ -198,6 +190,10 @@ class CabinetPaymentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if not self.is_bound and not self.initial.get("received_on"):
             self.initial["received_on"] = timezone.localdate()
+        # Garage Lions banks the customer's money, so the settlement almost
+        # always runs outward — preselect that rather than the model default.
+        if not self.is_bound and not self.initial.get("direction"):
+            self.initial["direction"] = CabinetPayment.DIR_OUT
         _require_method(self)
 
     def clean_amount(self):
@@ -235,8 +231,10 @@ class CustomerPaymentForm(forms.ModelForm):
         dep.choices = CabinetCustomerPayment.DEPOSITED_CHOICES
         dep.required = True
         _require_method(self)
-        if project is not None and not self.is_bound:
-            self.initial["deposited_by"] = project.effective_collected_by
+        # Garage Lions banks the money on nearly every job, so preselect it
+        # rather than whatever the project says it expects.
+        if not self.is_bound and not self.initial.get("deposited_by"):
+            self.initial["deposited_by"] = CabinetSettings.COLLECTED_GARAGELIONS
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]

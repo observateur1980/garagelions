@@ -66,6 +66,7 @@
       {% if is_customlux_owner or request.user.is_staff or request.user.project_manager %}
         <a href="{% url 'panel:dashboard' %}">Panel</a>
       {% endif %}
+      <a href="{% url 'account:password_change' %}">Password</a>
       <a href="{% url 'logout_shortcut' %}">Log out</a>
     </div>
   </div>

@@ -1,0 +1,26 @@
+{% load customlux_extras %}
+{% comment %}
+  The bill, adding up while you type. Filled in by the script in
+  _commission.html, which must be included on the same page.
+
+  `paid` and `show_paid` are only passed from the project page: a deal being
+  created has taken no money yet, so "paid so far" and a balance would just be
+  the total restated.
+{% endcomment %}
+<div class="cl-pays" id="cl-pays" data-paid="{{ paid|default:0|stringformat:'s' }}">
+  <div class="cl-pays-head">Customer pays total</div>
+  <div class="cl-pays-row"><span>Deal price</span><span id="cl-pay-price">—</span></div>
+  <div class="cl-pays-row" id="cl-pay-row-chg" style="display:none">
+    <span>Change orders</span><span id="cl-pay-chg">—</span>
+  </div>
+  <div class="cl-pays-row"><span id="cl-pay-lbl-tax">Sales tax</span><span id="cl-pay-tax">—</span></div>
+  <div class="cl-pays-row" id="cl-pay-row-fee" style="display:none">
+    <span>Online transaction fee</span><span id="cl-pay-fee">—</span>
+  </div>
+  <div class="cl-pays-row cl-pays-total"><span>Total</span><span id="cl-pay-total">—</span></div>
+  <div class="cl-pays-row"><span id="cl-pay-lbl-dep">Deposit due</span><span id="cl-pay-dep">—</span></div>
+  {% if show_paid %}
+    <div class="cl-pays-row"><span>Paid so far</span><span>${{ paid|money }}</span></div>
+    <div class="cl-pays-row cl-pays-bal"><span>Balance after saving</span><span id="cl-pay-bal">—</span></div>
+  {% endif %}
+</div>

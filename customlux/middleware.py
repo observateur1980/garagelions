@@ -6,10 +6,15 @@ in: every panel view is `@login_required` and nothing more. Worse, panel's
 ProjectManager, so records with no sales point would be visible to them.
 
 "CustomLux-only" means: authenticated, not staff/superuser, has no
-ProjectManager (so no job in the CRM), and holds an active CabinetMember row
-or is the configured owner email. Those users get bounced to their board.
-Everyone else is untouched.
+ProjectManager (so no job in the CRM), and holds a CabinetMember row or is the
+configured owner email. Those users get bounced to their board. Everyone else
+is untouched.
+
+The row is what confines them, *not* their current access level — a suspended
+member's level is None, and if that lifted the confinement then Suspend would
+hand them the CRM instead of taking the board away.
 """
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -41,15 +46,20 @@ class CustomLuxScopeMiddleware:
             # Imported here so the middleware module stays importable during
             # migrations, and to keep the DB hit off unblocked paths.
             from .access import OWNER, access_level
+            from .models import CabinetMember
 
-            level = access_level(user)
             # The owner is the business owner — they get the panel too, and the
             # sidebar shows them a CustomLux link. Only *invited* members are
             # confined to the board.
-            if (
-                level
-                and level != OWNER
-                and not ProjectManager.objects.filter(user=user).exists()
-            ):
+            if access_level(user) == OWNER:
+                return self.get_response(request)
+            if ProjectManager.objects.filter(user=user).exists():
+                return self.get_response(request)
+
+            email = (user.email or "").strip().lower()
+            match = Q(user=user)
+            if email:
+                match |= Q(email__iexact=email)
+            if CabinetMember.objects.filter(match).exists():
                 return redirect(reverse("customlux:board"))
         return self.get_response(request)

@@ -34,9 +34,11 @@
         <button class="btn-panel" style="margin-top:16px">Send invite</button>
       </form>
       <div class="small muted mt-3" style="line-height:1.5;">
-        If the address has no Garage Lions login yet, one is created and a
-        temporary password is shown to you <strong>once</strong> — pass it along.
-        If they already have a login, they keep their current password.
+        They get an email with the board link, their username — which is their
+        email address — a one-off temporary password, and a request to change
+        it. That password is also shown to you here <strong>once</strong>, in
+        case the email bounces. If the address already has a Garage Lions
+        login, no password is issued: they sign in with the one they have.
       </div>
     </div>
   </div>
@@ -47,20 +49,26 @@
       <table class="table table-sm align-middle mb-0">
         <thead>
           <tr class="small text-muted">
-            <th>Email</th><th>Login</th><th>Access</th><th></th>
+            <th>Email</th><th>Login</th><th>Access</th><th>Last seen</th><th></th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="small"><strong>{{ owner_email }}</strong></td>
-            <td class="small muted">{{ request.user.username }}</td>
+            <td class="small muted">—</td>
             <td><span class="badge bg-dark">owner</span></td>
+            <td class="small muted">—</td>
             <td></td>
           </tr>
           {% for m in members %}
             <tr>
               <td class="small">{{ m.email }}</td>
-              <td class="small muted">{{ m.user.username|default:"—" }}</td>
+              <td class="small muted">
+                {{ m.user.username|default:"—" }}
+                {% if m.user and not m.user.is_active %}
+                  <span class="badge bg-danger">login off</span>
+                {% endif %}
+              </td>
               <td>
                 {% if not m.is_active %}
                   <span class="badge bg-secondary">suspended</span>
@@ -70,6 +78,13 @@
                   <span class="badge bg-warning text-dark">read-only</span>
                 {% endif %}
               </td>
+              <td class="small muted">
+                {% if m.user.last_login %}
+                  {{ m.user.last_login|date:"M j, Y" }}
+                {% else %}
+                  never signed in
+                {% endif %}
+              </td>
               <td class="text-end">
                 <form method="post" action="{% url 'customlux:member_toggle' m.pk %}" class="d-inline">
                   {% csrf_token %}
@@ -77,15 +92,20 @@
                     {% if m.is_active %}Suspend{% else %}Re-enable{% endif %}
                   </button>
                 </form>
+                <form method="post" action="{% url 'customlux:member_reset_password' m.pk %}" class="d-inline"
+                      onsubmit="return confirm('Issue a new temporary password for {{ m.email }} and email it to them? Their current password stops working.');">
+                  {% csrf_token %}
+                  <button class="btn-panel-outline">New password</button>
+                </form>
                 <form method="post" action="{% url 'customlux:member_remove' m.pk %}" class="d-inline"
-                      onsubmit="return confirm('Remove {{ m.email }} from CustomLux? Their login stays, but the board closes to them.');">
+                      onsubmit="return confirm('Remove {{ m.email }} from CustomLux? {% if m.login_created %}The login created for them is switched off too.{% else %}Their pre-existing login stays as it was.{% endif %}');">
                   {% csrf_token %}
                   <button class="btn-panel-outline cl-danger">Remove</button>
                 </form>
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="4" class="small muted py-3">
+            <tr><td colspan="5" class="small muted py-3">
               Nobody else yet — the board is private to you.
             </td></tr>
           {% endfor %}
