@@ -260,16 +260,21 @@ class ManualLeadForm(forms.ModelForm):
                     self.fields['sales_point'].initial = sp
                     self.fields['sales_point'].queryset = \
                         self.fields['sales_point'].queryset.filter(pk__in=allowed_sp_ids)
-                    # Use Django's form-field disabled (ignores submitted data,
-                    # reuses the instance/initial value) instead of an HTML
-                    # widget attribute — disabled HTML inputs don't POST and
-                    # would silently blank sales_point on save.
-                    self.fields['sales_point'].disabled = True
+                    # Lock the field only when there's a single allowed
+                    # location. Multi-location managers (primary + extras)
+                    # need to pick among their sales points. Use Django's
+                    # form-field disabled (ignores submitted data, reuses the
+                    # instance/initial value) instead of an HTML widget
+                    # attribute — disabled HTML inputs don't POST and would
+                    # silently blank sales_point on save.
+                    self.fields['sales_point'].disabled = len(allowed_sp_ids) <= 1
                     self.fields['service_city'].queryset = \
-                        self.fields['service_city'].queryset.filter(sales_point=sp)
+                        self.fields['service_city'].queryset.filter(
+                            sales_point__in=allowed_sp_ids
+                        )
                     self.fields['assigned_user'].queryset = \
                         self.fields['assigned_user'].queryset.filter(
-                            project_manager__sales_point=sp
+                            project_manager__sales_point__in=allowed_sp_ids
                         )
             except Exception:
                 pass

@@ -2825,6 +2825,17 @@ def lead_create(request):
         form = ManualLeadForm(request.POST, user=request.user, gcal_connected=gcal_connected)
         if form.is_valid():
             lead = form.save(commit=False)
+            # Route by ZIP when no sales point was explicitly chosen (e.g. a
+            # regular salesperson whose disabled widget submits nothing).
+            # ZipCoverage is the source of truth for operational routing, same
+            # as the public site form (home.views.create_lead).
+            if not lead.sales_point:
+                routed_zip = (lead.zip_code or "").strip()
+                coverage = ZipCoverage.route(routed_zip) if routed_zip else None
+                if coverage and coverage.sales_point.is_active:
+                    lead.sales_point = coverage.sales_point
+                    if not lead.assigned_user:
+                        lead.assigned_user = coverage.sales_point.assigned_user
             if not lead.sales_point and pm and pm.sales_point:
                 lead.sales_point = pm.sales_point
             if not lead.assigned_user:
@@ -2850,6 +2861,15 @@ def lead_create(request):
             val = request.GET.get(field)
             if val:
                 initial[field] = val
+        # Pre-select the sales point by ZIP so calendar-sourced leads default to
+        # the customer's territory, not the operator's own SP. The operator can
+        # still change it; for a multi-location operator their primary SP would
+        # otherwise win and silently mis-route the lead.
+        zip_prefill = (request.GET.get("zip_code") or "").strip()
+        if zip_prefill:
+            coverage = ZipCoverage.route(zip_prefill)
+            if coverage and coverage.sales_point.is_active:
+                initial["sales_point"] = coverage.sales_point
         form = ManualLeadForm(user=request.user, gcal_connected=gcal_connected, initial=initial)
 
     return render(request, "panel/leads/form.html", {

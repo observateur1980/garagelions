@@ -150,7 +150,20 @@
         </div>
         <div class="col-md-6">
           <label>City</label>
-          {{ form.service_city }}
+          {% comment %}
+            Rendered manually so each option carries its sales point id,
+            letting the script below filter cities by the chosen location.
+            Note: a multi-line hash comment is NOT a comment — it prints.
+          {% endcomment %}
+          <select name="service_city" id="id_service_city" class="form-control">
+            <option value="">— Select city —</option>
+            {% for city in form.fields.service_city.queryset %}
+              <option value="{{ city.pk }}" data-sp="{{ city.sales_point_id }}"
+                {% if form.service_city.value|stringformat:'s' == city.pk|stringformat:'s' %}selected{% endif %}>
+                {{ city }}
+              </option>
+            {% endfor %}
+          </select>
         </div>
       </div>
 
@@ -269,6 +282,34 @@
 
   statusEl.addEventListener("change", toggle);
   toggle();  // run once on load (covers edit page with status already set)
+
+  // ── City list follows the selected location ─────────────────────────────
+  // Each city <option> carries data-sp = its sales point id. When the location
+  // changes, rebuild the city select to only the matching cities. Rebuilding
+  // (vs. hiding options) is reliable cross-browser.
+  var spEl   = document.getElementById("id_sales_point");
+  var cityEl = document.getElementById("id_service_city");
+  if (spEl && cityEl) {
+    var allCityOpts = Array.prototype.slice.call(cityEl.options);
+
+    function syncCities() {
+      var sp = spEl.value;
+      var prev = cityEl.value;
+      cityEl.innerHTML = "";
+      var stillValid = false;
+      allCityOpts.forEach(function(opt) {
+        // Always keep the empty placeholder; otherwise match the location.
+        if (opt.value === "" || opt.dataset.sp === sp) {
+          cityEl.appendChild(opt);
+          if (opt.value === prev) stillValid = true;
+        }
+      });
+      cityEl.value = stillValid ? prev : "";
+    }
+
+    spEl.addEventListener("change", syncCities);
+    syncCities();  // run once on load to match the pre-selected location
+  }
 })();
 </script>
 {% endblock %}
