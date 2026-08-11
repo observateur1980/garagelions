@@ -104,6 +104,25 @@
       {% if sum_customer_due %}${{ sum_customer_due|money0 }} still due{% else %}nothing outstanding{% endif %}
     </div>
   </div>
+
+  {% comment %}
+    Commission that hasn't been earned yet, next to the customer money it is
+    waiting on — the two move together, so reading them apart invites the
+    mistake of treating the whole commission as money in hand.
+  {% endcomment %}
+  <div class="cl-sum-tile t-comm">
+    <div class="l">Commission still to come</div>
+    <div class="v {% if sum_commission_unearned %}green{% endif %}">${{ sum_commission_unearned|money0 }}</div>
+    <div class="s">
+      {% if sum_customer_due %}
+        inside <span class="amber">${{ sum_customer_due|money0 }}</span> still due from
+        {{ n_owing }} customer{{ n_owing|pluralize }} ·
+        ${{ sum_commission_earned|money0 }} earned so far
+      {% else %}
+        every customer has paid in full · ${{ sum_commission_earned|money0 }} earned
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endif %}
 
@@ -148,8 +167,11 @@
   .view-toggle-btn:hover { background:#f9fafb; color:#111827; }
   .view-toggle-btn.active { background:#374151; color:#fff; }
 
+  /* Flex column so the settlement strip can be pushed to the true bottom of
+     a card that has been stretched to match its taller neighbours. */
   .cl-card-item {
-    display:block; background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+    display:flex; flex-direction:column;
+    background:#fff; border:1px solid #e5e7eb; border-radius:10px;
     padding:16px 18px; text-decoration:none; color:inherit; height:100%;
     transition: box-shadow .15s, transform .15s, border-color .15s;
   }
@@ -173,6 +195,23 @@
                   border:1px solid #a7f3d0; border-radius:999px; padding:0 6px; }
   .cl-pill-part { font-size:10px; font-weight:700; color:#b45309; background:#fffbeb;
                   border:1px solid #fde68a; border-radius:999px; padding:0 6px; }
+
+  /* Where the deal stands between the two sides, along the foot of a card.
+     Red while one owes the other, green once nothing is left to move. Both
+     name the parties outright — this board is read from both sides.
+     The negative margins bleed the strip to the card's edges, so it has to
+     mirror whichever card's padding it sits in. */
+  .cl-settle-bar { border-radius:0 0 10px 10px; font-size:11.5px;
+                   font-weight:600; line-height:1.35;
+                   display:flex; justify-content:space-between; gap:8px; }
+  .cl-settle-bar .amt { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cl-settle-owed { background:#fef2f2; color:#b91c1c;
+                    border-top:1px solid #fecaca; }
+  .cl-settle-ok   { background:#ecfdf5; color:#065f46;
+                    border-top:1px solid #a7f3d0; }
+  .cl-cardlet   .cl-settle-bar { margin:9px -13px -11px;  padding:6px 13px; }
+  /* margin-top:auto pins it to the bottom of a stretched card. */
+  .cl-card-item .cl-settle-bar { margin:auto -18px -16px; padding:8px 18px; }
 
   .main-content { min-width: 0; }
 
@@ -279,9 +318,10 @@
               {% if p.install_date or p.quoted_amount %}
                 <div class="foot">
                   <span>{% if p.install_date %}Install {{ p.install_date|date:"M j" }}{% endif %}</span>
-                  {% if p.quoted_amount %}<span><span style="color:#9ca3af">${{ p.current_total|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}</span>{% endif %}
+                  {% if p.quoted_amount %}<span><span style="color:#9ca3af">${{ p.current_total|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span></span>{% endif %}
                 </div>
               {% endif %}
+              {% include "customlux/_settle_bar.html" with p=p %}
             </a>
           {% empty %}
             <div class="cl-empty">—</div>
@@ -325,8 +365,9 @@
           {% endif %}
           <div class="cl-card-footer">
             <span>{% if p.lead_id %}<span class="cl-from-lead">lead #{{ p.lead_id }}</span>{% else %}Created here{% endif %}</span>
-            <span>{% if p.quoted_amount %}<span style="color:#9ca3af">${{ p.current_total|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span>{% if p.is_settled %} <span class="cl-pill-paid">paid</span>{% elif p.is_part_paid %} <span class="cl-pill-part">part</span>{% endif %}{% else %}{{ p.created_at|date:"M j, Y" }}{% endif %}</span>
+            <span>{% if p.quoted_amount %}<span style="color:#9ca3af">${{ p.current_total|money0 }}</span> <span class="cl-amt">→ ${{ p.commission_amount|money0 }}</span>{% else %}{{ p.created_at|date:"M j, Y" }}{% endif %}</span>
           </div>
+          {% include "customlux/_settle_bar.html" with p=p %}
         </a>
       </div>
     {% empty %}

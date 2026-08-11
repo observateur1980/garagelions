@@ -578,6 +578,65 @@ class CabinetProject(models.Model):
         return True
 
     @property
+    def commission_received(self):
+        """Commission that has actually reached Garage Lions.
+
+        Two ways in: customer money Garage Lions banked itself, and transfers
+        from CustomLux net of anything sent back. Capped at the job's
+        commission, because banking a customer cheque can put far more than
+        the commission into the account — that surplus is CustomLux's money
+        and belongs in the settlement, not here.
+        """
+        total = self.commission_amount
+        if total is None:
+            return _money(0)
+        if self.pk is None:
+            return _money(0)
+        inbound = sum(
+            p.amount for p in self.payments.all()
+            if p.direction == CabinetPayment.DIR_IN
+        )
+        outbound = sum(
+            p.amount for p in self.payments.all()
+            if p.direction == CabinetPayment.DIR_OUT
+        )
+        got = self.garagelions_collected + inbound - outbound
+        if got <= 0:
+            return _money(0)
+        return _money(min(got, total))
+
+    @property
+    def commission_remaining(self):
+        """The rest of the job's commission, still to reach Garage Lions.
+
+        Whole-job view, so it counts money the customer hasn't paid yet —
+        unlike `settlement_outstanding`, which is only what is owed *today*
+        on the money already collected. With `commission_received` it always
+        adds back up to `commission_amount`.
+        """
+        total = self.commission_amount
+        if total is None:
+            return None
+        return _money(total - self.commission_received)
+
+    @property
+    def settlement_state(self):
+        """What a card should say about this deal: 'settled', 'owed' or ''.
+
+        Empty covers the honest middle: an unpriced deal, or one where nobody
+        has banked anything yet, so no side owes the other a thing. Kept here
+        rather than assembled in the template because `settlement_outstanding`
+        can be zero *or* negative without anything being owed, and templates
+        can't compare numbers.
+        """
+        if self.current_total is None:
+            return ""
+        if self.is_settled:
+            return "settled"
+        out = self.settlement_outstanding
+        return "owed" if out is not None and out > 0 else ""
+
+    @property
     def is_part_paid(self):
         out = self.settlement_outstanding
         return (

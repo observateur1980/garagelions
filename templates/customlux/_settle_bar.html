@@ -1,0 +1,20 @@
+{% load customlux_extras %}
+{% comment %}
+  The strip along the foot of a card: red while one side owes the other,
+  green once the deal is square. Silent on a deal that is unpriced or that
+  nobody has paid into yet — nothing is owed until money has moved.
+
+  `settlement_state` does the deciding: the outstanding figure can be zero or
+  negative without anything being owed, and a template can't compare numbers.
+{% endcomment %}
+{% if p.settlement_state == "owed" %}
+  <div class="cl-settle-bar cl-settle-owed">
+    <span>{{ p.settlement_headline }}</span>
+    <span class="amt">${{ p.settlement_outstanding|money0 }}</span>
+  </div>
+{% elif p.settlement_state == "settled" %}
+  <div class="cl-settle-bar cl-settle-ok">
+    <span>Settled up</span>
+    <span class="amt">$0</span>
+  </div>
+{% endif %}

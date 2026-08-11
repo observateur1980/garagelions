@@ -8,9 +8,10 @@
 
 <style>
   /* ── Summary strip ── */
-  .cl-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr));
+  .cl-stats { display:grid; grid-template-columns:repeat(5, minmax(0,1fr));
               gap:12px; margin-bottom:18px; }
-  @media (max-width: 900px) { .cl-stats { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 1400px) { .cl-stats { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width: 900px)  { .cl-stats { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   /* Three colours carry meaning across this whole page, and nothing else is
      coloured — so a colour always answers "which kind of money is this?":
         green  = Garage Lions commission (what the job earns)
@@ -113,6 +114,9 @@
   .cl-pay-sum .rule { border-top:1px solid #eceff2; margin-top:3px; padding-top:6px;
                       font-weight:600; }
   .cl-pay-sum em { font-style:normal; color:#b45309; font-weight:600; }
+  /* Footnote under a figure — explains it without competing with it. */
+  .cl-pay-sum .cl-note-line { display:block; font-size:11px; color:#9ca3af;
+                              padding:1px 0 0; line-height:1.4; }
   .cl-pay { display:flex; align-items:flex-start; gap:12px; padding:10px 0;
             border-top:1px solid #f1f3f5; }
   /* Fixed-width, right-aligned and tabular so a column of amounts lines up on
@@ -195,6 +199,17 @@
     <div class="k">Customer remaining balance</div>
     <div class="v {% if project.customer_balance > 0 %}amber{% endif %}">{% if project.current_total %}${{ project.customer_balance|money }}{% else %}—{% endif %}</div>
     <div class="s">{% if project.current_total %}${{ project.customer_paid|money0 }} of ${{ project.current_total|money0 }} paid{% else %}no amount yet{% endif %}</div>
+  </div>
+  <div class="cl-stat t-comm">
+    <div class="k">Commission remaining balance</div>
+    <div class="v {% if project.commission_remaining %}green{% endif %}">
+      {% if project.commission_amount %}${{ project.commission_remaining|money }}{% else %}—{% endif %}
+    </div>
+    <div class="s">
+      {% if project.commission_amount %}
+        ${{ project.commission_received|money }} of ${{ project.commission_amount|money }} received
+      {% else %}no amount yet{% endif %}
+    </div>
   </div>
   <div class="cl-stat t-settle">
     <div class="k">{{ project.settlement_headline }}</div>
@@ -368,6 +383,28 @@
             <span class="{% if project.customer_balance > 0 %}cl-owed{% else %}cl-amt{% endif %}">
               ${{ project.customer_balance|money }}
             </span>
+          </div>
+          {% comment %}
+            The commission split the same way as the money behind it: what the
+            customer has already paid has earned its share, and the rest is
+            only worth something once the balance above comes in.
+          {% endcomment %}
+          <div class="rule">
+            <span>Commission earned so far</span>
+            <span class="cl-amt">${{ project.commission_earned|money }}</span>
+          </div>
+          <div>
+            <span>Commission still to come</span>
+            <span class="{% if project.commission_unearned > 0 %}cl-owed{% else %}cl-amt{% endif %}">
+              ${{ project.commission_unearned|money }}
+            </span>
+          </div>
+          <div class="cl-note-line">
+            {% if project.customer_balance > 0 %}
+              waiting on ${{ project.customer_balance|money }} still due from the customer
+            {% else %}
+              the customer has paid in full — all of it is earned
+            {% endif %}
           </div>
         </div>
         <div class="cl-bar"><span style="width:{{ project.customer_percent_paid }}%"></span></div>

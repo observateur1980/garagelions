@@ -73,10 +73,11 @@ def _board_summary(projects):
     the payment rows, so touching them per project inside several generator
     expressions would re-walk the same rows again and again.
     """
-    n = n_priced = n_settled = 0
+    n = n_priced = n_settled = n_owing = 0
     n_to_collect = n_to_pay = 0
     total = commission = _money(0)
     paid = due = to_collect = to_pay = _money(0)
+    commission_earned = commission_unearned = _money(0)
 
     for p in projects:
         n += 1
@@ -86,10 +87,15 @@ def _board_summary(projects):
         n_priced += 1
         total += deal
         commission += p.commission_amount or 0
+        # Split the commission by whether the customer money behind it has
+        # actually arrived: the unearned half only becomes real as they pay.
+        commission_earned += p.commission_earned
+        commission_unearned += p.commission_unearned
         paid += p.customer_paid
         balance = p.customer_balance or 0
         if balance > 0:
             due += balance
+            n_owing += 1
         outstanding = p.settlement_outstanding or 0
         if outstanding <= 0:
             n_settled += 1
@@ -103,8 +109,11 @@ def _board_summary(projects):
     return {
         "sum_total": total,
         "sum_commission": commission,
+        "sum_commission_earned": commission_earned,
+        "sum_commission_unearned": commission_unearned,
         "sum_customer_paid": paid,
         "sum_customer_due": due,
+        "n_owing": n_owing,
         "sum_to_collect": to_collect,
         "sum_to_pay": to_pay,
         "n_to_collect": n_to_collect,
