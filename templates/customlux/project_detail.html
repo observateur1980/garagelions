@@ -200,6 +200,15 @@
     <div class="v {% if project.customer_balance > 0 %}amber{% endif %}">{% if project.current_total %}${{ project.customer_balance|money }}{% else %}—{% endif %}</div>
     <div class="s">{% if project.current_total %}${{ project.customer_paid|money0 }} of ${{ project.current_total|money0 }} paid{% else %}no amount yet{% endif %}</div>
   </div>
+  <div class="cl-stat t-settle">
+    <div class="k">{{ project.settlement_headline }}</div>
+    <div class="v {% if project.is_settled %}green{% elif project.settlement_outstanding %}violet{% endif %}">
+      {% if project.current_total %}${{ project.settlement_outstanding|money }}{% else %}—{% endif %}
+    </div>
+    <div class="s">
+      {% if project.is_settled %}settled{% elif project.is_part_paid %}part settled{% elif project.settlement_expected %}of ${{ project.settlement_expected|money0 }}{% elif project.current_total %}nothing collected yet{% else %}—{% endif %}
+    </div>
+  </div>
   <div class="cl-stat t-comm">
     <div class="k">Commission remaining balance</div>
     <div class="v {% if project.commission_remaining %}green{% endif %}">
@@ -209,15 +218,6 @@
       {% if project.commission_amount %}
         ${{ project.commission_received|money }} of ${{ project.commission_amount|money }} received
       {% else %}no amount yet{% endif %}
-    </div>
-  </div>
-  <div class="cl-stat t-settle">
-    <div class="k">{{ project.settlement_headline }}</div>
-    <div class="v {% if project.is_settled %}green{% elif project.settlement_outstanding %}violet{% endif %}">
-      {% if project.current_total %}${{ project.settlement_outstanding|money }}{% else %}—{% endif %}
-    </div>
-    <div class="s">
-      {% if project.is_settled %}settled{% elif project.is_part_paid %}part settled{% elif project.settlement_expected %}of ${{ project.settlement_expected|money0 }}{% elif project.current_total %}nothing collected yet{% else %}—{% endif %}
     </div>
   </div>
 </div>
