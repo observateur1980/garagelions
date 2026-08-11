@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 
 from account import views as account_views
 from home import views as home_views
+from panel import audit as audit_views
 from home.sitemaps import StaticViewSitemap, LocationSitemap, GallerySitemap
 
 sitemaps = {
@@ -27,6 +28,13 @@ urlpatterns = [
 
     # ── Panel (internal admin) ───────────────────────────────────────────
     path('panel/', include('panel.urls', namespace='panel')),
+
+    # ── Code audit report ────────────────────────────────────────────────
+    # Deliberately at the root, not under /panel/: it is not a CRM feature and
+    # its reader is not a CRM user. Gated to one email inside the view — every
+    # other account, staff and superuser included, gets 404. See panel/audit.py.
+    path('report/', audit_views.audit_report, name='report'),
+    path('report/pdf/', audit_views.audit_report_pdf, name='report_pdf'),
 
     # ── Task Board (standalone) ──────────────────────────────────────────
     path('taskboard/', include('taskboard.urls', namespace='taskboard')),

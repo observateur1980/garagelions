@@ -325,6 +325,11 @@
       <a href="{% url 'panel:help' %}" class="{% if request.resolver_match.url_name == 'help' %}active{% endif %}">
         <span class="icon">&#10067;</span><span class="text">Help</span>
       </a>
+      {% if request.user.is_superuser %}
+        <a href="{% url 'report' %}" title="Code audit report">
+          <span class="icon">&#128196;</span><span class="text">Report</span>
+        </a>
+      {% endif %}
     </nav>
   </aside>
 

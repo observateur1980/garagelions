@@ -1,0 +1,207 @@
+{% load static %}<!doctype html>
+{# Standalone on purpose — no panel/base.html. This is not a CRM screen, and #}
+{# its reader is not a CRM user, so it carries no sidebar and no nav. #}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Code Audit — Garage Lions</title>
+  <style>
+    :root {
+      --ink: #12161c;
+      --muted: #5b6472;
+      --rule: #e5e7eb;
+      --accent: #b3261e;
+      --bg: #ffffff;
+      --panel: #f8f9fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .masthead {
+      border-bottom: 1px solid var(--rule);
+      background: var(--panel);
+      padding: 20px 24px;
+    }
+    .masthead-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px 14px;
+    }
+    .masthead h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.2px;
+    }
+    .masthead .meta {
+      color: var(--muted);
+      font-size: 13px;
+      flex: 1 1 auto;
+    }
+    /* Reached from the panel sidebar, but rendered without panel chrome —
+       so it needs its own way back or it is a dead end. */
+    .masthead .back {
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .masthead .back:hover { color: var(--ink); text-decoration: underline; }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 24px 90px;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 16px 14px;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .toc strong {
+      display: block;
+      margin-bottom: 9px;
+      color: #374151;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .toc ul { padding-left: 17px; margin: 0; }
+    .toc > ul { padding-left: 0; list-style: none; }
+    .toc > ul > li > a { font-weight: 600; }
+    .toc a { color: #374151; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .flag {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 26px;
+      padding: 13px 16px;
+      border: 1px solid #fca5a5;
+      border-left: 4px solid #dc2626;
+      border-radius: 6px;
+      background: #fef2f2;
+      color: #7f1d1d;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .flag .grow { flex: 1 1 320px; }
+    .pdf-btn {
+      display: inline-block;
+      padding: 8px 15px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .pdf-btn:hover { background: #911d17; }
+
+    .doc { max-width: 860px; padding-bottom: 40px; }
+    .doc h1 {
+      font-size: 27px;
+      margin: 0 0 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+      letter-spacing: -0.3px;
+    }
+    .doc h2 {
+      font-size: 21px;
+      margin: 40px 0 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f2f5;
+      letter-spacing: -0.2px;
+    }
+    .doc h3 { font-size: 16px; margin: 28px 0 10px; color: var(--accent); }
+    .doc p { margin: 0 0 13px; }
+    .doc ul, .doc ol { margin: 0 0 15px; padding-left: 24px; }
+    .doc li { margin-bottom: 7px; }
+    .doc strong { color: #0b0e13; }
+    .doc hr { border: 0; border-top: 1px solid var(--rule); margin: 34px 0; }
+    .doc a { color: #1d4ed8; }
+    .doc code {
+      background: #f1f2f5;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: #25303c;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .doc pre {
+      background: #f5f6f8;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .doc pre code { background: none; padding: 0; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: 1fr; padding: 20px 16px 70px; }
+      .toc { position: static; max-height: none; order: 2; }
+      .doc { order: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <h1>Garage Lions — Code Audit</h1>
+      <span class="meta">Signed in as {{ request.user.email }}</span>
+      <a class="back" href="{% url 'panel:dashboard' %}">&larr; Back to panel</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <aside class="toc">
+      <strong>Contents</strong>
+      {{ toc_html|safe }}
+    </aside>
+
+    <main class="doc">
+      <div class="flag">
+        <div class="grow">
+          <strong>Confidential.</strong> This page describes unfixed weaknesses in
+          this deployment and is restricted to a single account. Don't paste it
+          into shared channels or ticket systems.
+        </div>
+        {% if has_pdf %}
+          <a class="pdf-btn" href="{% url 'report_pdf' %}">Download PDF</a>
+        {% endif %}
+      </div>
+
+      {{ body_html|safe }}
+    </main>
+  </div>
+</body>
+</html>
