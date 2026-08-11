@@ -33,7 +33,7 @@ class CabinetProjectForm(forms.ModelForm):
                 "placeholder": "0.00",
             }),
             "tax_percent": forms.NumberInput(attrs={
-                "class": _FC, "step": "0.01", "min": "0", "max": "100",
+                "class": _FC, "step": "0.0001", "min": "0", "max": "100",
                 "id": "cl-tax",
             }),
             "online_fee": forms.NumberInput(attrs={
@@ -283,7 +283,7 @@ class CabinetSettingsForm(forms.ModelForm):
                 "class": _FC, "step": "0.01", "min": "0", "max": "100",
             }),
             "default_tax_rate": forms.NumberInput(attrs={
-                "class": _FC, "step": "0.001", "min": "0", "max": "100",
+                "class": _FC, "step": "0.0001", "min": "0", "max": "100",
             }),
             "default_deposit_percent": forms.NumberInput(attrs={
                 "class": _FC, "step": "0.01", "min": "0", "max": "100",

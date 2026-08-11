@@ -29,3 +29,23 @@ def money(value, places=2):
 def money0(value):
     """Same, rounded to whole dollars — for compact card and column labels."""
     return money(value, 0)
+
+
+@register.filter
+def pct(value, places=4):
+    """A rate, shown to as many decimals as it actually carries.
+
+    Tax rates go to four places (9.375%, and district add-ons can add a
+    fourth), but most rates are round numbers, so trailing zeros are dropped:
+    9.3750 -> '9.375', 8.2500 -> '8.25', 30.0000 -> '30'.
+    """
+    if value is None or value == "":
+        return ""
+    try:
+        rate = Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return value
+    text = f"{rate:.{int(places)}f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"

@@ -141,6 +141,11 @@
     return (tax && tax.value.trim() !== '') ? num(tax) : defTax;
   }
 
+  // Tax rates carry up to four decimals (9.375%), so the label must not
+  // round the way the commission and deposit percentages do. Trailing zeros
+  // are dropped so a plain 8.25% still reads as 8.25%.
+  const rateText = n => String(Math.round(n * 10000) / 10000);
+
   function render() {
     // Change orders re-price the job, so they are part of the taxed base.
     const base = num(total) + changes;
@@ -174,7 +179,7 @@
     document.getElementById('cl-out-dep').textContent =
       t ? money(t * dp / 100) + '  (' + (Math.round(dp*100)/100) + '%)' : '—';
     document.getElementById('cl-lbl-tax').textContent =
-      'Plus sales tax (' + (Math.round(p * 100) / 100) + '%)' +
+      'Plus sales tax (' + rateText(p) + '%)' +
       ((tax && tax.value.trim() !== '') ? '' : ' — board rate');
     document.getElementById('cl-out-tax').textContent   = x ? '+ ' + money(x) : '—';
     document.getElementById('cl-row-fee').style.display = f ? '' : 'none';
@@ -195,7 +200,7 @@
         document.getElementById('cl-pay-row-chg').style.display = '';
         set('cl-pay-chg', (changes > 0 ? '+ ' : '− ') + money(Math.abs(changes)));
       }
-      set('cl-pay-lbl-tax', 'Sales tax (' + (Math.round(p * 100) / 100) + '%)');
+      set('cl-pay-lbl-tax', 'Sales tax (' + rateText(p) + '%)');
       set('cl-pay-tax', x ? '+ ' + money(x) : '—');
       document.getElementById('cl-pay-row-fee').style.display = f ? '' : 'none';
       set('cl-pay-fee', f ? '+ ' + money(f) : '—');

@@ -1,4 +1,5 @@
 {% extends parent_template %}
+{% load customlux_extras %}
 {% block title %}New cabinets project{% endblock %}
 
 {% block content %}
@@ -48,7 +49,7 @@
       <div class="col-md-4">
         <label class="form-label small fw-semibold">Sales tax %</label>
         {{ form.tax_percent }}
-        <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|floatformat:"-2" }}%)</div>
+        <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|pct }}%)</div>
       </div>
       <div class="col-md-4">
         <label class="form-label small fw-semibold">Commission rate %</label>

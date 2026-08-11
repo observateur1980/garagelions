@@ -63,8 +63,11 @@ class CabinetSettings(models.Model):
         max_digits=5, decimal_places=2, default=Decimal("50.00"),
         help_text="Down payment percent used to pre-fill a new deal.",
     )
+    # Four decimals: county rates run to three (9.375%), and district
+    # add-ons can push a fourth, so rounding to cents-style precision would
+    # bill the customer the wrong tax.
     default_tax_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, default=Decimal("0.00"),
+        max_digits=7, decimal_places=4, default=Decimal("0.0000"),
         help_text=(
             "Sales-tax percent applied to any deal that doesn't set its own. "
             "The tax is added to the deal price; it never enters the "
@@ -152,7 +155,7 @@ class CabinetProject(models.Model):
     # A rate, not an amount: the tax is worked out from the deal price and
     # added on top of it. Blank = the board's default rate.
     tax_percent = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True,
+        max_digits=7, decimal_places=4, null=True, blank=True,
         verbose_name="Sales tax %",
     )
     # What the old tax-inclusive scheme stored. Never read by the maths any

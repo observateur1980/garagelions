@@ -308,7 +308,7 @@
           <div class="col-md-6">
             <label class="form-label small fw-semibold">Sales tax %</label>
             {{ form.tax_percent }}
-            <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|floatformat:"-2" }}%)</div>
+            <div class="form-text" style="font-size:11px">Added on top. Blank = board rate ({{ conf.default_tax_rate|pct }}%)</div>
           </div>
           <div class="col-md-6">
             <label class="form-label small fw-semibold">Online transaction fee</label>
@@ -361,7 +361,7 @@
           {% if project.pass_through %}
             <div><span>Price before {{ project.pass_through_label }}</span><span>${{ project.net_amount|money }}</span></div>
             {% if project.tax_amount %}
-              <div><span>Sales tax ({{ project.effective_tax_percent|floatformat:"-2" }}%)</span><span>${{ project.tax_amount|money }}</span></div>
+              <div><span>Sales tax ({{ project.effective_tax_percent|pct }}%)</span><span>${{ project.tax_amount|money }}</span></div>
             {% endif %}
             {% if project.online_fee %}
               <div><span>Online transaction fee</span><span>${{ project.online_fee|money }}</span></div>
